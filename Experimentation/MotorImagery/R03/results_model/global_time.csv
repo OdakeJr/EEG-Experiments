@@ -1,0 +1,3 @@
+split_type,fs_method,model,fs_time,train_time,n_train,n_test
+global_mixed_subjects,mi,nn_erm,12.105601072311401,3.5819718837738037,4140,1044
+global_mixed_subjects,mi,nn_domain_agreement,12.105601072311401,3.300503969192505,4140,1044
