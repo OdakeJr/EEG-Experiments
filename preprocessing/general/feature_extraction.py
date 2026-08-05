@@ -461,3 +461,276 @@ def extract_features_to_dataframe(
                 trial_indices[output_session] += 1
 
     return pd.DataFrame(all_features)
+
+
+def validate_feature_dataframe(
+    dataframe,
+    metadata_columns=None,
+    identifier_columns=None,
+):
+    """
+    Validate an extracted EEG feature DataFrame.
+
+    The function raises an exception when it finds:
+        - an empty DataFrame;
+        - duplicated column names;
+        - missing required metadata columns;
+        - missing or blank metadata values;
+        - invalid trial indices;
+        - duplicated trial identifiers;
+        - missing feature columns;
+        - non-numeric feature columns;
+        - NaN or infinite feature values.
+
+    Parameters
+    ----------
+    dataframe : pandas.DataFrame
+        Feature table to validate.
+
+    metadata_columns : sequence of str, optional
+        Columns that are not model features.
+
+    identifier_columns : sequence of str, optional
+        Columns that uniquely identify each trial.
+
+    Returns
+    -------
+    bool
+        True when all checks pass.
+    """
+    if metadata_columns is None:
+        metadata_columns = [
+            "dataset",
+            "subject",
+            "session",
+            "trial_index",
+            "label",
+        ]
+
+    if identifier_columns is None:
+        identifier_columns = [
+            "dataset",
+            "subject",
+            "session",
+            "trial_index",
+        ]
+
+    if not isinstance(dataframe, pd.DataFrame):
+        raise TypeError(
+            "Expected a pandas DataFrame."
+        )
+
+    if dataframe.empty:
+        raise ValueError(
+            "The feature DataFrame is empty."
+        )
+
+    # ========================================================
+    # Column validation
+    # ========================================================
+
+    duplicated_columns = dataframe.columns[
+        dataframe.columns.duplicated()
+    ].tolist()
+
+    if duplicated_columns:
+        raise ValueError(
+            "Duplicated column names found: "
+            f"{duplicated_columns}"
+        )
+
+    missing_metadata = [
+        column
+        for column in metadata_columns
+        if column not in dataframe.columns
+    ]
+
+    if missing_metadata:
+        raise ValueError(
+            "Missing required metadata columns: "
+            f"{missing_metadata}"
+        )
+
+    missing_identifiers = [
+        column
+        for column in identifier_columns
+        if column not in dataframe.columns
+    ]
+
+    if missing_identifiers:
+        raise ValueError(
+            "Missing trial identifier columns: "
+            f"{missing_identifiers}"
+        )
+
+    feature_columns = [
+        column
+        for column in dataframe.columns
+        if column not in metadata_columns
+    ]
+
+    if not feature_columns:
+        raise ValueError(
+            "No feature columns were found."
+        )
+
+    # ========================================================
+    # Metadata validation
+    # ========================================================
+
+    metadata_with_missing_values = [
+        column
+        for column in metadata_columns
+        if dataframe[column].isna().any()
+    ]
+
+    if metadata_with_missing_values:
+        raise ValueError(
+            "Missing metadata values found in columns: "
+            f"{metadata_with_missing_values}"
+        )
+
+    string_metadata_columns = [
+        "dataset",
+        "subject",
+        "session",
+        "label",
+    ]
+
+    blank_metadata_columns = []
+
+    for column in string_metadata_columns:
+        if column not in dataframe.columns:
+            continue
+
+        blank_mask = (
+            dataframe[column]
+            .astype(str)
+            .str.strip()
+            .eq("")
+        )
+
+        if blank_mask.any():
+            blank_metadata_columns.append(column)
+
+    if blank_metadata_columns:
+        raise ValueError(
+            "Blank metadata values found in columns: "
+            f"{blank_metadata_columns}"
+        )
+
+    # ========================================================
+    # Trial-index validation
+    # ========================================================
+
+    trial_indices = pd.to_numeric(
+        dataframe["trial_index"],
+        errors="coerce",
+    )
+
+    if trial_indices.isna().any():
+        raise ValueError(
+            "'trial_index' contains non-numeric values."
+        )
+
+    if not np.isfinite(
+        trial_indices.to_numpy(dtype=float)
+    ).all():
+        raise ValueError(
+            "'trial_index' contains infinite values."
+        )
+
+    if (trial_indices < 0).any():
+        raise ValueError(
+            "'trial_index' contains negative values."
+        )
+
+    if not np.equal(
+        trial_indices,
+        np.floor(trial_indices),
+    ).all():
+        raise ValueError(
+            "'trial_index' must contain integer values."
+        )
+
+    # ========================================================
+    # Duplicate-trial validation
+    # ========================================================
+
+    duplicate_mask = dataframe.duplicated(
+        subset=identifier_columns,
+        keep=False,
+    )
+
+    if duplicate_mask.any():
+        duplicate_examples = (
+            dataframe.loc[
+                duplicate_mask,
+                identifier_columns,
+            ]
+            .drop_duplicates()
+            .head(10)
+            .to_dict("records")
+        )
+
+        raise ValueError(
+            "Duplicated trial identifiers found. "
+            f"Examples: {duplicate_examples}"
+        )
+
+    # ========================================================
+    # Feature validation
+    # ========================================================
+
+    non_numeric_features = [
+        column
+        for column in feature_columns
+        if not pd.api.types.is_numeric_dtype(
+            dataframe[column]
+        )
+    ]
+
+    if non_numeric_features:
+        raise TypeError(
+            "Non-numeric feature columns found: "
+            f"{non_numeric_features[:10]}"
+        )
+
+    feature_values = dataframe[
+        feature_columns
+    ].to_numpy(
+        dtype=np.float64,
+        copy=False,
+    )
+
+    nan_mask = np.isnan(feature_values)
+
+    if nan_mask.any():
+        invalid_columns = [
+            feature_columns[index]
+            for index in np.where(
+                nan_mask.any(axis=0)
+            )[0]
+        ]
+
+        raise ValueError(
+            "NaN feature values found in columns: "
+            f"{invalid_columns[:10]}"
+        )
+
+    infinite_mask = np.isinf(feature_values)
+
+    if infinite_mask.any():
+        invalid_columns = [
+            feature_columns[index]
+            for index in np.where(
+                infinite_mask.any(axis=0)
+            )[0]
+        ]
+
+        raise ValueError(
+            "Infinite feature values found in columns: "
+            f"{invalid_columns[:10]}"
+        )
+
+    return True
