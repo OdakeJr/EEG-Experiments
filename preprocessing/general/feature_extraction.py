@@ -379,6 +379,8 @@ def extract_features_to_dataframe(
     extract_config,
     show_progress=True,
     band_labels=None,
+    dataset_name=None,
+    session_name=None,
 ):
     all_features = []
     feature_names_ref = None
@@ -392,10 +394,24 @@ def extract_features_to_dataframe(
         )
 
     for subj_id, sessions in iterator:
-        for sess_name, sess_data in sessions.items():
+        trial_indices = {}
+
+        for sess_name in sorted(sessions):
+            sess_data = sessions[sess_name]
+
             X = sess_data["X"]
             y = sess_data["y"]
             channel_names = sess_data["channel_names"]
+
+            output_session = (
+                session_name
+                if session_name is not None
+                else sess_name
+            )
+
+            # Start at zero for each output session.
+            if output_session not in trial_indices:
+                trial_indices[output_session] = 0
 
             if X.ndim == 3:
                 trial_iterator = enumerate(X)
@@ -411,7 +427,7 @@ def extract_features_to_dataframe(
                     f"Unexpected X shape: {X.shape}"
                 )
 
-            for trial_idx, trial in trial_iterator:
+            for local_trial_idx, trial in trial_iterator:
                 vals, names = extract_features_from_trial(
                     trial,
                     extract_config,
@@ -429,9 +445,11 @@ def extract_features_to_dataframe(
                     )
 
                 row = {
+                    "dataset": dataset_name,
                     "subject": subj_id,
-                    "session": sess_name,
-                    "label": int(y[trial_idx]),
+                    "session": output_session,
+                    "trial_index": trial_indices[output_session],
+                    "label": str(y[local_trial_idx]),
                 }
 
                 row.update({
@@ -440,5 +458,6 @@ def extract_features_to_dataframe(
                 })
 
                 all_features.append(row)
+                trial_indices[output_session] += 1
 
     return pd.DataFrame(all_features)

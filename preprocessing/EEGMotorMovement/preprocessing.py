@@ -16,52 +16,103 @@ DEFAULT_LOAD_CONFIG = {
     "subjects": list(range(1, 110)),
 
     "runs": {
+        # ----------------------------------------------------
+        # Execution: left fist versus right fist
+        # ----------------------------------------------------
+        3: {
+            "name": "run_03",
+            "label_map": {
+                "T1": "left_fist_execution",
+                "T2": "right_fist_execution",
+            },
+        },
+        7: {
+            "name": "run_07",
+            "label_map": {
+                "T1": "left_fist_execution",
+                "T2": "right_fist_execution",
+            },
+        },
+        11: {
+            "name": "run_11",
+            "label_map": {
+                "T1": "left_fist_execution",
+                "T2": "right_fist_execution",
+            },
+        },
+
+        # ----------------------------------------------------
+        # Imagery: left fist versus right fist
+        # ----------------------------------------------------
         4: {
             "name": "run_04",
-            "task": "left_right",
             "label_map": {
-                "T1": 0,
-                "T2": 1,
+                "T1": "left_fist_imagery",
+                "T2": "right_fist_imagery",
             },
         },
         8: {
             "name": "run_08",
-            "task": "left_right",
             "label_map": {
-                "T1": 0,
-                "T2": 1,
+                "T1": "left_fist_imagery",
+                "T2": "right_fist_imagery",
             },
         },
         12: {
             "name": "run_12",
-            "task": "left_right",
             "label_map": {
-                "T1": 0,
-                "T2": 1,
+                "T1": "left_fist_imagery",
+                "T2": "right_fist_imagery",
             },
         },
+
+        # ----------------------------------------------------
+        # Execution: both fists versus both feet
+        # ----------------------------------------------------
+        5: {
+            "name": "run_05",
+            "label_map": {
+                "T1": "both_fists_execution",
+                "T2": "both_feet_execution",
+            },
+        },
+        9: {
+            "name": "run_09",
+            "label_map": {
+                "T1": "both_fists_execution",
+                "T2": "both_feet_execution",
+            },
+        },
+        13: {
+            "name": "run_13",
+            "label_map": {
+                "T1": "both_fists_execution",
+                "T2": "both_feet_execution",
+            },
+        },
+
+        # ----------------------------------------------------
+        # Imagery: both fists versus both feet
+        # ----------------------------------------------------
         6: {
             "name": "run_06",
-            "task": "fists_feet",
             "label_map": {
-                "T1": 2,
-                "T2": 3,
+                "T1": "both_fists_imagery",
+                "T2": "both_feet_imagery",
             },
         },
         10: {
             "name": "run_10",
-            "task": "fists_feet",
             "label_map": {
-                "T1": 2,
-                "T2": 3,
+                "T1": "both_fists_imagery",
+                "T2": "both_feet_imagery",
             },
         },
         14: {
             "name": "run_14",
-            "task": "fists_feet",
             "label_map": {
-                "T1": 2,
-                "T2": 3,
+                "T1": "both_fists_imagery",
+                "T2": "both_feet_imagery",
             },
         },
     },
@@ -138,20 +189,6 @@ def _standardize_channel_names(raw, montage_name):
 def _select_physionet_channels(raw, channels=None):
     """
     Optionally select and reorder PhysioNet EEG channels.
-
-    Parameters
-    ----------
-    raw : mne.io.BaseRaw
-        Raw EEG recording with standardized channel names.
-
-    channels : list of str or None
-        Canonical channel names to retain. When None, every
-        available EEG channel is retained.
-
-    Returns
-    -------
-    raw : mne.io.BaseRaw
-        Recording containing the selected channels.
     """
     if channels is None:
         return raw
@@ -194,20 +231,21 @@ def load_physionet_eegmmidb_data(
     """
     Load the PhysioNet EEG Motor Movement/Imagery Database.
 
-    By default, the function loads:
+    By default, the function loads all movement and imagery runs:
+
+        Runs 3, 7, 11:
+            executed left fist versus executed right fist
 
         Runs 4, 8, 12:
             imagined left fist versus imagined right fist
 
+        Runs 5, 9, 13:
+            executed both fists versus executed both feet
+
         Runs 6, 10, 14:
             imagined both fists versus imagined both feet
 
-    Label mapping:
-
-        0 -> left fist
-        1 -> right fist
-        2 -> both fists
-        3 -> both feet
+    Labels are stored as dataset-specific semantic strings.
 
     Parameters
     ----------
@@ -227,14 +265,11 @@ def load_physionet_eegmmidb_data(
             "X": ndarray of shape
                  (n_trials, n_channels, n_samples),
 
-            "y": ndarray of shape
-                 (n_trials,),
+            "y": ndarray of semantic string labels,
 
             "channel_names": list of canonical electrode names,
 
-            "sampling_rate": sampling frequency in Hz,
-
-            "task": task represented by the run
+            "sampling_rate": sampling frequency in Hz
         }
     """
     config = _merge_config(config)
@@ -279,7 +314,6 @@ def load_physionet_eegmmidb_data(
 
         for run_number, run_config in runs.items():
             run_name = run_config["name"]
-            task = run_config["task"]
             label_map = run_config["label_map"]
 
             edf_path = (
@@ -303,7 +337,6 @@ def load_physionet_eegmmidb_data(
                 verbose=verbose,
             )
 
-            # Keep only EEG signals.
             raw.pick("eeg")
 
             # ==================================================
@@ -352,7 +385,7 @@ def load_physionet_eegmmidb_data(
                 )
                 continue
 
-            motor_imagery_event_id = {
+            selected_event_id = {
                 event_name: event_id[event_name]
                 for event_name in label_map
             }
@@ -364,7 +397,7 @@ def load_physionet_eegmmidb_data(
             epochs = mne.Epochs(
                 raw,
                 events,
-                event_id=motor_imagery_event_id,
+                event_id=selected_event_id,
                 tmin=tmin,
                 tmax=tmax,
                 baseline=baseline,
@@ -378,12 +411,12 @@ def load_physionet_eegmmidb_data(
             )
 
             # ==================================================
-            # Map T1 and T2 according to the run
+            # Map T1 and T2 to semantic labels
             # ==================================================
 
             event_code_to_label = {
-                event_id[event_name]: class_label
-                for event_name, class_label
+                event_id[event_name]: semantic_label
+                for event_name, semantic_label
                 in label_map.items()
             }
 
@@ -393,7 +426,7 @@ def load_physionet_eegmmidb_data(
                     for event_code
                     in epochs.events[:, -1]
                 ],
-                dtype=int,
+                dtype=str,
             )
 
             # ==================================================
@@ -427,7 +460,6 @@ def load_physionet_eegmmidb_data(
                 "sampling_rate": float(
                     epochs.info["sfreq"]
                 ),
-                "task": task,
             }
 
         if subject_data:

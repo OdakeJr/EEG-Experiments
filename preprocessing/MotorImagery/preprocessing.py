@@ -67,16 +67,27 @@ BCI_CHANNEL_ORDER = [
 ]
 
 
+# Dataset-specific semantic labels.
+BCI_LABEL_MAP = {
+    1: "left_hand_imagery",
+    2: "right_hand_imagery",
+    3: "both_feet_imagery",
+    4: "tongue_imagery",
+}
+
+
 # ============================================================
 # Default loading configuration
 # ============================================================
 
 DEFAULT_LOAD_CONFIG = {
     "subjects": list(range(1, 10)),
+
     "sessions": [
-        ("session1", "T"),
-        ("session2", "E"),
+        ("session_01", "T"),
+        ("session_02", "E"),
     ],
+
     "mi_codes": [
         "769",
         "770",
@@ -84,10 +95,10 @@ DEFAULT_LOAD_CONFIG = {
         "772",
         "783",
     ],
+
     "tmin": 0.5,
     "tmax": 3.5,
     "baseline": None,
-    "label_offset": 1,
 
     # None keeps all 22 EEG electrodes.
     # Example subset: ["C3", "Cz", "C4"]
@@ -129,8 +140,6 @@ def _prepare_bci_channels(raw, channels=None):
         Recording containing the selected EEG channels in the
         requested order.
     """
-
-    # Check that the expected original EEG channels are present.
     missing_original_channels = [
         channel
         for channel in BCI_CHANNEL_MAP
@@ -147,7 +156,6 @@ def _prepare_bci_channels(raw, channels=None):
     # Convert dataset-specific names into canonical names.
     raw.rename_channels(BCI_CHANNEL_MAP)
 
-    # Keep all EEG channels unless a subset was requested.
     if channels is None:
         selected_channels = BCI_CHANNEL_ORDER.copy()
     else:
@@ -158,7 +166,6 @@ def _prepare_bci_channels(raw, channels=None):
             "The channel list cannot be empty."
         )
 
-    # Check the requested canonical channel names.
     missing_selected_channels = [
         channel
         for channel in selected_channels
@@ -177,10 +184,10 @@ def _prepare_bci_channels(raw, channels=None):
             "The channel selection contains duplicate names."
         )
 
-    # This removes the EOG channels and any unselected EEG channels.
+    # Remove EOG and unselected EEG channels.
     raw.pick(selected_channels)
 
-    # Guarantee the exact requested order.
+    # Guarantee the requested channel order.
     raw.reorder_channels(selected_channels)
 
     return raw
@@ -193,6 +200,13 @@ def load_bci_iv_2a_data(
 ):
     """
     Load BCI Competition IV 2a data into a nested dictionary.
+
+    Labels are stored as dataset-specific semantic strings:
+
+        left_hand_imagery
+        right_hand_imagery
+        both_feet_imagery
+        tongue_imagery
 
     Parameters
     ----------
@@ -215,8 +229,7 @@ def load_bci_iv_2a_data(
             "X": ndarray of shape
                  (n_trials, n_channels, n_samples),
 
-            "y": ndarray of shape
-                 (n_trials,),
+            "y": ndarray of semantic string labels,
 
             "channel_names": list of canonical electrode names,
 
@@ -234,26 +247,39 @@ def load_bci_iv_2a_data(
     tmin = config["tmin"]
     tmax = config["tmax"]
     baseline = config["baseline"]
-    label_offset = config["label_offset"]
     channels = config["channels"]
     verbose = config["verbose"]
+
+    if not root_gdf.exists():
+        raise FileNotFoundError(
+            f"BCI GDF directory not found: {root_gdf}"
+        )
+
+    if not root_mat.exists():
+        raise FileNotFoundError(
+            f"BCI MAT directory not found: {root_mat}"
+        )
 
     all_data = {}
 
     for subject in subjects:
         subject_id = f"A{subject:02d}"
-        all_data[subject_id] = {}
+        subject_data = {}
 
         for session_name, suffix in sessions:
             gdf_path = root_gdf / f"{subject_id}{suffix}.gdf"
             mat_path = root_mat / f"{subject_id}{suffix}.mat"
 
             if not gdf_path.exists():
-                print(f"Warning: file not found: {gdf_path}")
+                print(
+                    f"Warning: file not found: {gdf_path}"
+                )
                 continue
 
             if not mat_path.exists():
-                print(f"Warning: file not found: {mat_path}")
+                print(
+                    f"Warning: file not found: {mat_path}"
+                )
                 continue
 
             # ==================================================
@@ -314,7 +340,7 @@ def load_bci_iv_2a_data(
             )
 
             # ==================================================
-            # Load labels
+            # Load and map labels
             # ==================================================
 
             mat_data = loadmat(mat_path)
@@ -324,13 +350,30 @@ def load_bci_iv_2a_data(
                     f"'classlabel' not found in {mat_path}"
                 )
 
-            y = (
+            numeric_labels = (
                 mat_data["classlabel"]
                 .squeeze()
                 .astype(int)
             )
 
-            y = y - label_offset
+            unknown_labels = sorted(
+                set(numeric_labels)
+                - set(BCI_LABEL_MAP)
+            )
+
+            if unknown_labels:
+                raise ValueError(
+                    f"Unexpected class labels in {mat_path}: "
+                    f"{unknown_labels}"
+                )
+
+            y = np.asarray(
+                [
+                    BCI_LABEL_MAP[label]
+                    for label in numeric_labels
+                ],
+                dtype=str,
+            )
 
             # ==================================================
             # Safety check
@@ -356,7 +399,7 @@ def load_bci_iv_2a_data(
             # Store session
             # ==================================================
 
-            all_data[subject_id][session_name] = {
+            subject_data[session_name] = {
                 "X": X,
                 "y": y,
                 "channel_names": epochs.ch_names.copy(),
@@ -364,5 +407,8 @@ def load_bci_iv_2a_data(
                     epochs.info["sfreq"]
                 ),
             }
+
+        if subject_data:
+            all_data[subject_id] = subject_data
 
     return all_data
