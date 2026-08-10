@@ -1,10 +1,55 @@
-import benchmark_architectures as my_models
+import lib.learning_algorithms.z_version_01.benchmark_architectures as my_models
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 from sklearn.svm import OneClassSVM
+from sklearn.svm import SVC
+from scipy.stats import mode
+
+
+class DomainMajoritySVM:
+    def __init__(self):
+        self.models = []
+        self.unique_domains = None
+
+    def fit(self, X_train, y_train, domains_train):
+        self.unique_domains = np.unique(domains_train)
+        self.models = []
+
+        for d in self.unique_domains:
+            mask = domains_train == d
+            model_d = SVC(kernel="rbf", probability=True)
+            model_d.fit(X_train[mask], y_train[mask])
+            self.models.append(model_d)
+
+    def predict(self, X):
+        all_preds = np.array([model.predict(X) for model in self.models])
+        majority_preds = mode(all_preds, axis=0).mode[0]
+        return majority_preds
+
+    def predict_proba(self, X):
+        all_probs = np.array([model.predict_proba(X) for model in self.models])
+        mean_probs = all_probs.mean(axis=0)
+        return mean_probs[:, 1]
+
+
+def train_domain_majority_svm(
+    X_train, y_train, domains_train,
+    **kwargs
+):
+
+    model = DomainMajoritySVM()
+    model.fit(X_train, y_train, domains_train)
+
+    return {
+        "model": model,
+        "predict_proba": lambda X: model.predict_proba(X),
+        "predict": lambda X: model.predict(X)
+    }
+        
 
 # =========================
 # Train SVM Region
@@ -21,6 +66,7 @@ def train_svm_region(x1, x2):
 # =========================
 # Differentiable SVM Wrapper
 # =========================
+
 class SVMPremise(nn.Module):
     def __init__(self, svm_model):
         super().__init__()
@@ -51,11 +97,9 @@ class SVMPremise(nn.Module):
     def forward(self, x1, x2_pred):
         f = self.raw_decision(x1, x2_pred)
         return torch.relu(-f)   # penalty
-    
-    
 
-def train_nn_svm_premise_global(
-    X_train, y_train, domains_train=None,
+def train_nn_svm_premise_multidomain(
+    X_train, y_train, domains_train,
     mode="combined",  # "plain", "combined", "premise_only"
     lambda_premise=0.1,
     hidden_dim=128,
@@ -78,12 +122,18 @@ def train_nn_svm_premise_global(
     criterion = nn.BCEWithLogitsLoss()
 
     # -------------------------
-    # Single Global SVM
+    # One SVM per domain
     # -------------------------
-    premise = None
+    premises = []
+    unique_domains = np.unique(domains_train)
+
     if mode in ["combined", "premise_only"]:
-        svm = train_svm_region(X_train, y_train)
-        premise = SVMPremise(svm).to(device)
+        for d in unique_domains:
+            mask = domains_train == d
+            svm_d = train_svm_region(X_train[mask], y_train[mask])
+            premises.append(SVMPremise(svm_d).to(device))
+
+    n_domains = len(premises)
 
     model.train()
 
@@ -97,13 +147,18 @@ def train_nn_svm_premise_global(
                 loss = criterion(logits, yb)
 
             else:
-                premise_loss = premise(xb, logits).mean()
+                total_premise_loss = 0.0
+
+                for premise in premises:
+                    total_premise_loss += premise(xb, logits).mean()
+
+                total_premise_loss /= n_domains
 
                 if mode == "combined":
                     task_loss = criterion(logits, yb)
-                    loss = task_loss + lambda_premise * premise_loss
+                    loss = task_loss + lambda_premise * total_premise_loss
                 else:
-                    loss = premise_loss
+                    loss = total_premise_loss
 
             loss.backward()
             optimizer.step()

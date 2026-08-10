@@ -9,7 +9,7 @@ import torch.optim as optim
 sys.path.append(os.path.abspath("../../../"))
 PROJECT_ROOT = "../../../"
 
-import lib.learning_algorithms.benchmark_architectures as my_models
+import lib.learning_algorithms.z_version_01.benchmark_architectures as my_models
 
 
 # ============================================================

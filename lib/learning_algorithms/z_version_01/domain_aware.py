@@ -1,10 +1,14 @@
-import benchmark_architectures as my_models
-
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import sys
+import os
 
+sys.path.append(os.path.abspath("../../../"))
+PROJECT_ROOT = "../../../"
+
+import lib.learning_algorithms.z_version_01.benchmark_architectures as my_models
 
 class GradientReversalFunction(torch.autograd.Function):
     @staticmethod
@@ -27,10 +31,9 @@ class GradientReversal(nn.Module):
 
 
 class DANN(nn.Module):
-    def __init__(self, input_dim, n_domains, hidden_dim=128, lambda_grl=1.0):
+    def __init__(self, input_dim, n_domains, n_classes, hidden_dim=128, lambda_grl=1.0):
         super().__init__()
 
-        # Feature extractor
         self.feature_extractor = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU(),
@@ -38,10 +41,8 @@ class DANN(nn.Module):
             nn.ReLU()
         )
 
-        # Label predictor
-        self.label_classifier = nn.Linear(hidden_dim, 1)
+        self.label_classifier = nn.Linear(hidden_dim, n_classes)
 
-        # Domain classifier
         self.grl = GradientReversal(lambda_grl)
         self.domain_classifier = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
@@ -58,8 +59,7 @@ class DANN(nn.Module):
         domain_logits = self.domain_classifier(reversed_features)
 
         return label_logits, domain_logits
-    
-    
+
 
 def train_dann(
     X_train, y_train, domains_train,
@@ -71,16 +71,19 @@ def train_dann(
     lambda_domain=1.0,
     **kwargs
 ):
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Map domains to 0..K-1
+    classes = np.unique(y_train)
+    n_classes = len(classes)
+    class_to_idx = {c: i for i, c in enumerate(classes)}
+    y_encoded = np.array([class_to_idx[y] for y in y_train], dtype=np.int64)
+
     unique_domains = np.unique(domains_train)
     domain_mapping = {d: i for i, d in enumerate(unique_domains)}
-    domains_mapped = np.array([domain_mapping[d] for d in domains_train])
+    domains_mapped = np.array([domain_mapping[d] for d in domains_train], dtype=np.int64)
 
     X_tensor = torch.tensor(X_train, dtype=torch.float32).to(device)
-    y_tensor = torch.tensor(y_train, dtype=torch.float32).unsqueeze(1).to(device)
+    y_tensor = torch.tensor(y_encoded, dtype=torch.long).to(device)
     d_tensor = torch.tensor(domains_mapped, dtype=torch.long).to(device)
 
     n_domains = len(unique_domains)
@@ -88,19 +91,19 @@ def train_dann(
     model = DANN(
         input_dim=X_train.shape[1],
         n_domains=n_domains,
+        n_classes=n_classes,
         hidden_dim=hidden_dim,
         lambda_grl=lambda_grl
     ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    label_criterion = nn.BCEWithLogitsLoss()
+    label_criterion = nn.CrossEntropyLoss()
     domain_criterion = nn.CrossEntropyLoss()
 
     dataset = torch.utils.data.TensorDataset(X_tensor, y_tensor, d_tensor)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     model.train()
-
     for _ in range(epochs):
         for xb, yb, db in loader:
             optimizer.zero_grad()
@@ -113,25 +116,28 @@ def train_dann(
             loss.backward()
             optimizer.step()
 
+    idx_to_class = np.array(classes)
+
     def predict_proba(X):
         model.eval()
         X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
         with torch.no_grad():
             logits, _ = model(X_tensor)
-            probs = torch.sigmoid(logits).cpu().numpy().flatten()
+            probs = torch.softmax(logits, dim=1).cpu().numpy()
         return probs
 
     def predict(X):
         probs = predict_proba(X)
-        return (probs >= 0.5).astype(int)
+        pred_idx = np.argmax(probs, axis=1)
+        return idx_to_class[pred_idx]
 
     return {
         "model": model,
         "predict_proba": predict_proba,
         "predict": predict
     }
-    
-    
+
+
 def train_vrex(
     X_train, y_train, domains_train,
     hidden_dim=128,
@@ -141,31 +147,42 @@ def train_vrex(
     lambda_vrex=1.0,
     **kwargs
 ):
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    classes = np.unique(y_train)
+    n_classes = len(classes)
+    class_to_idx = {c: i for i, c in enumerate(classes)}
+    y_encoded = np.array([class_to_idx[y] for y in y_train], dtype=np.int64)
+
+    unique_domains_np = np.unique(domains_train)
+    domain_mapping = {d: i for i, d in enumerate(unique_domains_np)}
+    domains_mapped = np.array([domain_mapping[d] for d in domains_train], dtype=np.int64)
+
     X_tensor = torch.tensor(X_train, dtype=torch.float32).to(device)
-    y_tensor = torch.tensor(y_train, dtype=torch.float32).unsqueeze(1).to(device)
-    d_tensor = torch.tensor(domains_train, dtype=torch.long).to(device)
+    y_tensor = torch.tensor(y_encoded, dtype=torch.long).to(device)
+    d_tensor = torch.tensor(domains_mapped, dtype=torch.long).to(device)
 
-    model = my_models.SimpleNN(X_train.shape[1], hidden_dim=hidden_dim).to(device)
+    model = my_models.SimpleNN(
+        X_train.shape[1],
+        hidden_dim=hidden_dim,
+        output_dim=n_classes
+    ).to(device)
+
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.BCEWithLogitsLoss(reduction='none')
-
-    unique_domains = torch.unique(d_tensor)
+    criterion = nn.CrossEntropyLoss(reduction="none")
 
     model.train()
 
     for _ in range(epochs):
-
         dataset = torch.utils.data.TensorDataset(X_tensor, y_tensor, d_tensor)
         loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
         for xb, yb, db in loader:
-
             optimizer.zero_grad()
             logits = model(xb)
             losses = criterion(logits, yb)
+
+            unique_domains = torch.unique(db)
 
             domain_risks = []
             for d in unique_domains:
@@ -183,17 +200,20 @@ def train_vrex(
             loss.backward()
             optimizer.step()
 
+    idx_to_class = np.array(classes)
+
     def predict_proba(X):
         model.eval()
         X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
         with torch.no_grad():
             logits = model(X_tensor)
-            probs = torch.sigmoid(logits).cpu().numpy().flatten()
+            probs = torch.softmax(logits, dim=1).cpu().numpy()
         return probs
 
     def predict(X):
         probs = predict_proba(X)
-        return (probs >= 0.5).astype(int)
+        pred_idx = np.argmax(probs, axis=1)
+        return idx_to_class[pred_idx]
 
     return {
         "model": model,
