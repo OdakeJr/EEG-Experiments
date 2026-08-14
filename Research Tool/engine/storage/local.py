@@ -39,12 +39,16 @@ class LocalStorage(Storage):
         """Check whether a key exists."""
         return self._get_path(key).exists()
 
-    def delete(self, key):
-        """Delete data associated with a key."""
-        path = self._get_path(key)
+    #def delete(self, key):
+    #    """Delete data associated with a key."""
+    #    path = self._get_path(key)
 
-        if path.exists():
-            path.unlink()
+    #    if path.exists():
+    #        path.unlink()
+            
+    def delete(self, key):
+        """Delete stored data."""
+        raise NotImplementedError("Delete is intentionally disabled for safety.")
 
     def list(self, prefix=None):
         """List all stored keys, optionally filtered by prefix."""
