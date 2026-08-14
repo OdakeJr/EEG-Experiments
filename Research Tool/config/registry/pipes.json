@@ -1,0 +1,4 @@
+{
+  "ml.logistic_regression": "pipes.ml.logistic.LogisticRegressionPipe",
+  "eeg.load": "pipes.eeg.load.LoadEEGPipe"
+}
