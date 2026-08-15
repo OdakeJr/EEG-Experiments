@@ -11,7 +11,7 @@ from engine.graph.models.experiment.experiment import Experiment
 from engine.graph.models.experiment.block import Block
 from engine.graph.models.experiment.variant import Variant
 from engine.registry.registry import Registry
-
+from engine.graph.visualization import visualize_graph
 
 registry = Registry(
     PROJECT_ROOT / "config/registry/pipes.json"
@@ -66,3 +66,5 @@ for node in graph.nodes:
 print("\nEDGES")
 for edge in graph.edges:
     print(edge)
+    
+visualize_graph(graph)
