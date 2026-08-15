@@ -1,4 +1,6 @@
 {
-  "ml.logistic_regression": "pipes.ml.logistic.LogisticRegressionPipe",
-  "eeg.load": "pipes.eeg.load.LoadEEGPipe"
+  "dummy.one_to_one": "plugins.dummy.dummy.OneToOnePipe",
+  "dummy.one_to_many": "plugins.dummy.dummy.OneToManyPipe",
+  "dummy.many_to_one": "plugins.dummy.dummy.ManyToOnePipe",
+  "dummy.source": "plugins.dummy.dummy.SourcePipe"
 }
