@@ -40,3 +40,5 @@ def visualize_graph(graph):
 
     plt.tight_layout()
     plt.show()
+    
+    
