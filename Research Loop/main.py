@@ -26,20 +26,47 @@ def main():
     # 1. PREPROCESSING
     # --------------------------------------------------
 
-    dataset_views = []
+    preprocessing_artifacts = []
 
-    for params in PREPROCESSING_PARAMS:
-        view = run_preprocessing(params)
-        dataset_views.append(view)
+    for group_params in PREPROCESSING_PARAMS:
+
+        dataset_views = []
+
+        for params in group_params["datasets"]:
+
+            view = run_preprocessing(
+                params
+            )
+
+            dataset_views.append(
+                view
+            )
+
+        preprocessing_artifacts.append({
+            "name": group_params["name"],
+            "views": dataset_views,
+        })
 
     # --------------------------------------------------
     # 2. COMBINE DATASETS
     # --------------------------------------------------
 
-    combined_view = combine_datasets(
-        dataset_views,
-        COMBINE_PARAMS,
-    )
+    combined_artifacts = []
+
+    for artifact in preprocessing_artifacts:
+
+        combined_view = combine_datasets(
+            artifact["views"],
+            {
+                **COMBINE_PARAMS,
+                "name": artifact["name"],
+            },
+        )
+
+        combined_artifacts.append({
+            "name": artifact["name"],
+            "view": combined_view,
+        })
 
     # --------------------------------------------------
     # 3. SCENARIOS
