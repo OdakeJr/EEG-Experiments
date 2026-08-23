@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from plugins.pipe import Pipe
+from plugins.pipe import Pipe, ExperimentRecord
 from plugins.eeg.lib.preparation import prepare_eeg_dataframe
 from plugins.eeg.lib.filtering import bands
 import plugins.eeg.lib.feature_extraction as fe
@@ -110,6 +110,7 @@ def _build_extract_config(feature_config=None):
     Convert JSON-friendly feature configuration into the
     configuration expected by feature_extraction.py.
     """
+
     if feature_config is None:
         feature_config = DEFAULT_FEATURE_CONFIG
 
@@ -161,10 +162,12 @@ def _prepare_zhou_channels(
     """
     Select and reorder Zhou2016 EEG channels.
     """
+
     channel_names = list(channel_names)
 
     if channels is None:
         selected_channels = channel_names.copy()
+
     else:
         selected_channels = list(channels)
 
@@ -213,6 +216,7 @@ def _prepare_zhou_labels(
     """
     Map Zhou2016 stimulus codes to semantic labels.
     """
+
     yaml_labels = metadata["stim"]["labels"]
 
     unknown_labels = [
@@ -286,6 +290,7 @@ def load_zhou2016_data(
             "sampling_rate": ...
         }
     """
+
     config = _merge_config(config)
 
     root = Path(root)
@@ -689,9 +694,16 @@ class Zhou2016Pipe(Pipe):
         # Features
         # ====================================================
 
+        feature_config = deepcopy(
+            params.get(
+                "features",
+                DEFAULT_FEATURE_CONFIG,
+            )
+        )
+
         extract_config = (
             _build_extract_config(
-                params.get("features")
+                feature_config
             )
         )
 
@@ -720,7 +732,7 @@ class Zhou2016Pipe(Pipe):
         # Shared preparation
         # ====================================================
 
-        return prepare_eeg_dataframe(
+        eeg_data = prepare_eeg_dataframe(
             loader=load_zhou2016_data,
 
             loader_kwargs={
@@ -743,7 +755,7 @@ class Zhou2016Pipe(Pipe):
 
             band_labels=band_labels,
 
-            # Important: preserve the three actual sessions.
+            # Preserve the three actual sessions.
             session_name=None,
 
             metadata=metadata,
@@ -753,4 +765,68 @@ class Zhou2016Pipe(Pipe):
                 False,
             ),
         )
-        
+
+        # ====================================================
+        # Experiment record
+        # ====================================================
+
+        record = ExperimentRecord()
+
+        record.set(
+            "dataset",
+            {
+                "name": DATASET_NAME,
+                "subjects": list(subjects),
+                "channels": list(
+                    eeg_data.channels
+                ),
+                "original_sampling_rate": (
+                    ORIGINAL_SAMPLING_RATE
+                ),
+                "sampling_rate": (
+                    eeg_data.sampling_rate
+                ),
+                "classes": deepcopy(
+                    loader_config.get(
+                        "classes",
+                        DEFAULT_LOAD_CONFIG["classes"],
+                    )
+                ),
+                "sessions": deepcopy(
+                    loader_config.get(
+                        "sessions",
+                        DEFAULT_LOAD_CONFIG["sessions"],
+                    )
+                ),
+                "n_rows": len(
+                    eeg_data.data
+                ),
+                "n_features": len(
+                    eeg_data.feature_columns or []
+                ),
+            },
+        )
+
+        record.set(
+            "preparation",
+            {
+                "loader": deepcopy(
+                    loader_config
+                ),
+                "filter": deepcopy(
+                    filter_config
+                ),
+                "features": deepcopy(
+                    feature_config
+                ),
+            },
+        )
+
+        # ====================================================
+        # Output
+        # ====================================================
+
+        return self.make_result(
+            value=eeg_data,
+            record=record,
+        )

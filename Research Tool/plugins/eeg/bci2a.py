@@ -7,7 +7,7 @@ import mne
 import numpy as np
 from scipy.io import loadmat
 
-from plugins.pipe import Pipe
+from plugins.pipe import Pipe, ExperimentRecord
 from plugins.eeg.lib.preparation import prepare_eeg_dataframe
 from plugins.eeg.lib.filtering import bands
 import plugins.eeg.lib.feature_extraction as fe
@@ -592,9 +592,16 @@ class BCI2aPipe(Pipe):
         # Feature configuration
         # ====================================================
 
+        feature_config = deepcopy(
+            params.get(
+                "features",
+                DEFAULT_FEATURE_CONFIG,
+            )
+        )
+
         extract_config = (
             _build_extract_config(
-                params.get("features")
+                feature_config
             )
         )
 
@@ -622,7 +629,7 @@ class BCI2aPipe(Pipe):
         # Shared preparation
         # ====================================================
 
-        return prepare_eeg_dataframe(
+        eeg_data = prepare_eeg_dataframe(
             loader=load_bci_iv_2a_data,
 
             loader_kwargs={
@@ -655,4 +662,57 @@ class BCI2aPipe(Pipe):
                 "show_progress",
                 False,
             ),
+        )
+
+        # ====================================================
+        # Experiment record
+        # ====================================================
+
+        record = ExperimentRecord()
+
+        record.set(
+            "dataset",
+            {
+                "name": DATASET_NAME,
+                "subjects": list(subjects),
+                "channels": list(
+                    eeg_data.channels
+                ),
+                "original_sampling_rate": (
+                    ORIGINAL_SAMPLING_RATE
+                ),
+                "sampling_rate": (
+                    eeg_data.sampling_rate
+                ),
+                "n_rows": len(
+                    eeg_data.data
+                ),
+                "n_features": len(
+                    eeg_data.feature_columns or []
+                ),
+            },
+        )
+
+        record.set(
+            "preparation",
+            {
+                "loader": deepcopy(
+                    loader_config
+                ),
+                "filter": deepcopy(
+                    filter_config
+                ),
+                "features": deepcopy(
+                    feature_config
+                ),
+            },
+        )
+
+        # ====================================================
+        # Output
+        # ====================================================
+
+        return self.make_result(
+            value=eeg_data,
+            record=record,
         )

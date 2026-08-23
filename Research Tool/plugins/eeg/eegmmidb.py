@@ -7,7 +7,7 @@ import mne
 import numpy as np
 from tqdm.auto import tqdm
 
-from plugins.pipe import Pipe
+from plugins.pipe import Pipe, ExperimentRecord
 from plugins.eeg.lib.preparation import prepare_eeg_dataframe
 from plugins.eeg.lib.filtering import bands
 import plugins.eeg.lib.feature_extraction as fe
@@ -184,17 +184,8 @@ def _build_extract_config(feature_config=None):
     """
     Convert JSON-friendly feature configuration into the format
     expected by extract_features_to_dataframe.
-
-    Example
-    -------
-    {
-        "mean": {},
-        "cov": {},
-        "fft": {
-            "ntop": 5
-        }
-    }
     """
+
     if feature_config is None:
         feature_config = DEFAULT_FEATURE_CONFIG
 
@@ -209,11 +200,6 @@ def _build_extract_config(feature_config=None):
                 f"{sorted(FEATURE_FUNCTIONS)}"
             )
 
-        # Allows:
-        #
-        # "fft": false
-        #
-        # to explicitly disable a feature.
         if feature_params is False:
             continue
 
@@ -332,6 +318,7 @@ def load_eegmmidb_data(
             "sampling_rate": ...
         }
     """
+
     config = _merge_config(config)
 
     root_dir = Path(root_dir)
@@ -586,7 +573,6 @@ class EEGMMIDBPipe(Pipe):
             params.get("filter", {})
         )
 
-        # Dataset invariant.
         filter_config["original_fs"] = (
             ORIGINAL_SAMPLING_RATE
         )
@@ -601,8 +587,17 @@ class EEGMMIDBPipe(Pipe):
         # Features
         # ====================================================
 
-        extract_config = _build_extract_config(
-            params.get("features")
+        feature_config = deepcopy(
+            params.get(
+                "features",
+                DEFAULT_FEATURE_CONFIG,
+            )
+        )
+
+        extract_config = (
+            _build_extract_config(
+                feature_config
+            )
         )
 
         # ====================================================
@@ -632,7 +627,7 @@ class EEGMMIDBPipe(Pipe):
         # Shared preparation pipeline
         # ====================================================
 
-        return prepare_eeg_dataframe(
+        eeg_data = prepare_eeg_dataframe(
             loader=load_eegmmidb_data,
 
             loader_kwargs={
@@ -661,4 +656,58 @@ class EEGMMIDBPipe(Pipe):
                 "show_progress",
                 False,
             ),
+        )
+
+        # ====================================================
+        # Experiment record
+        # ====================================================
+
+        record = ExperimentRecord()
+
+        record.set(
+            "dataset",
+            {
+                "name": DATASET_NAME,
+                "subjects": list(subjects),
+                "channels": list(
+                    eeg_data.channels
+                ),
+                "original_sampling_rate": (
+                    ORIGINAL_SAMPLING_RATE
+                ),
+                "sampling_rate": (
+                    eeg_data.sampling_rate
+                ),
+                "session_name": session_name,
+                "n_rows": len(
+                    eeg_data.data
+                ),
+                "n_features": len(
+                    eeg_data.feature_columns or []
+                ),
+            },
+        )
+
+        record.set(
+            "preparation",
+            {
+                "loader": deepcopy(
+                    loader_config
+                ),
+                "filter": deepcopy(
+                    filter_config
+                ),
+                "features": deepcopy(
+                    feature_config
+                ),
+            },
+        )
+
+        # ====================================================
+        # Output
+        # ====================================================
+
+        return self.make_result(
+            value=eeg_data,
+            record=record,
         )
