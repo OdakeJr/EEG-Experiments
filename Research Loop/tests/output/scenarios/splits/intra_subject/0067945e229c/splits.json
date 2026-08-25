@@ -1,0 +1,46 @@
+[
+    {
+        "id": "intra_subject_788ea77192c1",
+        "scenario": "intra_subject",
+        "source_elementary_domains": [],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "zhou2016|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2774107906
+    },
+    {
+        "id": "intra_subject_a428f73f987e",
+        "scenario": "intra_subject",
+        "source_elementary_domains": [],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "zhou2016|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2687577909
+    },
+    {
+        "id": "intra_subject_2d831dd4f137",
+        "scenario": "intra_subject",
+        "source_elementary_domains": [],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "zhou2016|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 330334091
+    },
+    {
+        "id": "intra_subject_df38f89a3b36",
+        "scenario": "intra_subject",
+        "source_elementary_domains": [],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "zhou2016|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 872353833
+    }
+]

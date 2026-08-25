@@ -1,0 +1,27 @@
+{
+    "status": "done",
+    "params": {
+        "scenario": "cross_subject",
+        "params": {
+            "source_counts": [
+                1,
+                2,
+                "all"
+            ],
+            "target_fractions": [
+                0.5
+            ],
+            "max_source_combinations": 3,
+            "seed": 42
+        },
+        "input_signature": "28f9b32b397f5e9f2822debeb007d0bf"
+    },
+    "signature": "989870fa27c0250d6665e11beeecdac6",
+    "execution_time": null,
+    "error": null,
+    "output": {
+        "scenario": "cross_subject",
+        "n_splits": 28,
+        "splits_path": "tests/output/scenarios/splits/cross_subject/989870fa27c0/splits.json"
+    }
+}

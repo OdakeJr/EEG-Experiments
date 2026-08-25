@@ -1,0 +1,31 @@
+{
+    "status": "done",
+    "params": {
+        "scenario": "cross_dataset",
+        "params": {
+            "source_dataset_counts": [
+                1,
+                2
+            ],
+            "target_dataset_subject_counts": [
+                0,
+                1
+            ],
+            "target_subject_fractions": [
+                0.5
+            ],
+            "max_source_combinations": 3,
+            "max_target_domain_combinations": 3,
+            "seed": 42
+        },
+        "input_signature": "60dbfc6cc31ed8c251f1e2eee5e65ed0"
+    },
+    "signature": "a35b670526f52d493e9103e881e4747c",
+    "execution_time": null,
+    "error": null,
+    "output": {
+        "scenario": "cross_dataset",
+        "n_splits": 456,
+        "splits_path": "tests/output/scenarios/splits/cross_dataset/a35b670526f5/splits.json"
+    }
+}

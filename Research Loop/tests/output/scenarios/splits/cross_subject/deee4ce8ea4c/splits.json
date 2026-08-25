@@ -1,0 +1,552 @@
+[
+    {
+        "id": "cross_subject_efb8730f6b97",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1208752837
+    },
+    {
+        "id": "cross_subject_c80bc9b180f9",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1195748805
+    },
+    {
+        "id": "cross_subject_9214165725e9",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2576007136
+    },
+    {
+        "id": "cross_subject_4ca79d4a876e",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2047877909
+    },
+    {
+        "id": "cross_subject_0a042ed295c2",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3450440560
+    },
+    {
+        "id": "cross_subject_221359866309",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A03",
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3121080498
+    },
+    {
+        "id": "cross_subject_600ef57fb1ad",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A04",
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3495535205
+    },
+    {
+        "id": "cross_subject_06db15e07ea6",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A03",
+            "bci_iv_2a|A04",
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3657961912
+    },
+    {
+        "id": "cross_subject_63112878d390",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2360280853
+    },
+    {
+        "id": "cross_subject_eb3a543f9a13",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2525105962
+    },
+    {
+        "id": "cross_subject_ed381e1aa7c0",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3549663508
+    },
+    {
+        "id": "cross_subject_595b3000a9be",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3446169890
+    },
+    {
+        "id": "cross_subject_2871dacb3d4e",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 701511357
+    },
+    {
+        "id": "cross_subject_ffbbc797ce62",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3716656808
+    },
+    {
+        "id": "cross_subject_375593f7db83",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A04",
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3947618026
+    },
+    {
+        "id": "cross_subject_0f8aea19f232",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A03",
+            "bci_iv_2a|A04",
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2504162034
+    },
+    {
+        "id": "cross_subject_5ce2fcf3f5e0",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1858803110
+    },
+    {
+        "id": "cross_subject_ceec7b5b5dea",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1039998512
+    },
+    {
+        "id": "cross_subject_b2243d9bdf61",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3623540089
+    },
+    {
+        "id": "cross_subject_a279bd81150e",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3666462239
+    },
+    {
+        "id": "cross_subject_c67190348f24",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1862659909
+    },
+    {
+        "id": "cross_subject_8281f84f370e",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1718846948
+    },
+    {
+        "id": "cross_subject_f1c5edc1f64e",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2697727946
+    },
+    {
+        "id": "cross_subject_348bbf84f16e",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A04",
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2190167319
+    },
+    {
+        "id": "cross_subject_ccb2efcee9b2",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2733322466
+    },
+    {
+        "id": "cross_subject_b465510ecc16",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1012991561
+    },
+    {
+        "id": "cross_subject_020b109f8503",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1007460636
+    },
+    {
+        "id": "cross_subject_55d54bc47435",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3470869423
+    },
+    {
+        "id": "cross_subject_dad31a3b4cdb",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3133812722
+    },
+    {
+        "id": "cross_subject_db16555d9d1c",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1987826325
+    },
+    {
+        "id": "cross_subject_476140c7ee97",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1472675270
+    },
+    {
+        "id": "cross_subject_b3c8204469f5",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A03",
+            "bci_iv_2a|A05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1930159803
+    },
+    {
+        "id": "cross_subject_986da65bfec3",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3473959648
+    },
+    {
+        "id": "cross_subject_6f2cb8498d38",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 139990630
+    },
+    {
+        "id": "cross_subject_c9d6c7494b6f",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2039230622
+    },
+    {
+        "id": "cross_subject_4e123ac5371c",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3666071288
+    },
+    {
+        "id": "cross_subject_7daaf619fbdd",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2010076449
+    },
+    {
+        "id": "cross_subject_da2bba8cc6ca",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 163829381
+    },
+    {
+        "id": "cross_subject_a6a6a8899604",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A03",
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 810626825
+    },
+    {
+        "id": "cross_subject_2bc280dedcb7",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "bci_iv_2a|A01",
+            "bci_iv_2a|A02",
+            "bci_iv_2a|A03",
+            "bci_iv_2a|A04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "bci_iv_2a|A05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 4248822370
+    }
+]

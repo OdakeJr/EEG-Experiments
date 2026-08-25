@@ -80,62 +80,93 @@ def main():
     }
 
 
-    for view, preprocessing_params in zip(
-        dataset_views,
-        PREPROCESSING_PARAMS,
-    ):
+    for artifact in preprocessing_artifacts:
 
-        dataset = preprocessing_params["dataset"]
+        group_name = artifact["name"]
 
-        scenario_artifacts["intra_subject"].append({
-            "dataset": dataset,
-            "view": view,
+        for view in artifact["views"]:
+
+            scenario_artifacts["intra_subject"].append({
+                "group": group_name,
+                "view": view,
+                "splits": run_scenario(
+                    view,
+                    "intra_subject",
+                    INTRA_SUBJECT_PARAMS,
+                ),
+            })
+
+            scenario_artifacts["cross_session"].append({
+                "group": group_name,
+                "view": view,
+                "splits": run_scenario(
+                    view,
+                    "cross_session",
+                    CROSS_SESSION_PARAMS,
+                ),
+            })
+
+            scenario_artifacts["cross_subject"].append({
+                "group": group_name,
+                "view": view,
+                "splits": run_scenario(
+                    view,
+                    "cross_subject",
+                    CROSS_SUBJECT_PARAMS,
+                ),
+            })
+
+
+    for artifact in combined_artifacts:
+
+        scenario_artifacts["cross_dataset"].append({
+            "group": artifact["name"],
+            "view": artifact["view"],
             "splits": run_scenario(
-                view,
-                "intra_subject",
-                INTRA_SUBJECT_PARAMS,
+                artifact["view"],
+                "cross_dataset",
+                CROSS_DATASET_PARAMS,
             ),
         })
-
-        scenario_artifacts["cross_session"].append({
-            "dataset": dataset,
-            "view": view,
-            "splits": run_scenario(
-                view,
-                "cross_session",
-                CROSS_SESSION_PARAMS,
-            ),
-        })
-
-        scenario_artifacts["cross_subject"].append({
-            "dataset": dataset,
-            "view": view,
-            "splits": run_scenario(
-                view,
-                "cross_subject",
-                CROSS_SUBJECT_PARAMS,
-            ),
-        })
-
-
-    scenario_artifacts["cross_dataset"].append({
-        "dataset": "combined",
-        "view": combined_view,
-        "splits": run_scenario(
-            combined_view,
-            "cross_dataset",
-            CROSS_DATASET_PARAMS,
-        ),
-    })
 
     # --------------------------------------------------
     # 4. FEATURE SELECTION / TRANSFORMATION
     # --------------------------------------------------
 
-    fs_artifacts = run_feature_selection(
-        scenario_artifacts,
-        FEATURE_SELECTION_PARAMS,
-    )
+    fs_artifacts = {
+        scenario: []
+        for scenario in scenario_artifacts
+    }
+
+    for scenario, artifacts in scenario_artifacts.items():
+
+        for artifact in artifacts:
+
+            group_name = artifact["group"]
+            view = artifact["view"]
+
+            for split in artifact["splits"]:
+
+                split_fs_artifacts = []
+
+                for fs_params in FEATURE_SELECTION_PARAMS:
+
+                    fs_artifact = run_feature_selection(
+                        split,
+                        view,
+                        fs_params,
+                    )
+
+                    split_fs_artifacts.append(
+                        fs_artifact
+                    )
+
+                fs_artifacts[scenario].append({
+                    "group": group_name,
+                    "view": view,
+                    "split": split,
+                    "artifacts": split_fs_artifacts,
+                })
 
     # --------------------------------------------------
     # 5. TRAINING

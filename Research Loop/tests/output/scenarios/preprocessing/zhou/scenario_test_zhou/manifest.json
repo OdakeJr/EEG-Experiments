@@ -1,0 +1,93 @@
+{
+    "status": "done",
+    "params": {
+        "dataset": "zhou",
+        "name": "scenario_test_zhou",
+        "root": "data/zhou",
+        "loader": {
+            "subjects": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "channels": [
+                "C3",
+                "Cz",
+                "C4"
+            ],
+            "classes": [
+                "left_hand_imagery",
+                "right_hand_imagery",
+                "both_feet_imagery"
+            ]
+        },
+        "filter": {
+            "bandpass": {
+                "bands": [
+                    [
+                        8,
+                        12
+                    ],
+                    [
+                        13,
+                        30
+                    ]
+                ]
+            }
+        },
+        "features": {
+            "logvar": {},
+            "cov": {}
+        },
+        "subject_batch_size": 2,
+        "show_progress": false
+    },
+    "signature": "28f9b32b397f5e9f2822debeb007d0bf",
+    "execution_time": 0.8590419292449951,
+    "error": null,
+    "output": {
+        "dataset_name": "zhou2016",
+        "channels": [
+            "C3",
+            "Cz",
+            "C4"
+        ],
+        "sampling_rate": 128.0,
+        "feature_columns": [
+            "b8_12_logvar_C3",
+            "b8_12_logvar_Cz",
+            "b8_12_logvar_C4",
+            "b8_12_cov_C3_C3",
+            "b8_12_cov_C3_Cz",
+            "b8_12_cov_C3_C4",
+            "b8_12_cov_Cz_Cz",
+            "b8_12_cov_Cz_C4",
+            "b8_12_cov_C4_C4",
+            "b13_30_logvar_C3",
+            "b13_30_logvar_Cz",
+            "b13_30_logvar_C4",
+            "b13_30_cov_C3_C3",
+            "b13_30_cov_C3_Cz",
+            "b13_30_cov_C3_C4",
+            "b13_30_cov_Cz_Cz",
+            "b13_30_cov_Cz_C4",
+            "b13_30_cov_C4_C4"
+        ],
+        "label_column": "label",
+        "domain_columns": [
+            "dataset",
+            "subject",
+            "session"
+        ],
+        "metadata_columns": [
+            "trial_index"
+        ],
+        "metadata": {
+            "dataset": "zhou2016",
+            "n_subjects": 4,
+            "n_sessions": 3,
+            "n_trials": 1800
+        }
+    }
+}

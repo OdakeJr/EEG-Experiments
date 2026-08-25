@@ -1,0 +1,25 @@
+{
+    "status": "done",
+    "params": {
+        "scenario": "cross_session",
+        "params": {
+            "source_counts": [
+                1,
+                "all"
+            ],
+            "target_fractions": [
+                0.5
+            ],
+            "seed": 42
+        },
+        "input_signature": "03b6119221a670d4f413a5d0571c374a"
+    },
+    "signature": "72116c5c7383dd35ea10f296c2caa96d",
+    "execution_time": null,
+    "error": null,
+    "output": {
+        "scenario": "cross_session",
+        "n_splits": 10,
+        "splits_path": "tests/output/scenarios/splits/cross_session/72116c5c7383/splits.json"
+    }
+}

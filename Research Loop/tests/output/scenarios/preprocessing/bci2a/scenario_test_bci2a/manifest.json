@@ -1,0 +1,95 @@
+{
+    "status": "done",
+    "params": {
+        "dataset": "bci2a",
+        "name": "scenario_test_bci2a",
+        "root_gdf": "data/bci2a/gdf",
+        "root_mat": "data/bci2a/mat",
+        "loader": {
+            "subjects": [
+                1,
+                2,
+                3,
+                4,
+                5
+            ],
+            "channels": [
+                "C3",
+                "Cz",
+                "C4"
+            ],
+            "classes": [
+                "left_hand_imagery",
+                "right_hand_imagery",
+                "both_feet_imagery"
+            ]
+        },
+        "filter": {
+            "bandpass": {
+                "bands": [
+                    [
+                        8,
+                        12
+                    ],
+                    [
+                        13,
+                        30
+                    ]
+                ]
+            }
+        },
+        "features": {
+            "logvar": {},
+            "cov": {}
+        },
+        "subject_batch_size": 2,
+        "show_progress": false
+    },
+    "signature": "03b6119221a670d4f413a5d0571c374a",
+    "execution_time": 7.962296009063721,
+    "error": null,
+    "output": {
+        "dataset_name": "bci_iv_2a",
+        "channels": [
+            "C3",
+            "Cz",
+            "C4"
+        ],
+        "sampling_rate": 128.0,
+        "feature_columns": [
+            "b8_12_logvar_C3",
+            "b8_12_logvar_Cz",
+            "b8_12_logvar_C4",
+            "b8_12_cov_C3_C3",
+            "b8_12_cov_C3_Cz",
+            "b8_12_cov_C3_C4",
+            "b8_12_cov_Cz_Cz",
+            "b8_12_cov_Cz_C4",
+            "b8_12_cov_C4_C4",
+            "b13_30_logvar_C3",
+            "b13_30_logvar_Cz",
+            "b13_30_logvar_C4",
+            "b13_30_cov_C3_C3",
+            "b13_30_cov_C3_Cz",
+            "b13_30_cov_C3_C4",
+            "b13_30_cov_Cz_Cz",
+            "b13_30_cov_Cz_C4",
+            "b13_30_cov_C4_C4"
+        ],
+        "label_column": "label",
+        "domain_columns": [
+            "dataset",
+            "subject",
+            "session"
+        ],
+        "metadata_columns": [
+            "trial_index"
+        ],
+        "metadata": {
+            "dataset": "bci_iv_2a",
+            "n_subjects": 5,
+            "n_sessions": 2,
+            "n_trials": 2160
+        }
+    }
+}

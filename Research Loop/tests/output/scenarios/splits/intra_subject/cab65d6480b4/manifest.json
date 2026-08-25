@@ -1,0 +1,19 @@
+{
+    "status": "done",
+    "params": {
+        "scenario": "intra_subject",
+        "params": {
+            "train_fraction": 0.5,
+            "seed": 42
+        },
+        "input_signature": "03b6119221a670d4f413a5d0571c374a"
+    },
+    "signature": "cab65d6480b474c5d24213ce21ed570c",
+    "execution_time": null,
+    "error": null,
+    "output": {
+        "scenario": "intra_subject",
+        "n_splits": 5,
+        "splits_path": "tests/output/scenarios/splits/intra_subject/cab65d6480b4/splits.json"
+    }
+}

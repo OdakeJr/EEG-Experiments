@@ -1,0 +1,552 @@
+[
+    {
+        "id": "cross_subject_047c63717d9c",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 4014382088
+    },
+    {
+        "id": "cross_subject_f775d0960eb5",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3795185482
+    },
+    {
+        "id": "cross_subject_afcb5339872e",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1594119934
+    },
+    {
+        "id": "cross_subject_874fda00bff5",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3862717481
+    },
+    {
+        "id": "cross_subject_d3456698b9c3",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_02",
+            "weibo2014|subject_03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1452744247
+    },
+    {
+        "id": "cross_subject_4606e54fd28d",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_03",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2218299157
+    },
+    {
+        "id": "cross_subject_5e34139b24e5",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_04",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1929484483
+    },
+    {
+        "id": "cross_subject_7c5898a32879",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_02",
+            "weibo2014|subject_03",
+            "weibo2014|subject_04",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2794560711
+    },
+    {
+        "id": "cross_subject_e721375f2655",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2683474937
+    },
+    {
+        "id": "cross_subject_2885a046c765",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3686862981
+    },
+    {
+        "id": "cross_subject_d9f92639173d",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 39822742
+    },
+    {
+        "id": "cross_subject_8711b4d24818",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3002204856
+    },
+    {
+        "id": "cross_subject_e6b3a7962057",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 4132491325
+    },
+    {
+        "id": "cross_subject_02dd79617da5",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 83069666
+    },
+    {
+        "id": "cross_subject_265d9ce2ccb1",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_04",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3621191666
+    },
+    {
+        "id": "cross_subject_d9d55ebfa53a",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_03",
+            "weibo2014|subject_04",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2146583465
+    },
+    {
+        "id": "cross_subject_a9d3d30531a0",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 588999651
+    },
+    {
+        "id": "cross_subject_4213c2d7da7f",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2277098983
+    },
+    {
+        "id": "cross_subject_fc2bdd5ffbb7",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1557583902
+    },
+    {
+        "id": "cross_subject_dbf3689e7e4d",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1665507937
+    },
+    {
+        "id": "cross_subject_2093de58c8a9",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 4134489040
+    },
+    {
+        "id": "cross_subject_86a0b441aaac",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3703489158
+    },
+    {
+        "id": "cross_subject_7c565649b7fd",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_04",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 411226587
+    },
+    {
+        "id": "cross_subject_dbafd7527a65",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_02",
+            "weibo2014|subject_04",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3812713770
+    },
+    {
+        "id": "cross_subject_7ad56157d752",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 757141562
+    },
+    {
+        "id": "cross_subject_efbcf9826f75",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 726503026
+    },
+    {
+        "id": "cross_subject_e419260d3d23",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 255941670
+    },
+    {
+        "id": "cross_subject_f6d8cfef240e",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2871075027
+    },
+    {
+        "id": "cross_subject_1fdc993f04d6",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 4202952077
+    },
+    {
+        "id": "cross_subject_f4ed504b06dd",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3518724304
+    },
+    {
+        "id": "cross_subject_44296a6efa89",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_02",
+            "weibo2014|subject_03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2028379672
+    },
+    {
+        "id": "cross_subject_fdc217c7414f",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_02",
+            "weibo2014|subject_03",
+            "weibo2014|subject_05"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_fraction": 0.5,
+        "seed": 4220821855
+    },
+    {
+        "id": "cross_subject_b4c289f04383",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 4143475768
+    },
+    {
+        "id": "cross_subject_fafff0383f43",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3783125291
+    },
+    {
+        "id": "cross_subject_7ba23069cb84",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_03"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2443784486
+    },
+    {
+        "id": "cross_subject_f3ebaccf3daf",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 4189314073
+    },
+    {
+        "id": "cross_subject_6b03ce675883",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_02"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1367524921
+    },
+    {
+        "id": "cross_subject_1f08dc1263dd",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 1486006187
+    },
+    {
+        "id": "cross_subject_e83c0f62861a",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_02",
+            "weibo2014|subject_04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 3681982995
+    },
+    {
+        "id": "cross_subject_71dc51707c2c",
+        "scenario": "cross_subject",
+        "source_elementary_domains": [
+            "weibo2014|subject_01",
+            "weibo2014|subject_02",
+            "weibo2014|subject_03",
+            "weibo2014|subject_04"
+        ],
+        "target_super_domain_elementary_domains": [],
+        "target_elementary_domains": [
+            "weibo2014|subject_05"
+        ],
+        "target_fraction": 0.5,
+        "seed": 2157611729
+    }
+]
