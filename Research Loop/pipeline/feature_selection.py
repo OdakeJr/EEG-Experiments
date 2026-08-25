@@ -31,8 +31,6 @@ OUTPUT_ROOT = Path("outputs/feature_selection")
 def _get_fit_data(data, fit_partitions):
     """
     Collect samples allowed to fit the feature transformer.
-
-    By default this will normally be only partition='train'.
     """
 
     X_parts = []
@@ -109,38 +107,38 @@ def _get_output_paths(
 
 
 # ============================================================
-# One FS execution
+# Public function
 # ============================================================
 
-def _run_one(
+def run_feature_selection(
     split,
     view,
-    group,
-    fs_config,
+    fs_params,
+    group="default",
 ):
     """
     Fit or reuse one feature transformer for one ScenarioSplit.
     """
 
-    method = fs_config["method"]
+    method = fs_params["method"]
 
-    name = fs_config.get(
+    name = fs_params.get(
         "name",
         method,
     )
 
-    method_params = fs_config.get(
+    method_params = fs_params.get(
         "params",
         {},
     )
 
-    fit_partitions = fs_config.get(
+    fit_partitions = fs_params.get(
         "fit_partitions",
         ["train"],
     )
 
     # --------------------------------------------------
-    # Input identity
+    # Signature
     # --------------------------------------------------
 
     input_manifest = load_manifest(
@@ -209,7 +207,7 @@ def _run_one(
     try:
 
         # --------------------------------------------------
-        # Materialize scenario
+        # Materialize split
         # --------------------------------------------------
 
         data = split.materialize(
@@ -237,7 +235,7 @@ def _run_one(
         )
 
         # --------------------------------------------------
-        # Persist fitted object
+        # Save transformer
         # --------------------------------------------------
 
         save_pickle(
@@ -292,6 +290,10 @@ def _run_one(
 
         raise
 
+    # --------------------------------------------------
+    # Artifact
+    # --------------------------------------------------
+
     return FeatureSelectionArtifact(
         split_id=split.id,
         method=method,
@@ -303,66 +305,3 @@ def _run_one(
         ),
         signature=signature,
     )
-
-
-# ============================================================
-# Public function
-# ============================================================
-
-def run_feature_selection(
-    scenario_artifacts,
-    feature_selection_params,
-):
-    """
-    Fit configured feature transformers for all scenario splits.
-
-    Returns a structure parallel to scenario_artifacts.
-    """
-
-    fs_artifacts = {
-        scenario: []
-        for scenario in scenario_artifacts
-    }
-
-    for scenario, artifacts in (
-        scenario_artifacts.items()
-    ):
-
-        for artifact in artifacts:
-
-            group = artifact["group"]
-            view = artifact["view"]
-
-            split_artifacts = []
-
-            for split in artifact["splits"]:
-
-                transformers = []
-
-                for fs_config in (
-                    feature_selection_params
-                ):
-
-                    transformers.append(
-                        _run_one(
-                            split=split,
-                            view=view,
-                            group=group,
-                            fs_config=fs_config,
-                        )
-                    )
-
-                split_artifacts.append({
-                    "split_id": split.id,
-                    "artifacts": transformers,
-                })
-
-            fs_artifacts[
-                scenario
-            ].append({
-                "group": group,
-                "view": view,
-                "splits": split_artifacts,
-            })
-
-    return fs_artifacts

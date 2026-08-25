@@ -1,0 +1,47 @@
+{
+    "status": "done",
+    "params": {
+        "split": {
+            "id": "cross_subject_efb8730f6b97",
+            "scenario": "cross_subject",
+            "source_elementary_domains": [
+                "bci_iv_2a|A02"
+            ],
+            "target_super_domain_elementary_domains": [],
+            "target_elementary_domains": [
+                "bci_iv_2a|A01"
+            ],
+            "target_fraction": 0.5,
+            "seed": 1208752837
+        },
+        "input_signature": "bafe528325926ea834426d95a311ff44",
+        "feature_selection_signature": "41b248940d24dfe587fd18b3e998ebf5",
+        "learning_method": "neural_erm",
+        "learning_params": {},
+        "model": "mlp",
+        "model_params": {
+            "hidden_dims": [
+                8
+            ]
+        },
+        "training_params": {
+            "epochs": 2,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "seed": 42
+        }
+    },
+    "signature": "35338b4f9f04de0a975db7ad9cfa6cad",
+    "execution_time": 1.1732051372528076,
+    "error": null,
+    "output": {
+        "model_path": "tests/output/training/cross_subject/test/cross_subject_efb8730f6b97/41b248940d24/neural_erm_mlp_35338b4f9f04/model.pkl",
+        "resolved_model_params": {
+            "hidden_dims": [
+                8
+            ],
+            "input_dim": 3,
+            "output_dim": 4
+        }
+    }
+}

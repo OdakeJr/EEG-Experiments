@@ -155,6 +155,7 @@ def main():
                         split,
                         view,
                         fs_params,
+                        group=group_name,
                     )
 
                     split_fs_artifacts.append(
@@ -172,11 +173,40 @@ def main():
     # 5. TRAINING
     # --------------------------------------------------
 
-    model_artifacts = run_training(
-        scenario_artifacts,
-        fs_artifacts,
-        TRAINING_PARAMS,
-    )
+    model_artifacts = {
+        scenario: []
+        for scenario in fs_artifacts
+    }
+
+    for scenario, artifacts in fs_artifacts.items():
+        for artifact in artifacts:
+            group_name = artifact["group"]
+            view = artifact["view"]
+            split = artifact["split"]
+
+            for fs_artifact in artifact["artifacts"]:
+                split_model_artifacts = []
+
+                for training_params in TRAINING_PARAMS:
+                    model_artifact = run_training(
+                        split,
+                        view,
+                        fs_artifact,
+                        training_params,
+                        group=group_name,
+                    )
+
+                    split_model_artifacts.append(
+                        model_artifact
+                    )
+
+                model_artifacts[scenario].append({
+                    "group": group_name,
+                    "view": view,
+                    "split": split,
+                    "fs_artifact": fs_artifact,
+                    "artifacts": split_model_artifacts,
+                })
 
     # --------------------------------------------------
     # 6. DOMAIN ANALYSIS

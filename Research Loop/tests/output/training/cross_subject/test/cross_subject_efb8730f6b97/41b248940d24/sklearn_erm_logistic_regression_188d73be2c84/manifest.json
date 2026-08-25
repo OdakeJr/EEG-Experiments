@@ -1,0 +1,36 @@
+{
+    "status": "done",
+    "params": {
+        "split": {
+            "id": "cross_subject_efb8730f6b97",
+            "scenario": "cross_subject",
+            "source_elementary_domains": [
+                "bci_iv_2a|A02"
+            ],
+            "target_super_domain_elementary_domains": [],
+            "target_elementary_domains": [
+                "bci_iv_2a|A01"
+            ],
+            "target_fraction": 0.5,
+            "seed": 1208752837
+        },
+        "input_signature": "bafe528325926ea834426d95a311ff44",
+        "feature_selection_signature": "41b248940d24dfe587fd18b3e998ebf5",
+        "learning_method": "sklearn_erm",
+        "learning_params": {},
+        "model": "logistic_regression",
+        "model_params": {
+            "max_iter": 200
+        },
+        "training_params": {}
+    },
+    "signature": "188d73be2c84c800840b51ab582041f1",
+    "execution_time": 0.4202399253845215,
+    "error": null,
+    "output": {
+        "model_path": "tests/output/training/cross_subject/test/cross_subject_efb8730f6b97/41b248940d24/sklearn_erm_logistic_regression_188d73be2c84/model.pkl",
+        "resolved_model_params": {
+            "max_iter": 200
+        }
+    }
+}
