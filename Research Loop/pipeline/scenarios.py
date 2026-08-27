@@ -638,6 +638,15 @@ def _generate_cross_dataset(
 
     Super-domain      = dataset
     Elementary domain = subject
+
+    By default, this generates the simplified cross-dataset
+    benchmark:
+
+        source datasets -> held-out target subject
+
+    No target-super-domain adaptation is used unless
+    target_dataset_subject_counts is explicitly set to values
+    larger than zero.
     """
 
     source_dataset_counts = params.get(
@@ -645,9 +654,11 @@ def _generate_cross_dataset(
         [1, "all"],
     )
 
+    # Default is now [0], not [0, "all"].
+    # This avoids accidental two-stage adaptation.
     target_dataset_subject_counts = params.get(
         "target_dataset_subject_counts",
-        [0, "all"],
+        [0],
     )
 
     target_subject_fractions = params.get(
@@ -688,7 +699,7 @@ def _generate_cross_dataset(
     splits = []
 
     # --------------------------------------------------
-    # Choose target super-domain (dataset)
+    # Choose held-out target dataset
     # --------------------------------------------------
 
     for target_dataset in datasets:
@@ -711,7 +722,7 @@ def _generate_cross_dataset(
         )
 
         # --------------------------------------------------
-        # Choose source super-domains
+        # Choose source datasets
         # --------------------------------------------------
 
         for source_dataset_count in (
@@ -749,8 +760,7 @@ def _generate_cross_dataset(
                 source_dataset_sets
             ):
 
-                # All subjects belonging to the selected
-                # source super-domains.
+                # All subjects from selected source datasets.
                 source_mask = dataframe[
                     "dataset"
                 ].isin(
@@ -766,7 +776,7 @@ def _generate_cross_dataset(
                 )
 
                 # --------------------------------------------------
-                # Final target elementary domain
+                # Hold out one target subject
                 # --------------------------------------------------
 
                 for target_subject in target_subjects:
@@ -790,9 +800,8 @@ def _generate_cross_dataset(
                         .tolist()
                     )
 
-                    # Other subjects from the same target
-                    # super-domain can be used for the first
-                    # adaptation stage.
+                    # Optional future two-stage setting:
+                    # other subjects from the held-out dataset.
                     target_domain_candidates = [
                         subject
                         for subject in target_subjects

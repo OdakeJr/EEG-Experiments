@@ -236,26 +236,22 @@ SUBJECT_TEST_PARAMS = {
 
 DATASET_TEST_PARAMS = {
 
-    # Important:
-    # 2 lets us explicitly test multiple source
-    # super-domains.
+    # Simplified cross-dataset benchmark:
+    # source datasets -> held-out target subject.
     "source_dataset_counts": [
         1,
         2,
     ],
 
-    "target_dataset_subject_counts": [
-        0,
-        1,
-    ],
-
+    # Important:
+    # No target_dataset_subject_counts here.
+    # This tests the default behavior: no target-super-domain
+    # adaptation.
     "target_subject_fractions": [
         0.5,
     ],
 
     "max_source_combinations": 3,
-
-    "max_target_domain_combinations": 3,
 
     "seed": 42,
 }
@@ -679,14 +675,23 @@ def test_cross_dataset(
     ) > 0
 
     # --------------------------------------------------------
-    # Find a split containing:
+    # Default protocol:
     #
-    # 2 source datasets
-    # +
-    # target-super-domain calibration
+    # source datasets -> held-out target subject.
     #
-    # This directly tests the hierarchy that motivated
-    # the super-domain representation.
+    # There should be no target-super-domain adaptation.
+    # --------------------------------------------------------
+
+    for split in splits:
+
+        assert (
+            split
+            .target_super_domain_elementary_domains
+            == []
+        )
+
+    # --------------------------------------------------------
+    # Select a split with two source datasets.
     # --------------------------------------------------------
 
     selected_split = None
@@ -703,13 +708,9 @@ def test_cross_dataset(
             in split.source_elementary_domains
         }
 
-        if (
-            len(source_datasets) == 2
-            and len(
-                split
-                .target_super_domain_elementary_domains
-            ) > 0
-        ):
+        if len(
+            source_datasets
+        ) == 2:
 
             selected_split = split
             break
@@ -729,9 +730,10 @@ def test_cross_dataset(
 
     assert data.source is not None
 
+    # No two-stage adaptation in the current benchmark.
     assert (
         data.target_super_domain
-        is not None
+        is None
     )
 
     assert (
@@ -743,14 +745,42 @@ def test_cross_dataset(
     # Super-domain hierarchy
     # --------------------------------------------------------
 
-    source_super_domains = set(
+    assert (
         data.source.super_domains
+        is not None
     )
 
-    target_super_domains = set(
+    assert (
         data
-        .target_super_domain
+        .target_elementary_domain
         .super_domains
+        is not None
+    )
+
+    assert (
+        len(
+            data.source.super_domains
+        )
+        == len(
+            data.source.X
+        )
+    )
+
+    assert (
+        len(
+            data
+            .target_elementary_domain
+            .super_domains
+        )
+        == len(
+            data
+            .target_elementary_domain
+            .X
+        )
+    )
+
+    source_super_domains = set(
+        data.source.super_domains
     )
 
     final_target_super_domains = set(
@@ -764,11 +794,7 @@ def test_cross_dataset(
         source_super_domains
     ) == 2
 
-    # One target dataset.
-    assert len(
-        target_super_domains
-    ) == 1
-
+    # One held-out target dataset.
     assert len(
         final_target_super_domains
     ) == 1
@@ -782,25 +808,12 @@ def test_cross_dataset(
         )
     )
 
-    # Both target stages belong to the
-    # same target dataset.
-    assert (
-        target_super_domains
-        == final_target_super_domains
-    )
-
     # --------------------------------------------------------
     # Elementary domains
     # --------------------------------------------------------
 
     source_elementary = set(
         data.source.elementary_domains
-    )
-
-    target_super_elementary = set(
-        data
-        .target_super_domain
-        .elementary_domains
     )
 
     target_elementary = set(
@@ -816,13 +829,6 @@ def test_cross_dataset(
         )
     )
 
-    assert (
-        target_super_elementary
-        .isdisjoint(
-            target_elementary
-        )
-    )
-
     # --------------------------------------------------------
     # Partitions
     # --------------------------------------------------------
@@ -831,14 +837,6 @@ def test_cross_dataset(
         data.source.partitions
     ) == {
         "train",
-    }
-
-    assert set(
-        data
-        .target_super_domain
-        .partitions
-    ) == {
-        "calibration",
     }
 
     assert set(

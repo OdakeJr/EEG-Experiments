@@ -16,13 +16,21 @@ class ScenarioSplit:
     scenario: str
 
     # Elementary domains used as source.
+    # Example:
+    #   cross-subject -> subjects
+    #   cross-dataset -> subjects from source datasets
     source_elementary_domains: list[str]
 
     # Elementary domains from the target super-domain
     # used in the first adaptation stage.
+    # Example:
+    #   cross-dataset -> other subjects from held-out dataset
     target_super_domain_elementary_domains: list[str]
 
     # Final target elementary domain(s).
+    # Example:
+    #   cross-subject -> held-out subject
+    #   cross-dataset -> held-out subject from held-out dataset
     target_elementary_domains: list[str]
 
     # Fraction of the final target elementary domain used
@@ -41,6 +49,14 @@ class ScenarioSplit:
     def materialize(self, dataset_view):
         """
         Build the concrete ScenarioData for this split.
+
+        In cross-dataset experiments:
+            elementary domain = subject
+            super domain      = dataset
+
+        Therefore, source data can also have both:
+            source.elementary_domains = source subjects
+            source.super_domains      = source datasets
         """
 
         dataframe = load_data(
@@ -52,18 +68,24 @@ class ScenarioSplit:
         # --------------------------------------------------
 
         elementary_domains = _build_elementary_domains(
-            dataframe,
-            self.scenario,
+            dataframe=dataframe,
+            scenario=self.scenario,
         )
 
         super_domains = _build_super_domains(
-            dataframe,
-            self.scenario,
+            dataframe=dataframe,
+            scenario=self.scenario,
         )
 
         # --------------------------------------------------
-        # Source
+        # Source block
         # --------------------------------------------------
+        # For cross-dataset:
+        #   elementary_domains -> source subjects
+        #   super_domains      -> source datasets
+        #
+        # For other scenarios:
+        #   super_domains is None.
 
         source = _build_group(
             dataframe=dataframe,
@@ -76,8 +98,11 @@ class ScenarioSplit:
         )
 
         # --------------------------------------------------
-        # Target super-domain adaptation
+        # Optional target super-domain block
         # --------------------------------------------------
+        # Mainly useful for future two-stage adaptation.
+        # For the current simplified cross-dataset benchmark,
+        # this can simply be empty.
 
         target_super_domain = _build_group(
             dataframe=dataframe,
@@ -92,7 +117,7 @@ class ScenarioSplit:
         )
 
         # --------------------------------------------------
-        # Final target elementary domain
+        # Final target elementary-domain block
         # --------------------------------------------------
 
         target_elementary_domain = _build_target_group(
@@ -125,10 +150,14 @@ def _build_elementary_domains(
     """
     Define the elementary domain according to the scenario.
 
-    Intra-subject  -> subject
-    Cross-session  -> session
-    Cross-subject  -> subject
-    Cross-dataset  -> subject
+    Intra-subject  -> dataset | subject
+    Cross-session  -> dataset | subject | session
+    Cross-subject  -> dataset | subject
+    Cross-dataset  -> dataset | subject
+
+    In cross-dataset, the elementary domain is still the
+    subject, but the dataset prefix keeps subject IDs unique
+    across datasets.
     """
 
     if scenario == "cross_session":
@@ -160,8 +189,11 @@ def _build_super_domains(
     """
     Define the higher-level domain structure.
 
-    Currently only cross-dataset uses super-domains,
-    where each dataset is one super-domain.
+    Cross-dataset:
+        super-domain = dataset
+
+    Other scenarios:
+        no explicit super-domain is needed.
     """
 
     if scenario != "cross_dataset":
@@ -177,6 +209,24 @@ def _build_super_domains(
 # DataGroup helpers
 # ============================================================
 
+def _select_super_domains(
+    super_domains,
+    mask,
+):
+    """
+    Select super-domain labels when available.
+    """
+
+    if super_domains is None:
+        return None
+
+    return (
+        super_domains.loc[
+            mask
+        ].to_numpy()
+    )
+
+
 def _build_group(
     dataframe,
     elementary_domains,
@@ -188,6 +238,10 @@ def _build_group(
 ):
     """
     Build a DataGroup with a single partition.
+
+    The same function is used for source and target blocks.
+    Therefore, in cross-dataset experiments, both source and
+    target blocks receive their dataset-level super-domain labels.
     """
 
     if not selected_domains:
@@ -204,15 +258,10 @@ def _build_group(
     if selected.empty:
         return None
 
-    if super_domains is None:
-        selected_super_domains = None
-
-    else:
-        selected_super_domains = (
-            super_domains.loc[
-                mask
-            ].to_numpy()
-        )
+    selected_super_domains = _select_super_domains(
+        super_domains=super_domains,
+        mask=mask,
+    )
 
     return DataGroup(
         X=selected[
@@ -229,15 +278,13 @@ def _build_group(
             ].to_numpy()
         ),
 
-        super_domains=(
-            selected_super_domains
-        ),
-
         partitions=np.full(
             len(selected),
             partition,
             dtype=object,
         ),
+
+        super_domains=selected_super_domains,
     )
 
 
@@ -341,15 +388,10 @@ def _build_target_group(
         dtype=object,
     )
 
-    if super_domains is None:
-        selected_super_domains = None
-
-    else:
-        selected_super_domains = (
-            super_domains.loc[
-                mask
-            ].to_numpy()
-        )
+    selected_super_domains = _select_super_domains(
+        super_domains=super_domains,
+        mask=mask,
+    )
 
     return DataGroup(
         X=selected[
@@ -366,9 +408,7 @@ def _build_target_group(
             ].to_numpy()
         ),
 
-        super_domains=(
-            selected_super_domains
-        ),
-
         partitions=partitions,
+
+        super_domains=selected_super_domains,
     )
