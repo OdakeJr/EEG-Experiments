@@ -93,4 +93,34 @@ EVALUATION_PARAMS = {
     ]
 }
 
+MODEL_EVALUATION_PARAMS = {
+    "metrics": [
+        "accuracy",
+        "balanced_accuracy",
+        "macro_f1",
+        "auc",
+    ],
+    "include_computational": True,
+}
 
+DOMAIN_EVALUATION_PARAMS = {
+    "metrics": [
+        {
+            "name": "mmd",
+            "params": {},
+        },
+        {
+            "name": "energy",
+            "params": {},
+        },
+    ],
+
+    "representations": [
+        "marginal",
+        "class",
+    ],
+
+    "standardize": True,
+
+    "min_samples_per_side": 2,
+}

@@ -9,6 +9,8 @@ from params import (
     FEATURE_SELECTION_PARAMS,
     TRAINING_PARAMS,
     EVALUATION_PARAMS,
+    MODEL_EVALUATION_PARAMS,
+    DOMAIN_EVALUATION_PARAMS,
 )
 
 from pipeline.process_data import run_preprocessing
@@ -17,7 +19,8 @@ from pipeline.scenarios import run_scenario
 from pipeline.domain_analysis import run_domain_analysis
 from pipeline.feature_selection import run_feature_selection
 from pipeline.training import run_training
-from pipeline.evaluation import run_evaluation
+from pipeline.evaluation.model_results import run_model_evaluation
+from pipeline.evaluation.domain_results import run_domain_evaluation
 
 
 def main():
@@ -207,25 +210,43 @@ def main():
                     "fs_artifact": fs_artifact,
                     "artifacts": split_model_artifacts,
                 })
-
+                
     # --------------------------------------------------
-    # 6. DOMAIN ANALYSIS
+    # 6. MODEL EVALUATION
     # --------------------------------------------------
 
-    run_domain_analysis(
-        scenario_artifacts,
-        DOMAIN_ANALYSIS_PARAMS,
+    model_results = run_model_evaluation(
+        model_artifacts,
+        MODEL_EVALUATION_PARAMS,
     )
+    
+    # ============================================================
+    # 7. Domain evaluation
+    # ============================================================
+
+    domain_results = run_domain_evaluation(
+        scenario_artifacts,
+        DOMAIN_EVALUATION_PARAMS,
+    )
+
+    # --------------------------------------------------
+    # 7. DOMAIN ANALYSIS
+    # --------------------------------------------------
+
+    #run_domain_analysis(
+    #    scenario_artifacts,
+    #    DOMAIN_ANALYSIS_PARAMS,
+    #)
         
     # --------------------------------------------------
-    # 7. EVALUATION
+    # 8. EVALUATION
     # --------------------------------------------------
 
-    run_evaluation(
-        scenario_artifacts,
-        model_artifacts,
-        EVALUATION_PARAMS,
-    )
+    #run_evaluation(
+    #    scenario_artifacts,
+    #    model_artifacts,
+    #    EVALUATION_PARAMS,
+    #)
 
 
 if __name__ == "__main__":
