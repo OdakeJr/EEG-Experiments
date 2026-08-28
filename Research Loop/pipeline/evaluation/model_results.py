@@ -1,5 +1,9 @@
+# pipeline/evaluation/model_results.py
+
 import time
+import json
 from pathlib import Path
+from copy import deepcopy
 
 import numpy as np
 import pandas as pd
@@ -30,6 +34,275 @@ from utils.status import (
 
 
 OUTPUT_ROOT = Path("outputs/model_results")
+
+
+# --------------------------------------------------
+# Helper: JSON-safe copy
+# --------------------------------------------------
+
+def _json_copy(value):
+    try:
+        return json.loads(
+            json.dumps(
+                value,
+                default=str,
+            )
+        )
+    except TypeError:
+        return deepcopy(
+            value
+        )
+
+
+def _json_string(value):
+    if value is None:
+        return None
+
+    try:
+        return json.dumps(
+            value,
+            sort_keys=True,
+            default=str,
+        )
+    except TypeError:
+        return str(
+            value
+        )
+
+
+# --------------------------------------------------
+# Helper: propagated trace
+# --------------------------------------------------
+
+def _get_feature_selection_trace(
+    fs_artifact,
+):
+    method = getattr(
+        fs_artifact,
+        "feature_selection_method",
+        None,
+    )
+
+    params = getattr(
+        fs_artifact,
+        "feature_selection_params",
+        None,
+    )
+
+    config_label = getattr(
+        fs_artifact,
+        "feature_selection_config_label",
+        None,
+    )
+
+    if (
+        method is not None
+        and config_label is not None
+    ):
+        return {
+            "feature_selection_method": method,
+            "feature_selection_params": _json_copy(
+                params
+            ),
+            "feature_selection_config_label": config_label,
+        }
+
+    try:
+        manifest = load_manifest(
+            fs_artifact.manifest_path
+        )
+
+        output = manifest.get(
+            "output",
+            {},
+        )
+
+        return {
+            "feature_selection_method": output.get(
+                "feature_selection_method",
+                method,
+            ),
+            "feature_selection_params": _json_copy(
+                output.get(
+                    "feature_selection_params",
+                    params,
+                )
+            ),
+            "feature_selection_config_label": output.get(
+                "feature_selection_config_label",
+                config_label,
+            ),
+        }
+
+    except Exception:
+        return {
+            "feature_selection_method": method,
+            "feature_selection_params": _json_copy(
+                params
+            ),
+            "feature_selection_config_label": config_label,
+        }
+
+
+def _get_preprocessing_trace(
+    view,
+    model_artifact=None,
+):
+    preprocessing_signature = getattr(
+        model_artifact,
+        "preprocessing_signature",
+        None,
+    )
+
+    preprocessing_config_label = getattr(
+        model_artifact,
+        "preprocessing_config_label",
+        None,
+    )
+
+    if preprocessing_signature is None:
+        preprocessing_signature = getattr(
+            view,
+            "preprocessing_signature",
+            None,
+        )
+
+    if preprocessing_config_label is None:
+        preprocessing_config_label = getattr(
+            view,
+            "preprocessing_config_label",
+            None,
+        )
+
+    if (
+        preprocessing_signature is not None
+        and preprocessing_config_label is not None
+    ):
+        return {
+            "preprocessing_signature": preprocessing_signature,
+            "preprocessing_config_label": preprocessing_config_label,
+        }
+
+    try:
+        manifest = load_manifest(
+            view.manifest_path
+        )
+
+        output = manifest.get(
+            "output",
+            {},
+        )
+
+        return {
+            "preprocessing_signature": output.get(
+                "preprocessing_signature",
+                preprocessing_signature,
+            ),
+            "preprocessing_config_label": output.get(
+                "preprocessing_config_label",
+                preprocessing_config_label,
+            ),
+        }
+
+    except Exception:
+        return {
+            "preprocessing_signature": preprocessing_signature,
+            "preprocessing_config_label": preprocessing_config_label,
+        }
+
+
+def _get_model_trace(
+    model_artifact,
+):
+    method = getattr(
+        model_artifact,
+        "feature_selection_method",
+        None,
+    )
+
+    params = getattr(
+        model_artifact,
+        "feature_selection_params",
+        None,
+    )
+
+    config_label = getattr(
+        model_artifact,
+        "feature_selection_config_label",
+        None,
+    )
+
+    preprocessing_signature = getattr(
+        model_artifact,
+        "preprocessing_signature",
+        None,
+    )
+
+    preprocessing_config_label = getattr(
+        model_artifact,
+        "preprocessing_config_label",
+        None,
+    )
+
+    if (
+        config_label is not None
+        or preprocessing_config_label is not None
+    ):
+        return {
+            "feature_selection_method": method,
+            "feature_selection_params": _json_copy(
+                params
+            ),
+            "feature_selection_config_label": config_label,
+            "preprocessing_signature": preprocessing_signature,
+            "preprocessing_config_label": preprocessing_config_label,
+        }
+
+    try:
+        manifest = load_manifest(
+            model_artifact.manifest_path
+        )
+
+        output = manifest.get(
+            "output",
+            {},
+        )
+
+        return {
+            "feature_selection_method": output.get(
+                "feature_selection_method",
+                method,
+            ),
+            "feature_selection_params": _json_copy(
+                output.get(
+                    "feature_selection_params",
+                    params,
+                )
+            ),
+            "feature_selection_config_label": output.get(
+                "feature_selection_config_label",
+                config_label,
+            ),
+            "preprocessing_signature": output.get(
+                "preprocessing_signature",
+                preprocessing_signature,
+            ),
+            "preprocessing_config_label": output.get(
+                "preprocessing_config_label",
+                preprocessing_config_label,
+            ),
+        }
+
+    except Exception:
+        return {
+            "feature_selection_method": method,
+            "feature_selection_params": _json_copy(
+                params
+            ),
+            "feature_selection_config_label": config_label,
+            "preprocessing_signature": preprocessing_signature,
+            "preprocessing_config_label": preprocessing_config_label,
+        }
 
 
 # --------------------------------------------------
@@ -491,6 +764,10 @@ def run_model_evaluation(
                     "fs_artifact"
                 ]
 
+                fs_trace = _get_feature_selection_trace(
+                    fs_artifact
+                )
+
                 # ------------------------------------------
                 # Materialize scenario once
                 # ------------------------------------------
@@ -522,6 +799,62 @@ def run_model_evaluation(
                     model_manifest = (
                         load_manifest(
                             model_artifact.manifest_path
+                        )
+                    )
+
+                    model_trace = _get_model_trace(
+                        model_artifact
+                    )
+
+                    preprocessing_trace = (
+                        _get_preprocessing_trace(
+                            view=view,
+                            model_artifact=model_artifact,
+                        )
+                    )
+
+                    feature_selection_method = (
+                        model_trace.get(
+                            "feature_selection_method"
+                        )
+                        or fs_trace.get(
+                            "feature_selection_method"
+                        )
+                    )
+
+                    feature_selection_params = (
+                        model_trace.get(
+                            "feature_selection_params"
+                        )
+                        or fs_trace.get(
+                            "feature_selection_params"
+                        )
+                    )
+
+                    feature_selection_config_label = (
+                        model_trace.get(
+                            "feature_selection_config_label"
+                        )
+                        or fs_trace.get(
+                            "feature_selection_config_label"
+                        )
+                    )
+
+                    preprocessing_signature = (
+                        model_trace.get(
+                            "preprocessing_signature"
+                        )
+                        or preprocessing_trace.get(
+                            "preprocessing_signature"
+                        )
+                    )
+
+                    preprocessing_config_label = (
+                        model_trace.get(
+                            "preprocessing_config_label"
+                        )
+                        or preprocessing_trace.get(
+                            "preprocessing_config_label"
                         )
                     )
 
@@ -689,8 +1022,40 @@ def run_model_evaluation(
                             ),
                         )
 
+                        row = result.to_dict()
+
+                        # ----------------------------------
+                        # Clean propagated trace columns
+                        # ----------------------------------
+
+                        row.update(
+                            {
+                                "feature_selection_method": (
+                                    feature_selection_method
+                                ),
+
+                                "feature_selection_params": (
+                                    _json_string(
+                                        feature_selection_params
+                                    )
+                                ),
+
+                                "feature_selection_config_label": (
+                                    feature_selection_config_label
+                                ),
+
+                                "preprocessing_signature": (
+                                    preprocessing_signature
+                                ),
+
+                                "preprocessing_config_label": (
+                                    preprocessing_config_label
+                                ),
+                            }
+                        )
+
                         rows.append(
-                            result.to_dict()
+                            row
                         )
 
         # --------------------------------------------------

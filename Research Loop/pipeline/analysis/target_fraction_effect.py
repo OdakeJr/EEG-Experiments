@@ -1,8 +1,13 @@
 from pathlib import Path
 import ast
+import re
 
 import numpy as np
 import pandas as pd
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 from models.analysis_artifact import AnalysisArtifact
 from utils.storage import (
@@ -17,25 +22,16 @@ from utils.status import (
 
 
 OUTPUT_ROOT = Path(
-    "outputs/analysis/benchmark_tables"
+    "outputs/analysis/target_fraction_effect"
 )
 
 
-DEFAULT_TABLE_CONFIGS = [
-    {
-        "name": "intra_subject",
-        "scenario": "intra_subject",
-        "setting_column": "Dataset",
-        "output_name": "intra_subject_table.csv",
-        "include_discrepancy": False,
-        "filters": {},
-    },
+DEFAULT_SCENARIO_CONFIGS = [
     {
         "name": "cross_session",
         "scenario": "cross_session",
         "setting_column": "Dataset",
-        "output_name": "cross_session_table.csv",
-        "include_discrepancy": True,
+        "output_prefix": "cross_session",
         "filters": {
             "n_target_super_domains": 0,
             "use_max_source_domains": True,
@@ -45,8 +41,7 @@ DEFAULT_TABLE_CONFIGS = [
         "name": "cross_subject",
         "scenario": "cross_subject",
         "setting_column": "Dataset",
-        "output_name": "cross_subject_table.csv",
-        "include_discrepancy": True,
+        "output_prefix": "cross_subject",
         "filters": {
             "n_target_super_domains": 0,
             "use_max_source_domains": True,
@@ -56,8 +51,7 @@ DEFAULT_TABLE_CONFIGS = [
         "name": "cross_dataset",
         "scenario": "cross_dataset",
         "setting_column": "Held-out Dataset",
-        "output_name": "cross_dataset_table.csv",
-        "include_discrepancy": True,
+        "output_prefix": "cross_dataset",
         "filters": {
             "n_target_super_domains": 0,
             "use_max_source_super_domains": True,
@@ -70,22 +64,24 @@ DEFAULT_TABLE_CONFIGS = [
 # Public function
 # ============================================================
 
-def run_benchmark_tables(
+def run_target_fraction_effect(
     model_results_artifact,
-    domain_results_artifact=None,
     params=None,
 ):
     """
-    Create paper-oriented benchmark summary tables.
+    Analyze the effect of increasing the available target
+    calibration fraction.
 
-    This function is analysis-only. It reads the canonical
-    model/domain result tables and writes one summary table per
-    benchmark scenario.
+    This is analysis-only. It assumes the model-results table
+    already contains runs with different target_fraction values.
 
-    Regime and method display names are supplied through
-    params["method_display"].
+    The source protocol is usually fixed to all-source, so that
+    the analysis isolates the target-fraction effect instead of
+    mixing it with the source-domain-count effect.
 
-    The output tables store numeric mean/std columns separately.
+    Output:
+    - target_fraction_effect_summary.csv
+    - one line plot per scenario x dataset/held-out dataset
     """
 
     params = _with_default_params(
@@ -96,23 +92,10 @@ def run_benchmark_tables(
         model_results_artifact
     )
 
-    domain_path = (
-        None
-        if domain_results_artifact is None
-        else _artifact_path(
-            domain_results_artifact
-        )
-    )
-
     effective_params = {
-        "analysis": "benchmark_tables",
+        "analysis": "target_fraction_effect",
         "params": params,
         "model_results_path": str(model_path),
-        "domain_results_path": (
-            None
-            if domain_path is None
-            else str(domain_path)
-        ),
     }
 
     signature = make_signature(
@@ -124,42 +107,47 @@ def run_benchmark_tables(
         / signature[:12]
     )
 
+    figures_dir = (
+        output_dir
+        / "figures"
+    )
+
+    summary_path = (
+        output_dir
+        / "target_fraction_effect_summary.csv"
+    )
+
     manifest_path = (
         output_dir
         / "manifest.json"
     )
-
-    table_paths = {
-        table_config["name"]: (
-            output_dir
-            / table_config["output_name"]
-        )
-        for table_config in params["tables"]
-    }
 
     # --------------------------------------------------------
     # Resume
     # --------------------------------------------------------
 
     if (
-        all(
-            exists(path)
-            for path in table_paths.values()
-        )
+        exists(summary_path)
         and is_done(
             manifest_path,
             effective_params,
         )
     ):
 
+        figures = {
+            path.stem: str(path)
+            for path in figures_dir.glob(
+                "*.png"
+            )
+        }
+
         return AnalysisArtifact(
-            name="benchmark_tables",
+            name="target_fraction_effect",
             output_dir=str(output_dir),
             tables={
-                name: str(path)
-                for name, path in table_paths.items()
+                "summary": str(summary_path),
             },
-            figures={},
+            figures=figures,
             manifest_path=str(manifest_path),
             signature=signature,
         )
@@ -169,58 +157,76 @@ def run_benchmark_tables(
         exist_ok=True,
     )
 
+    figures_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     # --------------------------------------------------------
-    # Load canonical result tables
+    # Load and prepare rows
     # --------------------------------------------------------
 
     model_results = pd.read_csv(
         model_path
     )
 
-    domain_results = (
-        None
-        if domain_path is None
-        else pd.read_csv(
-            domain_path
-        )
-    )
-
     display_lookup = _build_display_lookup(
         params["method_display"]
     )
 
-    model_summary = _prepare_model_summary(
+    prepared = _prepare_model_summary(
         model_results,
         display_lookup,
     )
 
-    discrepancy = _prepare_discrepancy(
-        domain_results,
-        params["discrepancy_metric"],
+    # --------------------------------------------------------
+    # Build summary table
+    # --------------------------------------------------------
+
+    scenario_summaries = []
+
+    for scenario_config in params[
+        "scenarios"
+    ]:
+
+        scenario_summary = _build_scenario_summary(
+            prepared=prepared,
+            scenario_config=scenario_config,
+            ci_z=params["ci_z"],
+        )
+
+        if not scenario_summary.empty:
+
+            scenario_summaries.append(
+                scenario_summary
+            )
+
+    if scenario_summaries:
+
+        summary = pd.concat(
+            scenario_summaries,
+            ignore_index=True,
+        )
+
+    else:
+
+        summary = _empty_summary_table()
+
+    summary.to_csv(
+        summary_path,
+        index=False,
     )
 
-    written_tables = {}
+    # --------------------------------------------------------
+    # Build plots
+    # --------------------------------------------------------
 
-    for table_config in params["tables"]:
-
-        table = _build_table(
-            model_summary=model_summary,
-            discrepancy=discrepancy,
-            table_config=table_config,
-        )
-
-        path = table_paths[
-            table_config["name"]
-        ]
-
-        table.to_csv(
-            path,
-            index=False,
-        )
-
-        written_tables[
-            table_config["name"]
-        ] = str(path)
+    figures = _build_plots(
+        summary=summary,
+        scenario_configs=params["scenarios"],
+        figures_dir=figures_dir,
+        metric_prefix=params["plot_metric"],
+    )
 
     # --------------------------------------------------------
     # Manifest
@@ -233,7 +239,8 @@ def run_benchmark_tables(
 
     manifest["output"] = {
         "output_dir": str(output_dir),
-        "tables": written_tables,
+        "summary": str(summary_path),
+        "figures": figures,
     }
 
     save_manifest(
@@ -242,35 +249,36 @@ def run_benchmark_tables(
     )
 
     return AnalysisArtifact(
-        name="benchmark_tables",
+        name="target_fraction_effect",
         output_dir=str(output_dir),
-        tables=written_tables,
-        figures={},
+        tables={
+            "summary": str(summary_path),
+        },
+        figures=figures,
         manifest_path=str(manifest_path),
         signature=signature,
     )
 
 
 # ============================================================
-# Parameters
+# Params
 # ============================================================
 
 def _with_default_params(
     params,
 ):
     defaults = {
-        "tables": DEFAULT_TABLE_CONFIGS,
-        "discrepancy_metric": "mmd",
+        "scenarios": DEFAULT_SCENARIO_CONFIGS,
 
-        # Display-only mapping. No computation depends on this.
-        #
-        # Example item:
-        # {
-        #     "learning_method": "sklearn_erm",
-        #     "model_name": "logistic_regression",
-        #     "regime": "Classical",
-        #     "method": "Logistic Regression",
-        # }
+        # Main plotted metric.
+        # Must match one of the prefixes produced below:
+        # Source BA, Target-Test BA, Gap, Macro-F1, AUC
+        "plot_metric": "Target-Test BA",
+
+        # 95% normal-approximation confidence interval.
+        "ci_z": 1.96,
+
+        # Display-only labels.
         "method_display": [],
     }
 
@@ -342,7 +350,7 @@ def _build_display_lookup(
 
 
 # ============================================================
-# Model result preparation
+# Model preparation
 # ============================================================
 
 def _prepare_model_summary(
@@ -395,7 +403,7 @@ def _prepare_model_summary(
         )
 
     # --------------------------------------------------------
-    # Final target-test performance
+    # Target-test performance
     # --------------------------------------------------------
 
     target_test = results[
@@ -432,30 +440,7 @@ def _prepare_model_summary(
         )
     ].copy()
 
-    intra_train = results[
-        (
-            results["scenario"]
-            == "intra_subject"
-        )
-        & (
-            results["evaluation_group"]
-            == "target_elementary_domain"
-        )
-        & (
-            results["partition"]
-            == "train"
-        )
-    ].copy()
-
-    train_rows = pd.concat(
-        [
-            source_train,
-            intra_train,
-        ],
-        ignore_index=True,
-    )
-
-    train_rows = train_rows[
+    source_train = source_train[
         key_columns
         + [
             "balanced_accuracy",
@@ -466,12 +451,8 @@ def _prepare_model_summary(
         }
     )
 
-    # --------------------------------------------------------
-    # Join train and target-test metrics
-    # --------------------------------------------------------
-
     summary = target_test.merge(
-        train_rows,
+        source_train,
         on=key_columns,
         how="left",
     )
@@ -480,10 +461,6 @@ def _prepare_model_summary(
         summary["source_ba"]
         - summary["target_ba"]
     )
-
-    # --------------------------------------------------------
-    # Dataset labels
-    # --------------------------------------------------------
 
     summary["Dataset"] = (
         summary["target_domains"]
@@ -505,10 +482,6 @@ def _prepare_model_summary(
             _dataset_count_from_domains
         )
     )
-
-    # --------------------------------------------------------
-    # Display labels
-    # --------------------------------------------------------
 
     labels = summary.apply(
         lambda row: _display_labels(
@@ -565,99 +538,30 @@ def _display_labels(
 
 
 # ============================================================
-# Domain discrepancy preparation
+# Summary construction
 # ============================================================
 
-def _prepare_discrepancy(
-    results,
-    metric,
+def _build_scenario_summary(
+    prepared,
+    scenario_config,
+    ci_z,
 ):
-    if results is None:
-
-        return pd.DataFrame(
-            columns=[
-                "split_id",
-                "discrepancy",
-            ]
-        )
-
-    required_columns = [
-        "split_id",
-        "comparison",
-        "representation",
-        "metric",
-        "value",
-    ]
-
-    _require_columns(
-        results,
-        required_columns,
-    )
-
-    selected = results[
-        (
-            results["comparison"]
-            == "source_to_target_elementary"
-        )
-        & (
-            results["representation"]
-            == "marginal"
-        )
-        & (
-            results["metric"]
-            == metric
-        )
-    ].copy()
-
-    if selected.empty:
-
-        return pd.DataFrame(
-            columns=[
-                "split_id",
-                "discrepancy",
-            ]
-        )
-
-    return (
-        selected
-        .groupby(
-            "split_id",
-            as_index=False,
-        )["value"]
-        .mean()
-        .rename(
-            columns={
-                "value": "discrepancy",
-            }
-        )
-    )
-
-
-# ============================================================
-# Table construction
-# ============================================================
-
-def _build_table(
-    model_summary,
-    discrepancy,
-    table_config,
-):
-    scenario = table_config[
+    scenario = scenario_config[
         "scenario"
     ]
 
-    setting_column = table_config[
+    setting_column = scenario_config[
         "setting_column"
     ]
 
-    df = model_summary[
-        model_summary["scenario"]
+    df = prepared[
+        prepared["scenario"]
         == scenario
     ].copy()
 
     df = _apply_filters(
         df=df,
-        filters=table_config.get(
+        filters=scenario_config.get(
             "filters",
             {},
         ),
@@ -665,29 +569,37 @@ def _build_table(
     )
 
     if df.empty:
-        return _empty_table(
-            setting_column
-        )
+        return _empty_summary_table()
 
-    if table_config.get(
-        "include_discrepancy",
-        True,
-    ):
+    df["Scenario"] = scenario
 
-        df = df.merge(
-            discrepancy,
-            on="split_id",
-            how="left",
-        )
+    df["Setting"] = df[
+        setting_column
+    ]
 
-    else:
+    df["Target Fraction"] = pd.to_numeric(
+        df["target_fraction"],
+        errors="coerce",
+    )
 
-        df["discrepancy"] = np.nan
+    df["Source Domain Count"] = pd.to_numeric(
+        df["n_source_domains"],
+        errors="coerce",
+    )
+
+    df["Source Super Domain Count"] = pd.to_numeric(
+        df["source_super_domain_count"],
+        errors="coerce",
+    )
 
     group_columns = [
-        setting_column,
+        "Scenario",
+        "Setting",
         "Regime",
         "Method",
+        "Target Fraction",
+        "Source Domain Count",
+        "Source Super Domain Count",
     ]
 
     rows = []
@@ -696,14 +608,6 @@ def _build_table(
         group_columns,
         dropna=False,
     ):
-
-        if not isinstance(
-            group_values,
-            tuple,
-        ):
-            group_values = (
-                group_values,
-            )
 
         row = dict(
             zip(
@@ -718,54 +622,62 @@ def _build_table(
             .sum()
         )
 
-        _add_metric_columns(
-            row,
-            "Source BA",
-            group["source_ba"],
+        _add_stats(
+            row=row,
+            prefix="Source BA",
+            values=group["source_ba"],
+            ci_z=ci_z,
         )
 
-        _add_metric_columns(
-            row,
-            "Target-Test BA",
-            group["target_ba"],
+        _add_stats(
+            row=row,
+            prefix="Target-Test BA",
+            values=group["target_ba"],
+            ci_z=ci_z,
         )
 
-        _add_metric_columns(
-            row,
-            "Gap",
-            group["gap"],
+        _add_stats(
+            row=row,
+            prefix="Gap",
+            values=group["gap"],
+            ci_z=ci_z,
         )
 
-        _add_metric_columns(
-            row,
-            "Macro-F1",
-            group["target_macro_f1"],
+        _add_stats(
+            row=row,
+            prefix="Macro-F1",
+            values=group["target_macro_f1"],
+            ci_z=ci_z,
         )
 
-        _add_metric_columns(
-            row,
-            "AUC",
-            group["target_auc"],
-        )
-
-        _add_metric_columns(
-            row,
-            "Discrepancy",
-            group["discrepancy"],
+        _add_stats(
+            row=row,
+            prefix="AUC",
+            values=group["target_auc"],
+            ci_z=ci_z,
         )
 
         rows.append(
             row
         )
 
-    table = pd.DataFrame(
+    if not rows:
+        return _empty_summary_table()
+
+    summary = pd.DataFrame(
         rows
     )
 
     return (
-        table
+        summary
         .sort_values(
-            group_columns
+            [
+                "Scenario",
+                "Setting",
+                "Regime",
+                "Method",
+                "Target Fraction",
+            ]
         )
         .reset_index(
             drop=True
@@ -773,58 +685,425 @@ def _build_table(
     )
 
 
-def _add_metric_columns(
+def _add_stats(
     row,
-    name,
+    prefix,
     values,
+    ci_z,
 ):
     values = pd.to_numeric(
         values,
         errors="coerce",
     ).dropna()
 
-    mean_column = (
-        f"{name} Mean"
+    n = len(
+        values
     )
-
-    std_column = (
-        f"{name} Std"
-    )
-
-    if len(values) == 0:
-
-        row[
-            mean_column
-        ] = np.nan
-
-        row[
-            std_column
-        ] = np.nan
-
-        return
 
     row[
-        mean_column
-    ] = float(
+        f"{prefix} Mean"
+    ] = np.nan
+
+    row[
+        f"{prefix} Std"
+    ] = np.nan
+
+    row[
+        f"{prefix} SEM"
+    ] = np.nan
+
+    row[
+        f"{prefix} CI95 Low"
+    ] = np.nan
+
+    row[
+        f"{prefix} CI95 High"
+    ] = np.nan
+
+    if n == 0:
+        return
+
+    mean = float(
         values.mean()
     )
 
-    if len(values) == 1:
+    row[
+        f"{prefix} Mean"
+    ] = mean
 
-        row[
-            std_column
-        ] = np.nan
+    if n == 1:
+        return
 
-    else:
+    std = float(
+        values.std(
+            ddof=1
+        )
+    )
 
-        row[
-            std_column
-        ] = float(
-            values.std(
-                ddof=1
+    sem = float(
+        std
+        / np.sqrt(
+            n
+        )
+    )
+
+    margin = (
+        ci_z
+        * sem
+    )
+
+    row[
+        f"{prefix} Std"
+    ] = std
+
+    row[
+        f"{prefix} SEM"
+    ] = sem
+
+    row[
+        f"{prefix} CI95 Low"
+    ] = mean - margin
+
+    row[
+        f"{prefix} CI95 High"
+    ] = mean + margin
+
+
+def _empty_summary_table():
+    metric_prefixes = [
+        "Source BA",
+        "Target-Test BA",
+        "Gap",
+        "Macro-F1",
+        "AUC",
+    ]
+
+    columns = [
+        "Scenario",
+        "Setting",
+        "Regime",
+        "Method",
+        "Target Fraction",
+        "Source Domain Count",
+        "Source Super Domain Count",
+        "Runs",
+    ]
+
+    for prefix in metric_prefixes:
+
+        columns.extend(
+            [
+                f"{prefix} Mean",
+                f"{prefix} Std",
+                f"{prefix} SEM",
+                f"{prefix} CI95 Low",
+                f"{prefix} CI95 High",
+            ]
+        )
+
+    return pd.DataFrame(
+        columns=columns
+    )
+
+
+# ============================================================
+# Plotting
+# ============================================================
+
+def _build_plots(
+    summary,
+    scenario_configs,
+    figures_dir,
+    metric_prefix,
+):
+    figures = {}
+
+    if summary.empty:
+        return figures
+
+    mean_column = (
+        f"{metric_prefix} Mean"
+    )
+
+    low_column = (
+        f"{metric_prefix} CI95 Low"
+    )
+
+    high_column = (
+        f"{metric_prefix} CI95 High"
+    )
+
+    required_columns = [
+        mean_column,
+        low_column,
+        high_column,
+    ]
+
+    _require_columns(
+        summary,
+        required_columns,
+    )
+
+    for scenario_config in scenario_configs:
+
+        scenario = scenario_config[
+            "scenario"
+        ]
+
+        scenario_summary = summary[
+            summary["Scenario"]
+            == scenario
+        ].copy()
+
+        if scenario_summary.empty:
+            continue
+
+        for setting, setting_summary in scenario_summary.groupby(
+            "Setting"
+        ):
+
+            if setting_summary.empty:
+                continue
+
+            figure_key = _safe_name(
+                f"{scenario}_{setting}_{metric_prefix}"
+            )
+
+            figure_path = (
+                figures_dir
+                / f"{figure_key}.png"
+            )
+
+            _plot_single_setting(
+                data=setting_summary,
+                scenario=scenario,
+                setting=setting,
+                metric_prefix=metric_prefix,
+                mean_column=mean_column,
+                low_column=low_column,
+                high_column=high_column,
+                path=figure_path,
+            )
+
+            figures[
+                figure_key
+            ] = str(
+                figure_path
+            )
+
+    return figures
+
+
+def _plot_single_setting(
+    data,
+    scenario,
+    setting,
+    metric_prefix,
+    mean_column,
+    low_column,
+    high_column,
+    path,
+):
+    fig, ax = plt.subplots(
+        figsize=(
+            7,
+            4.5,
+        )
+    )
+
+    for label, group in data.groupby(
+        [
+            "Regime",
+            "Method",
+        ]
+    ):
+
+        if isinstance(
+            label,
+            tuple,
+        ):
+
+            regime, method = label
+
+            series_label = (
+                f"{regime} / {method}"
+            )
+
+        else:
+
+            series_label = str(
+                label
+            )
+
+        group = group.sort_values(
+            "Target Fraction"
+        )
+
+        x = pd.to_numeric(
+            group[
+                "Target Fraction"
+            ],
+            errors="coerce",
+        ).to_numpy(
+            dtype=float
+        )
+
+        y = pd.to_numeric(
+            group[
+                mean_column
+            ],
+            errors="coerce",
+        ).to_numpy(
+            dtype=float
+        )
+
+        low = pd.to_numeric(
+            group[
+                low_column
+            ],
+            errors="coerce",
+        ).to_numpy(
+            dtype=float
+        )
+
+        high = pd.to_numeric(
+            group[
+                high_column
+            ],
+            errors="coerce",
+        ).to_numpy(
+            dtype=float
+        )
+
+        valid = (
+            np.isfinite(
+                x
+            )
+            & np.isfinite(
+                y
             )
         )
 
+        if not valid.any():
+            continue
+
+        x = x[
+            valid
+        ]
+
+        y = y[
+            valid
+        ]
+
+        low = low[
+            valid
+        ]
+
+        high = high[
+            valid
+        ]
+
+        ax.plot(
+            x,
+            y,
+            marker="o",
+            label=series_label,
+        )
+
+        ci_valid = (
+            np.isfinite(
+                low
+            )
+            & np.isfinite(
+                high
+            )
+        )
+
+        if ci_valid.any():
+
+            ax.fill_between(
+                x[
+                    ci_valid
+                ],
+                low[
+                    ci_valid
+                ],
+                high[
+                    ci_valid
+                ],
+                alpha=0.2,
+            )
+
+    ax.set_title(
+        f"{_pretty_scenario(scenario)} — {setting}"
+    )
+
+    ax.set_xlabel(
+        "Target calibration fraction"
+    )
+
+    ax.set_ylabel(
+        metric_prefix
+    )
+
+    ax.grid(
+        True,
+        alpha=0.3,
+    )
+
+    ax.legend()
+
+    fig.tight_layout()
+
+    fig.savefig(
+        path,
+        dpi=200,
+    )
+
+    plt.close(
+        fig
+    )
+
+
+def _pretty_scenario(
+    scenario,
+):
+    return str(
+        scenario
+    ).replace(
+        "_",
+        " ",
+    ).title()
+
+
+def _safe_name(
+    text,
+):
+    text = str(
+        text
+    )
+
+    text = text.replace(
+        "/",
+        "_"
+    )
+
+    text = re.sub(
+        r"[^A-Za-z0-9_.-]+",
+        "_",
+        text,
+    )
+
+    text = text.strip(
+        "_"
+    )
+
+    return text.lower()
+
+
+# ============================================================
+# Filtering
+# ============================================================
 
 def _apply_filters(
     df,
@@ -834,7 +1113,7 @@ def _apply_filters(
     result = df.copy()
 
     # --------------------------------------------------------
-    # Direct column filters
+    # Direct filters
     # --------------------------------------------------------
 
     for column, value in filters.items():
@@ -855,7 +1134,7 @@ def _apply_filters(
         )
 
     # --------------------------------------------------------
-    # Keep all-source protocol for within-dataset scenarios
+    # Fix source-domain protocol for session/subject cases
     # --------------------------------------------------------
 
     if filters.get(
@@ -869,7 +1148,12 @@ def _apply_filters(
         max_values = (
             result
             .groupby(
-                setting_column
+                [
+                    setting_column,
+                    "target_fraction",
+                    "Regime",
+                    "Method",
+                ]
             )[
                 "n_source_domains"
             ]
@@ -884,7 +1168,7 @@ def _apply_filters(
         ]
 
     # --------------------------------------------------------
-    # Keep all-source-dataset protocol for cross-dataset
+    # Fix source-dataset protocol for cross-dataset
     # --------------------------------------------------------
 
     if filters.get(
@@ -898,7 +1182,12 @@ def _apply_filters(
         max_values = (
             result
             .groupby(
-                setting_column
+                [
+                    setting_column,
+                    "target_fraction",
+                    "Regime",
+                    "Method",
+                ]
             )[
                 "source_super_domain_count"
             ]
@@ -930,7 +1219,9 @@ def _filter_column(
 
         return dataframe[
             dataframe[column].isin(
-                list(value)
+                list(
+                    value
+                )
             )
         ]
 
@@ -959,37 +1250,6 @@ def _filter_column(
         dataframe[column]
         == value
     ]
-
-
-def _empty_table(
-    setting_column,
-):
-    return pd.DataFrame(
-        columns=[
-            setting_column,
-            "Regime",
-            "Method",
-            "Runs",
-
-            "Source BA Mean",
-            "Source BA Std",
-
-            "Target-Test BA Mean",
-            "Target-Test BA Std",
-
-            "Gap Mean",
-            "Gap Std",
-
-            "Macro-F1 Mean",
-            "Macro-F1 Std",
-
-            "AUC Mean",
-            "AUC Std",
-
-            "Discrepancy Mean",
-            "Discrepancy Std",
-        ]
-    )
 
 
 # ============================================================

@@ -2,6 +2,7 @@
 
 import time
 from pathlib import Path
+from copy import deepcopy
 
 from eeg.datasets.bci2a import prepare_bci2a
 from eeg.datasets.eegmmidb import prepare_eegmmidb
@@ -42,6 +43,51 @@ DATASET_PREPARERS = {
 # ============================================================
 # Helpers
 # ============================================================
+
+def _preprocessing_signature(params):
+    return make_signature(params)
+
+
+def _preprocessing_config_label(params):
+    """
+    Human-readable preprocessing label.
+
+    Prefer the explicit params["name"] because this is what we use
+    to name the preprocessing setup.
+    """
+
+    signature = _preprocessing_signature(params)
+
+    return params.get(
+        "name",
+        f"{params['dataset']}_{signature[:8]}",
+    )
+
+
+def _add_preprocessing_trace(info, params):
+    """
+    Add clean preprocessing trace to the saved output info.
+
+    These fields are propagated through the pipeline and later used
+    by analysis modules.
+    """
+
+    traced_info = deepcopy(info)
+
+    traced_info["preprocessing_signature"] = (
+        _preprocessing_signature(params)
+    )
+
+    traced_info["preprocessing_config_label"] = (
+        _preprocessing_config_label(params)
+    )
+
+    traced_info["preprocessing_params"] = deepcopy(
+        params
+    )
+
+    return traced_info
+
 
 def _get_output_paths(params):
     """
@@ -98,6 +144,18 @@ def _make_dataset_view(
         manifest_path=str(
             manifest_path
         ),
+
+        preprocessing_signature=info.get(
+            "preprocessing_signature"
+        ),
+
+        preprocessing_config_label=info.get(
+            "preprocessing_config_label"
+        ),
+
+        preprocessing_params=info.get(
+            "preprocessing_params"
+        ),
     )
 
 
@@ -150,10 +208,15 @@ def run_preprocessing(params):
             manifest_path
         )
 
+        info = _add_preprocessing_trace(
+            manifest["output"],
+            params,
+        )
+
         return _make_dataset_view(
             data_path=data_path,
             manifest_path=manifest_path,
-            info=manifest["output"],
+            info=info,
         )
 
     # --------------------------------------------------------
@@ -178,6 +241,11 @@ def run_preprocessing(params):
 
         dataframe, info = preparer(
             params
+        )
+
+        info = _add_preprocessing_trace(
+            info,
+            params,
         )
 
         # ----------------------------------------------------

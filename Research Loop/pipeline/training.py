@@ -1,5 +1,7 @@
 import time
+import json
 from pathlib import Path
+from copy import deepcopy
 
 import numpy as np
 
@@ -24,6 +26,213 @@ from utils.status import (
 
 OUTPUT_ROOT = Path("outputs/training")
 
+
+# ============================================================
+# Trace helpers
+# ============================================================
+
+def _json_copy(value):
+    """
+    Make params safe for manifests/artifacts.
+    """
+
+    try:
+        return json.loads(
+            json.dumps(
+                value,
+                default=str,
+            )
+        )
+
+    except TypeError:
+        return deepcopy(
+            value
+        )
+
+
+def _get_preprocessing_trace(view):
+    """
+    Get preprocessing trace from DatasetView, with manifest fallback.
+    """
+
+    preprocessing_signature = getattr(
+        view,
+        "preprocessing_signature",
+        None,
+    )
+
+    preprocessing_config_label = getattr(
+        view,
+        "preprocessing_config_label",
+        None,
+    )
+
+    if (
+        preprocessing_signature is not None
+        and preprocessing_config_label is not None
+    ):
+        return {
+            "preprocessing_signature": preprocessing_signature,
+            "preprocessing_config_label": preprocessing_config_label,
+        }
+
+    try:
+        manifest = load_manifest(
+            view.manifest_path
+        )
+
+        output = manifest.get(
+            "output",
+            {},
+        )
+
+        return {
+            "preprocessing_signature": output.get(
+                "preprocessing_signature",
+                preprocessing_signature,
+            ),
+            "preprocessing_config_label": output.get(
+                "preprocessing_config_label",
+                preprocessing_config_label,
+            ),
+        }
+
+    except Exception:
+
+        return {
+            "preprocessing_signature": preprocessing_signature,
+            "preprocessing_config_label": preprocessing_config_label,
+        }
+
+
+def _get_feature_selection_trace(fs_artifact):
+    """
+    Get clean feature-selection trace from artifact, with manifest fallback.
+    """
+
+    method = getattr(
+        fs_artifact,
+        "feature_selection_method",
+        None,
+    )
+
+    params = getattr(
+        fs_artifact,
+        "feature_selection_params",
+        None,
+    )
+
+    config_label = getattr(
+        fs_artifact,
+        "feature_selection_config_label",
+        None,
+    )
+
+    if (
+        method is not None
+        and config_label is not None
+    ):
+        return {
+            "feature_selection_method": method,
+            "feature_selection_params": _json_copy(
+                params
+            ),
+            "feature_selection_config_label": config_label,
+        }
+
+    try:
+        manifest = load_manifest(
+            fs_artifact.manifest_path
+        )
+
+        output = manifest.get(
+            "output",
+            {},
+        )
+
+        return {
+            "feature_selection_method": output.get(
+                "feature_selection_method",
+                method,
+            ),
+            "feature_selection_params": _json_copy(
+                output.get(
+                    "feature_selection_params",
+                    params,
+                )
+            ),
+            "feature_selection_config_label": output.get(
+                "feature_selection_config_label",
+                config_label,
+            ),
+        }
+
+    except Exception:
+
+        return {
+            "feature_selection_method": method,
+            "feature_selection_params": _json_copy(
+                params
+            ),
+            "feature_selection_config_label": config_label,
+        }
+
+
+def _make_model_artifact(
+    split,
+    fs_artifact,
+    learning_method,
+    model_name,
+    model_path,
+    manifest_path,
+    signature,
+    preprocessing_trace,
+    feature_selection_trace,
+):
+    return ModelArtifact(
+        split_id=split.id,
+
+        feature_selection_signature=fs_artifact.signature,
+
+        learning_method=learning_method,
+
+        model_name=model_name,
+
+        model_path=str(
+            model_path
+        ),
+
+        manifest_path=str(
+            manifest_path
+        ),
+
+        signature=signature,
+
+        feature_selection_method=feature_selection_trace.get(
+            "feature_selection_method"
+        ),
+
+        feature_selection_params=feature_selection_trace.get(
+            "feature_selection_params"
+        ),
+
+        feature_selection_config_label=feature_selection_trace.get(
+            "feature_selection_config_label"
+        ),
+
+        preprocessing_signature=preprocessing_trace.get(
+            "preprocessing_signature"
+        ),
+
+        preprocessing_config_label=preprocessing_trace.get(
+            "preprocessing_config_label"
+        ),
+    )
+
+
+# ============================================================
+# Data transformation
+# ============================================================
 
 def _transform_group(group, transformer):
     if group is None:
@@ -58,6 +267,10 @@ def _transform_data(data, transformer):
     )
 
 
+# ============================================================
+# Model dimensions
+# ============================================================
+
 def _get_input_dim(data):
     for group in [
         data.source,
@@ -67,7 +280,9 @@ def _get_input_dim(data):
         if group is not None and len(group.X) > 0:
             return group.X.shape[1]
 
-    raise ValueError("No samples found.")
+    raise ValueError(
+        "No samples found."
+    )
 
 
 def _get_output_dim(data):
@@ -84,16 +299,26 @@ def _get_output_dim(data):
         mask = group.partitions == "train"
 
         if np.any(mask):
-            labels.append(group.y[mask])
+            labels.append(
+                group.y[
+                    mask
+                ]
+            )
 
     if not labels:
         raise ValueError(
             "No training labels found."
         )
 
-    y = np.concatenate(labels)
+    y = np.concatenate(
+        labels
+    )
 
-    return len(np.unique(y))
+    return len(
+        np.unique(
+            y
+        )
+    )
 
 
 def _prepare_model_params(
@@ -101,20 +326,30 @@ def _prepare_model_params(
     model_params,
     data,
 ):
-    params = dict(model_params)
+    params = dict(
+        model_params
+    )
 
     if model_name == "mlp":
         params.setdefault(
             "input_dim",
-            _get_input_dim(data),
+            _get_input_dim(
+                data
+            ),
         )
         params.setdefault(
             "output_dim",
-            _get_output_dim(data),
+            _get_output_dim(
+                data
+            ),
         )
 
     return params
 
+
+# ============================================================
+# Paths
+# ============================================================
 
 def _get_output_paths(
     scenario,
@@ -139,6 +374,10 @@ def _get_output_paths(
     return model_path, manifest_path
 
 
+# ============================================================
+# Public function
+# ============================================================
+
 def run_training(
     split,
     view,
@@ -146,8 +385,13 @@ def run_training(
     training_params,
     group="default",
 ):
-    learning_method = training_params["learning"]
-    model_name = training_params["model"]
+    learning_method = training_params[
+        "learning"
+    ]
+
+    model_name = training_params[
+        "model"
+    ]
 
     learning_params = training_params.get(
         "learning_params",
@@ -173,14 +417,53 @@ def run_training(
         view.manifest_path
     )
 
+    preprocessing_trace = _get_preprocessing_trace(
+        view
+    )
+
+    feature_selection_trace = (
+        _get_feature_selection_trace(
+            fs_artifact
+        )
+    )
+
     effective_params = {
         "split": split.to_dict(),
-        "input_signature": input_manifest["signature"],
-        "feature_selection_signature": fs_artifact.signature,
+
+        "input_signature": input_manifest[
+            "signature"
+        ],
+
+        "feature_selection_signature": (
+            fs_artifact.signature
+        ),
+
+        "feature_selection_config_label": (
+            feature_selection_trace.get(
+                "feature_selection_config_label"
+            )
+        ),
+
+        "preprocessing_signature": (
+            preprocessing_trace.get(
+                "preprocessing_signature"
+            )
+        ),
+
+        "preprocessing_config_label": (
+            preprocessing_trace.get(
+                "preprocessing_config_label"
+            )
+        ),
+
         "learning_method": learning_method,
+
         "learning_params": learning_params,
+
         "model": model_name,
+
         "model_params": model_params,
+
         "training_params": fit_params,
     }
 
@@ -199,21 +482,29 @@ def run_training(
         )
     )
 
+    # --------------------------------------------------------
+    # Resume
+    # --------------------------------------------------------
+
     if (
-        exists(model_path)
+        exists(
+            model_path
+        )
         and is_done(
             manifest_path,
             effective_params,
         )
     ):
-        return ModelArtifact(
-            split_id=split.id,
-            feature_selection_signature=fs_artifact.signature,
+        return _make_model_artifact(
+            split=split,
+            fs_artifact=fs_artifact,
             learning_method=learning_method,
             model_name=model_name,
-            model_path=str(model_path),
-            manifest_path=str(manifest_path),
+            model_path=model_path,
+            manifest_path=manifest_path,
             signature=signature,
+            preprocessing_trace=preprocessing_trace,
+            feature_selection_trace=feature_selection_trace,
         )
 
     start = time.time()
@@ -231,7 +522,9 @@ def run_training(
         # Materialize scenario
         # ----------------------------------------
 
-        data = split.materialize(view)
+        data = split.materialize(
+            view
+        )
 
         # ----------------------------------------
         # Apply fitted feature transformation
@@ -289,10 +582,13 @@ def run_training(
         )
 
         # Save the complete fitted learning system.
-        learner.save(model_path)
+        learner.save(
+            model_path
+        )
 
         execution_time = (
-            time.time() - start
+            time.time()
+            - start
         )
 
         manifest = make_manifest(
@@ -302,9 +598,46 @@ def run_training(
         )
 
         manifest["output"] = {
-            "model_path": str(model_path),
+            "model_path": str(
+                model_path
+            ),
+
             "resolved_model_params": (
                 resolved_model_params
+            ),
+
+            "feature_selection_signature": (
+                fs_artifact.signature
+            ),
+
+            "feature_selection_method": (
+                feature_selection_trace.get(
+                    "feature_selection_method"
+                )
+            ),
+
+            "feature_selection_params": (
+                feature_selection_trace.get(
+                    "feature_selection_params"
+                )
+            ),
+
+            "feature_selection_config_label": (
+                feature_selection_trace.get(
+                    "feature_selection_config_label"
+                )
+            ),
+
+            "preprocessing_signature": (
+                preprocessing_trace.get(
+                    "preprocessing_signature"
+                )
+            ),
+
+            "preprocessing_config_label": (
+                preprocessing_trace.get(
+                    "preprocessing_config_label"
+                )
             ),
         }
 
@@ -316,7 +649,8 @@ def run_training(
     except Exception as error:
 
         execution_time = (
-            time.time() - start
+            time.time()
+            - start
         )
 
         save_manifest(
@@ -331,12 +665,14 @@ def run_training(
 
         raise
 
-    return ModelArtifact(
-        split_id=split.id,
-        feature_selection_signature=fs_artifact.signature,
+    return _make_model_artifact(
+        split=split,
+        fs_artifact=fs_artifact,
         learning_method=learning_method,
         model_name=model_name,
-        model_path=str(model_path),
-        manifest_path=str(manifest_path),
+        model_path=model_path,
+        manifest_path=manifest_path,
         signature=signature,
+        preprocessing_trace=preprocessing_trace,
+        feature_selection_trace=feature_selection_trace,
     )

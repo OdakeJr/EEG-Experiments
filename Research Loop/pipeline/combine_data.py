@@ -2,6 +2,7 @@
 
 import time
 from pathlib import Path
+from copy import deepcopy
 
 import pandas as pd
 
@@ -26,27 +27,203 @@ OUTPUT_ROOT = Path("outputs/combined")
 
 
 # ============================================================
-# Helpers
+# Helpers: preprocessing trace
 # ============================================================
 
 def _get_input_signatures(dataset_views):
     """
-    Get the signatures of all preprocessing artifacts.
+    Get the signatures of all upstream preprocessing artifacts.
     """
 
     signatures = []
 
     for view in dataset_views:
-        manifest = load_manifest(
-            view.manifest_path
-        )
 
-        signatures.append(
-            manifest["signature"]
-        )
+        if getattr(
+            view,
+            "preprocessing_signature",
+            None,
+        ) is not None:
+
+            signatures.append(
+                view.preprocessing_signature
+            )
+
+        else:
+
+            manifest = load_manifest(
+                view.manifest_path
+            )
+
+            signatures.append(
+                manifest["signature"]
+            )
 
     return signatures
 
+
+def _get_input_preprocessing_trace(dataset_views):
+    """
+    Preserve preprocessing information from all input views.
+    """
+
+    traces = []
+
+    for view in dataset_views:
+
+        trace = {
+            "path": view.path,
+
+            "manifest_path": view.manifest_path,
+
+            "preprocessing_signature": getattr(
+                view,
+                "preprocessing_signature",
+                None,
+            ),
+
+            "preprocessing_config_label": getattr(
+                view,
+                "preprocessing_config_label",
+                None,
+            ),
+
+            "preprocessing_params": getattr(
+                view,
+                "preprocessing_params",
+                None,
+            ),
+        }
+
+        traces.append(
+            trace
+        )
+
+    return traces
+
+
+def _combined_preprocessing_signature(
+    params,
+    input_preprocessing_trace,
+):
+    """
+    Signature for the combined processed dataset.
+    """
+
+    return make_signature(
+        {
+            "type": "combined_preprocessing",
+            "params": params,
+            "inputs": input_preprocessing_trace,
+        }
+    )
+
+
+def _combined_preprocessing_config_label(
+    params,
+    input_preprocessing_trace,
+):
+    """
+    Human-readable label for the combined preprocessing setup.
+
+    Prefer an explicit label/name.
+    """
+
+    if "preprocessing_config_label" in params:
+        return params[
+            "preprocessing_config_label"
+        ]
+
+    if "name" in params:
+        return params[
+            "name"
+        ]
+
+    labels = [
+        trace.get(
+            "preprocessing_config_label"
+        )
+        for trace in input_preprocessing_trace
+        if trace.get(
+            "preprocessing_config_label"
+        )
+    ]
+
+    unique_labels = sorted(
+        set(
+            labels
+        )
+    )
+
+    if len(
+        unique_labels
+    ) == 1:
+        return unique_labels[
+            0
+        ]
+
+    signature = make_signature(
+        {
+            "labels": unique_labels,
+        }
+    )
+
+    return (
+        "combined_"
+        + signature[:8]
+    )
+
+
+def _add_combined_preprocessing_trace(
+    info,
+    params,
+    input_preprocessing_trace,
+):
+    """
+    Add preprocessing trace to the combined DatasetView info.
+    """
+
+    traced_info = deepcopy(
+        info
+    )
+
+    traced_info[
+        "preprocessing_signature"
+    ] = _combined_preprocessing_signature(
+        params,
+        input_preprocessing_trace,
+    )
+
+    traced_info[
+        "preprocessing_config_label"
+    ] = _combined_preprocessing_config_label(
+        params,
+        input_preprocessing_trace,
+    )
+
+    traced_info[
+        "preprocessing_params"
+    ] = {
+        "combined_params": deepcopy(
+            params
+        ),
+        "inputs": deepcopy(
+            input_preprocessing_trace
+        ),
+    }
+
+    traced_info[
+        "input_preprocessing_trace"
+    ] = deepcopy(
+        input_preprocessing_trace
+    )
+
+    return traced_info
+
+
+# ============================================================
+# Helpers
+# ============================================================
 
 def _get_output_paths(params):
     """
@@ -135,6 +312,18 @@ def _make_dataset_view(
         manifest_path=str(
             manifest_path
         ),
+
+        preprocessing_signature=info.get(
+            "preprocessing_signature"
+        ),
+
+        preprocessing_config_label=info.get(
+            "preprocessing_config_label"
+        ),
+
+        preprocessing_params=info.get(
+            "preprocessing_params"
+        ),
     )
 
 
@@ -166,14 +355,23 @@ def combine_datasets(
     )
 
     # --------------------------------------------------------
-    # Include upstream signatures in status
+    # Include upstream signatures/traces in status
     # --------------------------------------------------------
+
+    input_signatures = _get_input_signatures(
+        dataset_views
+    )
+
+    input_preprocessing_trace = (
+        _get_input_preprocessing_trace(
+            dataset_views
+        )
+    )
 
     effective_params = {
         "params": params,
-        "inputs": _get_input_signatures(
-            dataset_views
-        ),
+        "inputs": input_signatures,
+        "input_preprocessing_trace": input_preprocessing_trace,
     }
 
     data_path, manifest_path = (
@@ -224,7 +422,9 @@ def combine_datasets(
         # ----------------------------------------------------
 
         dataframes = [
-            load_data(view.path)
+            load_data(
+                view.path
+            )
             for view in dataset_views
         ]
 
@@ -274,6 +474,12 @@ def combine_datasets(
                 "dataset"
             ].nunique(),
         }
+
+        info = _add_combined_preprocessing_trace(
+            info=info,
+            params=params,
+            input_preprocessing_trace=input_preprocessing_trace,
+        )
 
         # ----------------------------------------------------
         # Manifest

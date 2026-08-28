@@ -1,5 +1,7 @@
 from pathlib import Path
+import ast
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -28,8 +30,30 @@ TEST_ROOT = Path(
 
 
 # ============================================================
-# Shared test configuration
+# Full-subject test configuration
 # ============================================================
+
+BCI2A_SUBJECTS = list(
+    range(
+        1,
+        10,
+    )
+)
+
+WEIBO_SUBJECTS = list(
+    range(
+        1,
+        11,
+    )
+)
+
+ZHOU_SUBJECTS = list(
+    range(
+        1,
+        5,
+    )
+)
+
 
 COMMON_CLASSES = [
     "left_hand_imagery",
@@ -59,6 +83,17 @@ FEATURE_CONFIG = {
 
 
 # ============================================================
+# Benchmark protocol choices
+# ============================================================
+
+INTRA_TRAIN_FRACTION = 0.8
+
+SOURCE_ONLY_TARGET_FRACTION = 0.0
+
+BENCHMARK_TARGET_FRACTION = 0.25
+
+
+# ============================================================
 # Preprocessing params
 # ============================================================
 
@@ -70,18 +105,14 @@ PREPROCESSING_PARAMS = [
 
     {
         "dataset": "bci2a",
-        "name": "benchmark_table_bci2a",
+        "name": "benchmark_table_bci2a_full",
 
         "root_gdf": "data/bci2a/gdf",
         "root_mat": "data/bci2a/mat",
 
         "loader": {
-            "subjects": [
-                1, 2, 3,
-            ],
-
+            "subjects": BCI2A_SUBJECTS,
             "channels": CHANNELS,
-
             "classes": COMMON_CLASSES,
         },
 
@@ -100,17 +131,13 @@ PREPROCESSING_PARAMS = [
 
     {
         "dataset": "weibo",
-        "name": "benchmark_table_weibo",
+        "name": "benchmark_table_weibo_full",
 
         "root": "data/weibo",
 
         "loader": {
-            "subjects": [
-                1, 2, 3,
-            ],
-
+            "subjects": WEIBO_SUBJECTS,
             "channels": CHANNELS,
-
             "classes": COMMON_CLASSES,
         },
 
@@ -129,17 +156,13 @@ PREPROCESSING_PARAMS = [
 
     {
         "dataset": "zhou",
-        "name": "benchmark_table_zhou",
+        "name": "benchmark_table_zhou_full",
 
         "root": "data/zhou",
 
         "loader": {
-            "subjects": [
-                1, 2, 3,
-            ],
-
+            "subjects": ZHOU_SUBJECTS,
             "channels": CHANNELS,
-
             "classes": COMMON_CLASSES,
         },
 
@@ -159,19 +182,24 @@ PREPROCESSING_PARAMS = [
 # ============================================================
 
 INTRA_PARAMS = {
-    "train_fraction": 0.5,
+    "train_fraction": INTRA_TRAIN_FRACTION,
     "seed": 42,
 }
 
 
 SESSION_PARAMS = {
+    # Include both a smaller-source protocol and the all-source
+    # protocol. The benchmark table must keep only all-source.
     "source_counts": [
         1,
         "all",
     ],
 
+    # Include more than one target fraction. The benchmark table
+    # must keep only BENCHMARK_TARGET_FRACTION.
     "target_fractions": [
-        0.5,
+        SOURCE_ONLY_TARGET_FRACTION,
+        BENCHMARK_TARGET_FRACTION,
     ],
 
     "seed": 42,
@@ -179,15 +207,23 @@ SESSION_PARAMS = {
 
 
 SUBJECT_PARAMS = {
+    # Include smaller-source and all-source protocols.
+    # The benchmark table must keep only all subjects except
+    # the held-out subject.
     "source_counts": [
         1,
         "all",
     ],
 
+    # Include more than one target fraction. The benchmark table
+    # must keep only BENCHMARK_TARGET_FRACTION.
     "target_fractions": [
-        0.5,
+        SOURCE_ONLY_TARGET_FRACTION,
+        BENCHMARK_TARGET_FRACTION,
     ],
 
+    # This limits only the smaller-source combinations.
+    # The all-source protocol is still generated.
     "max_source_combinations": 2,
 
     "seed": 42,
@@ -195,6 +231,9 @@ SUBJECT_PARAMS = {
 
 
 DATASET_PARAMS = {
+    # Include one-source-dataset and all-source-dataset protocols.
+    # The benchmark table must keep only all source datasets except
+    # the held-out target dataset.
     "source_dataset_counts": [
         1,
         "all",
@@ -207,8 +246,11 @@ DATASET_PARAMS = {
         0,
     ],
 
+    # Include more than one target fraction. The benchmark table
+    # must keep only BENCHMARK_TARGET_FRACTION.
     "target_subject_fractions": [
-        0.5,
+        SOURCE_ONLY_TARGET_FRACTION,
+        BENCHMARK_TARGET_FRACTION,
     ],
 
     "max_source_combinations": 2,
@@ -234,7 +276,7 @@ TRAINING_CONFIGS = [
         "learning": "sklearn_erm",
         "model": "logistic_regression",
         "model_params": {
-            "max_iter": 200,
+            "max_iter": 300,
         },
         "training_params": {},
     },
@@ -259,7 +301,74 @@ DOMAIN_EVALUATION_PARAMS = {
 
 
 # ============================================================
-# Helpers
+# Benchmark table params
+# ============================================================
+
+BENCHMARK_TABLE_PARAMS = {
+    "discrepancy_metric": "mmd",
+
+    "method_display": [
+        {
+            "learning_method": "sklearn_erm",
+            "model_name": "logistic_regression",
+            "regime": "Classical",
+            "method": "Logistic Regression",
+        },
+    ],
+
+    "tables": [
+        {
+            "name": "intra_subject",
+            "scenario": "intra_subject",
+            "setting_column": "Dataset",
+            "output_name": "intra_subject_table.csv",
+            "include_discrepancy": False,
+            "filters": {
+                "target_fraction": INTRA_TRAIN_FRACTION,
+            },
+        },
+        {
+            "name": "cross_session",
+            "scenario": "cross_session",
+            "setting_column": "Dataset",
+            "output_name": "cross_session_table.csv",
+            "include_discrepancy": True,
+            "filters": {
+                "n_target_super_domains": 0,
+                "target_fraction": BENCHMARK_TARGET_FRACTION,
+                "use_max_source_domains": True,
+            },
+        },
+        {
+            "name": "cross_subject",
+            "scenario": "cross_subject",
+            "setting_column": "Dataset",
+            "output_name": "cross_subject_table.csv",
+            "include_discrepancy": True,
+            "filters": {
+                "n_target_super_domains": 0,
+                "target_fraction": BENCHMARK_TARGET_FRACTION,
+                "use_max_source_domains": True,
+            },
+        },
+        {
+            "name": "cross_dataset",
+            "scenario": "cross_dataset",
+            "setting_column": "Held-out Dataset",
+            "output_name": "cross_dataset_table.csv",
+            "include_discrepancy": True,
+            "filters": {
+                "n_target_super_domains": 0,
+                "target_fraction": BENCHMARK_TARGET_FRACTION,
+                "use_max_source_super_domains": True,
+            },
+        },
+    ],
+}
+
+
+# ============================================================
+# Helpers: paths
 # ============================================================
 
 def _check_raw_paths():
@@ -286,75 +395,159 @@ def _check_raw_paths():
         )
 
 
-def _source_domain_count(
-    split,
+# ============================================================
+# Helpers: domain parsing
+# ============================================================
+
+def _parse_domain_list(
+    value,
 ):
 
-    return len(
-        split.source_elementary_domains
+    if value is None:
+        return []
+
+    if isinstance(
+        value,
+        float,
+    ) and pd.isna(
+        value
+    ):
+        return []
+
+    if isinstance(
+        value,
+        (list, tuple, set),
+    ):
+        return [
+            str(item)
+            for item in value
+        ]
+
+    text = str(
+        value
+    ).strip()
+
+    if text in [
+        "",
+        "[]",
+        "None",
+        "nan",
+    ]:
+        return []
+
+    try:
+
+        parsed = ast.literal_eval(
+            text
+        )
+
+        if isinstance(
+            parsed,
+            (
+                list,
+                tuple,
+                set,
+            ),
+        ):
+
+            return [
+                str(item)
+                for item in parsed
+            ]
+
+    except Exception:
+
+        pass
+
+    # Domain IDs use "|", for example:
+    # bci_iv_2a|A01
+    #
+    # Therefore we must not split on "|".
+    # Domain lists in model_results.csv are separated by ";".
+    for separator in [
+        ";",
+        ",",
+    ]:
+
+        if separator in text:
+
+            return [
+                item.strip()
+                for item in text.split(
+                    separator
+                )
+                if item.strip()
+            ]
+
+    return [
+        text
+    ]
+
+
+def _dataset_from_domains(
+    value,
+):
+
+    domains = _parse_domain_list(
+        value
     )
 
-
-def _source_dataset_count(
-    split,
-):
-
-    return len(
+    datasets = sorted(
         {
             domain.split(
                 "|",
                 1,
             )[0]
-
-            for domain
-            in split.source_elementary_domains
+            for domain in domains
         }
     )
 
-
-def _take_representative_splits(
-    splits,
-    key_fn,
-):
-    """
-    Keep a small subset while preserving the smallest and largest
-    source protocols.
-
-    This lets the test verify that benchmark_tables can receive
-    both increasing-source and all-source cases, while the final
-    benchmark table keeps the fixed/all-source protocol.
-    """
-
-    if not splits:
-        return []
-
-    ordered = sorted(
-        splits,
-        key=key_fn,
+    return "+".join(
+        datasets
     )
 
-    selected = [
-        ordered[0],
-        ordered[-1],
-    ]
 
-    unique = []
-    seen = set()
+def _dataset_count_from_domains(
+    value,
+):
 
-    for split in selected:
+    domains = _parse_domain_list(
+        value
+    )
 
-        if split.id not in seen:
+    datasets = {
+        domain.split(
+            "|",
+            1,
+        )[0]
+        for domain in domains
+    }
 
-            unique.append(
-                split
+    return len(
+        datasets
+    )
+
+
+def _all_domains_from_column(
+    values,
+):
+
+    domains = set()
+
+    for value in values:
+
+        domains.update(
+            _parse_domain_list(
+                value
             )
+        )
 
-            seen.add(
-                split.id
-            )
+    return domains
 
-    return unique
 
+# ============================================================
+# Helpers: table assertions
+# ============================================================
 
 def _assert_table_exists(
     path,
@@ -371,18 +564,32 @@ def _assert_table_exists(
 
 def _assert_table_columns(
     table,
+    setting_column,
 ):
 
     required_columns = {
+        setting_column,
         "Regime",
-        "Method / Model",
+        "Method",
         "Runs",
-        "Source BA",
-        "Target-Test BA",
-        "Gap",
-        "Macro-F1",
-        "AUC",
-        "Discrepancy",
+
+        "Source BA Mean",
+        "Source BA Std",
+
+        "Target-Test BA Mean",
+        "Target-Test BA Std",
+
+        "Gap Mean",
+        "Gap Std",
+
+        "Macro-F1 Mean",
+        "Macro-F1 Std",
+
+        "AUC Mean",
+        "AUC Std",
+
+        "Discrepancy Mean",
+        "Discrepancy Std",
     }
 
     assert required_columns.issubset(
@@ -392,25 +599,481 @@ def _assert_table_columns(
     )
 
 
-def _add_scenario_item(
+def _assert_display_labels(
+    table,
+):
+
+    if table.empty:
+        return
+
+    assert set(
+        table["Regime"]
+    ) == {
+        "Classical",
+    }
+
+    assert set(
+        table["Method"]
+    ) == {
+        "Logistic Regression",
+    }
+
+
+def _assert_numeric_summary_columns(
+    table,
+):
+
+    if table.empty:
+        return
+
+    numeric_columns = [
+        "Runs",
+
+        "Source BA Mean",
+        "Source BA Std",
+
+        "Target-Test BA Mean",
+        "Target-Test BA Std",
+
+        "Gap Mean",
+        "Gap Std",
+
+        "Macro-F1 Mean",
+        "Macro-F1 Std",
+
+        "AUC Mean",
+        "AUC Std",
+
+        "Discrepancy Mean",
+        "Discrepancy Std",
+    ]
+
+    for column in numeric_columns:
+
+        converted = pd.to_numeric(
+            table[column],
+            errors="coerce",
+        )
+
+        assert len(
+            converted
+        ) == len(
+            table
+        )
+
+
+def _assert_no_formatted_mean_std_strings(
+    table,
+):
+
+    for column in table.columns:
+
+        if table[column].dtype == object:
+
+            text = table[column].astype(
+                str
+            )
+
+            assert not text.str.contains(
+                "±",
+                regex=False,
+            ).any()
+
+
+# ============================================================
+# Helpers: model-result filtering
+# ============================================================
+
+def _target_test_rows(
+    model_table,
+    scenario,
+    target_fraction,
+):
+
+    rows = model_table[
+        (
+            model_table["scenario"]
+            == scenario
+        )
+        & (
+            model_table["evaluation_group"]
+            == "target_elementary_domain"
+        )
+        & (
+            model_table["partition"]
+            == "test"
+        )
+        & np.isclose(
+            pd.to_numeric(
+                model_table["target_fraction"],
+                errors="coerce",
+            ),
+            target_fraction,
+        )
+    ].copy()
+
+    rows["Dataset"] = (
+        rows["target_domains"]
+        .apply(
+            _dataset_from_domains
+        )
+    )
+
+    rows["Held-out Dataset"] = (
+        rows["Dataset"]
+    )
+
+    rows["source_dataset_count"] = (
+        rows["source_domains"]
+        .apply(
+            _dataset_count_from_domains
+        )
+    )
+
+    return rows
+
+
+def _keep_max_source_domains(
+    rows,
+    setting_column,
+):
+
+    if rows.empty:
+        return rows
+
+    max_values = (
+        rows
+        .groupby(
+            setting_column
+        )[
+            "n_source_domains"
+        ]
+        .transform(
+            "max"
+        )
+    )
+
+    return rows[
+        rows["n_source_domains"]
+        == max_values
+    ].copy()
+
+
+def _keep_max_source_datasets(
+    rows,
+    setting_column,
+):
+
+    if rows.empty:
+        return rows
+
+    max_values = (
+        rows
+        .groupby(
+            setting_column
+        )[
+            "source_dataset_count"
+        ]
+        .transform(
+            "max"
+        )
+    )
+
+    return rows[
+        rows["source_dataset_count"]
+        == max_values
+    ].copy()
+
+
+def _assert_runs_match_raw_rows(
+    table,
+    raw_rows,
+    setting_column,
+):
+
+    counts = (
+        raw_rows
+        .groupby(
+            setting_column
+        )
+        .size()
+    )
+
+    assert set(
+        table[
+            setting_column
+        ]
+    ) == set(
+        counts.index
+    )
+
+    for _, row in table.iterrows():
+
+        setting = row[
+            setting_column
+        ]
+
+        assert int(
+            row["Runs"]
+        ) == int(
+            counts.loc[
+                setting
+            ]
+        )
+
+
+# ============================================================
+# Helpers: protocol assertions
+# ============================================================
+
+def _assert_intra_subject_runs_across_subjects(
+    model_table,
+    intra_table,
+):
+
+    rows = _target_test_rows(
+        model_table=model_table,
+        scenario="intra_subject",
+        target_fraction=INTRA_TRAIN_FRACTION,
+    )
+
+    assert not rows.empty
+
+    _assert_runs_match_raw_rows(
+        table=intra_table,
+        raw_rows=rows,
+        setting_column="Dataset",
+    )
+
+    # Intra-subject has no source-target domain discrepancy.
+    assert (
+        intra_table[
+            "Discrepancy Mean"
+        ]
+        .isna()
+        .all()
+    )
+
+    assert (
+        intra_table[
+            "Discrepancy Std"
+        ]
+        .isna()
+        .all()
+    )
+
+
+def _assert_cross_session_uses_max_source_sessions(
+    model_table,
+    cross_session_table,
+):
+
+    rows = _target_test_rows(
+        model_table=model_table,
+        scenario="cross_session",
+        target_fraction=BENCHMARK_TARGET_FRACTION,
+    )
+
+    if rows.empty:
+
+        assert cross_session_table.empty
+        return
+
+    full_source_rows = _keep_max_source_domains(
+        rows,
+        setting_column="Dataset",
+    )
+
+    assert not full_source_rows.empty
+
+    _assert_runs_match_raw_rows(
+        table=cross_session_table,
+        raw_rows=full_source_rows,
+        setting_column="Dataset",
+    )
+
+
+def _assert_cross_subject_is_all_except_one(
+    model_table,
+    cross_subject_table,
+):
+
+    rows = _target_test_rows(
+        model_table=model_table,
+        scenario="cross_subject",
+        target_fraction=BENCHMARK_TARGET_FRACTION,
+    )
+
+    assert not rows.empty
+
+    # The raw results should contain more than one source-size
+    # protocol, otherwise the table filtering is not being tested.
+    assert (
+        rows[
+            "n_source_domains"
+        ]
+        .nunique()
+        >= 2
+    )
+
+    full_source_rows = _keep_max_source_domains(
+        rows,
+        setting_column="Dataset",
+    )
+
+    assert not full_source_rows.empty
+
+    # Count how many target subjects/domains were loaded for each
+    # dataset based on the held-out target domains that appear in
+    # the cross-subject experiment.
+    loaded_target_domains = (
+        rows
+        .groupby(
+            "Dataset"
+        )[
+            "target_domains"
+        ]
+        .apply(
+            _all_domains_from_column
+        )
+    )
+
+    for dataset, group in full_source_rows.groupby(
+        "Dataset"
+    ):
+
+        n_loaded_subjects = len(
+            loaded_target_domains.loc[
+                dataset
+            ]
+        )
+
+        expected_source_domains = (
+            n_loaded_subjects
+            - 1
+        )
+
+        assert expected_source_domains > 0
+
+        assert (
+            group[
+                "n_source_domains"
+            ]
+            .eq(
+                expected_source_domains
+            )
+            .all()
+        )
+
+    _assert_runs_match_raw_rows(
+        table=cross_subject_table,
+        raw_rows=full_source_rows,
+        setting_column="Dataset",
+    )
+
+
+def _assert_cross_dataset_is_all_except_one_dataset(
+    model_table,
+    cross_dataset_table,
+):
+
+    rows = _target_test_rows(
+        model_table=model_table,
+        scenario="cross_dataset",
+        target_fraction=BENCHMARK_TARGET_FRACTION,
+    )
+
+    assert not rows.empty
+
+    assert (
+        rows[
+            "n_target_super_domains"
+        ]
+        .fillna(
+            0
+        )
+        .eq(
+            0
+        )
+        .all()
+    )
+
+    # The raw results should contain one-source-dataset and
+    # all-source-dataset protocols.
+    assert (
+        rows[
+            "source_dataset_count"
+        ]
+        .nunique()
+        >= 2
+    )
+
+    full_source_rows = _keep_max_source_datasets(
+        rows,
+        setting_column="Held-out Dataset",
+    )
+
+    assert not full_source_rows.empty
+
+    loaded_datasets = set(
+        rows[
+            "Held-out Dataset"
+        ]
+    )
+
+    n_loaded_datasets = len(
+        loaded_datasets
+    )
+
+    expected_source_datasets = (
+        n_loaded_datasets
+        - 1
+    )
+
+    assert expected_source_datasets > 0
+
+    assert (
+        full_source_rows[
+            "source_dataset_count"
+        ]
+        .eq(
+            expected_source_datasets
+        )
+        .all()
+    )
+
+    _assert_runs_match_raw_rows(
+        table=cross_dataset_table,
+        raw_rows=full_source_rows,
+        setting_column="Held-out Dataset",
+    )
+
+
+# ============================================================
+# Helpers: scenario item creation
+# ============================================================
+
+def _add_scenario_items(
     scenario_items,
-    split,
+    splits,
     view,
 ):
 
-    scenario_items.append(
-        {
-            "split": split,
-            "view": view,
-        }
-    )
+    for split in splits:
+
+        scenario_items.append(
+            {
+                "split": split,
+                "view": view,
+            }
+        )
 
 
 # ============================================================
 # Test
 # ============================================================
 
-def test_benchmark_tables_with_data():
+def test_benchmark_tables_with_full_source_protocols():
 
     _check_raw_paths()
 
@@ -459,7 +1122,7 @@ def test_benchmark_tables_with_data():
     )
 
     # --------------------------------------------------------
-    # Preprocess datasets
+    # Preprocess full-subject datasets
     # --------------------------------------------------------
 
     views = {}
@@ -478,12 +1141,20 @@ def test_benchmark_tables_with_data():
             params["dataset"]
         ] = view
 
+    assert set(
+        views.keys()
+    ) == {
+        "bci2a",
+        "weibo",
+        "zhou",
+    }
+
     combined_view = combine_data.combine_datasets(
         list(
             views.values()
         ),
         {
-            "name": "benchmark_table_combined",
+            "name": "benchmark_table_combined_full",
         },
     )
 
@@ -492,16 +1163,12 @@ def test_benchmark_tables_with_data():
     )
 
     # --------------------------------------------------------
-    # Generate representative scenario splits
+    # Generate all scenario splits
     # --------------------------------------------------------
 
     scenario_items = []
 
     for dataset, view in views.items():
-
-        # ----------------------------------------------------
-        # Intra-subject
-        # ----------------------------------------------------
 
         intra_splits = scenarios.run_scenario(
             view,
@@ -509,19 +1176,15 @@ def test_benchmark_tables_with_data():
             INTRA_PARAMS,
         )
 
-        for split in intra_splits[
-            :1
-        ]:
+        assert len(
+            intra_splits
+        ) > 0
 
-            _add_scenario_item(
-                scenario_items,
-                split,
-                view,
-            )
-
-        # ----------------------------------------------------
-        # Cross-session
-        # ----------------------------------------------------
+        _add_scenario_items(
+            scenario_items,
+            intra_splits,
+            view,
+        )
 
         session_splits = scenarios.run_scenario(
             view,
@@ -529,20 +1192,11 @@ def test_benchmark_tables_with_data():
             SESSION_PARAMS,
         )
 
-        for split in _take_representative_splits(
+        _add_scenario_items(
+            scenario_items,
             session_splits,
-            _source_domain_count,
-        ):
-
-            _add_scenario_item(
-                scenario_items,
-                split,
-                view,
-            )
-
-        # ----------------------------------------------------
-        # Cross-subject
-        # ----------------------------------------------------
+            view,
+        )
 
         subject_splits = scenarios.run_scenario(
             view,
@@ -550,20 +1204,15 @@ def test_benchmark_tables_with_data():
             SUBJECT_PARAMS,
         )
 
-        for split in _take_representative_splits(
+        assert len(
+            subject_splits
+        ) > 0
+
+        _add_scenario_items(
+            scenario_items,
             subject_splits,
-            _source_domain_count,
-        ):
-
-            _add_scenario_item(
-                scenario_items,
-                split,
-                view,
-            )
-
-    # --------------------------------------------------------
-    # Cross-dataset
-    # --------------------------------------------------------
+            view,
+        )
 
     dataset_splits = scenarios.run_scenario(
         combined_view,
@@ -571,16 +1220,15 @@ def test_benchmark_tables_with_data():
         DATASET_PARAMS,
     )
 
-    for split in _take_representative_splits(
-        dataset_splits,
-        _source_dataset_count,
-    ):
+    assert len(
+        dataset_splits
+    ) > 0
 
-        _add_scenario_item(
-            scenario_items,
-            split,
-            combined_view,
-        )
+    _add_scenario_items(
+        scenario_items,
+        dataset_splits,
+        combined_view,
+    )
 
     assert len(
         scenario_items
@@ -702,6 +1350,7 @@ def test_benchmark_tables_with_data():
     artifact = benchmark_tables.run_benchmark_tables(
         model_results_artifact,
         domain_results_artifact,
+        BENCHMARK_TABLE_PARAMS,
     )
 
     assert exists(
@@ -741,17 +1390,47 @@ def test_benchmark_tables_with_data():
         ]
     )
 
-    # Some datasets may not produce cross-session splits.
-    # Therefore only validate columns if the table is non-empty.
-    for table in [
-        intra_table,
-        cross_session_table,
-        cross_subject_table,
-        cross_dataset_table,
-    ]:
+    # --------------------------------------------------------
+    # Schema checks
+    # --------------------------------------------------------
+
+    table_specs = [
+        (
+            intra_table,
+            "Dataset",
+        ),
+        (
+            cross_session_table,
+            "Dataset",
+        ),
+        (
+            cross_subject_table,
+            "Dataset",
+        ),
+        (
+            cross_dataset_table,
+            "Held-out Dataset",
+        ),
+    ]
+
+    for table, setting_column in table_specs:
 
         if not table.empty:
+
             _assert_table_columns(
+                table,
+                setting_column,
+            )
+
+            _assert_display_labels(
+                table
+            )
+
+            _assert_numeric_summary_columns(
+                table
+            )
+
+            _assert_no_formatted_mean_std_strings(
                 table
             )
 
@@ -760,52 +1439,67 @@ def test_benchmark_tables_with_data():
     assert not cross_dataset_table.empty
 
     # --------------------------------------------------------
-    # Protocol checks
+    # Raw-result protocol checks
     # --------------------------------------------------------
-
-    assert (
-        intra_table[
-            "Discrepancy"
-        ]
-        .astype(str)
-        .eq("—")
-        .all()
-    )
 
     model_table = pd.read_csv(
         model_results_artifact.path
     )
 
-    cross_dataset_rows = model_table[
-        model_table["scenario"]
-        == "cross_dataset"
-    ]
+    assert not model_table.empty
 
-    assert not cross_dataset_rows.empty
-
-    # Current cross-dataset benchmark:
-    # no target-super-domain adaptation.
-    assert (
-        cross_dataset_rows[
-            "n_target_super_domains"
-        ]
-        .fillna(
-            0
-        )
-        .eq(
-            0
-        )
-        .all()
+    _assert_intra_subject_runs_across_subjects(
+        model_table=model_table,
+        intra_table=intra_table,
     )
 
-    # Make sure the test included both a smaller-source and
-    # all-source cross-dataset protocol before table filtering.
-    assert (
-        cross_dataset_rows[
-            "source_domains"
-        ]
-        .nunique()
-        >= 2
+    _assert_cross_session_uses_max_source_sessions(
+        model_table=model_table,
+        cross_session_table=cross_session_table,
     )
 
-    assert not cross_dataset_table.empty
+    _assert_cross_subject_is_all_except_one(
+        model_table=model_table,
+        cross_subject_table=cross_subject_table,
+    )
+
+    _assert_cross_dataset_is_all_except_one_dataset(
+        model_table=model_table,
+        cross_dataset_table=cross_dataset_table,
+    )
+
+    # --------------------------------------------------------
+    # Final sanity checks
+    # --------------------------------------------------------
+
+    assert (
+        cross_subject_table[
+            "Runs"
+        ]
+        .min()
+        > 1
+    )
+
+    assert (
+        cross_dataset_table[
+            "Runs"
+        ]
+        .min()
+        > 1
+    )
+
+    assert (
+        cross_subject_table[
+            "Target-Test BA Std"
+        ]
+        .notna()
+        .any()
+    )
+
+    assert (
+        cross_dataset_table[
+            "Target-Test BA Std"
+        ]
+        .notna()
+        .any()
+    )
