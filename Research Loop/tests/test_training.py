@@ -92,7 +92,9 @@ TRAINING_CONFIGS = [
         "model_params": {
             "max_iter": 200,
         },
-        "training_params": {},
+        "training_params": {
+            "seed": 42,
+        },
     },
     {
         "learning": "neural_erm",
