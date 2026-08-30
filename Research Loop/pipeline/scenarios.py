@@ -29,19 +29,33 @@ OUTPUT_ROOT = Path("outputs/scenarios")
 # ============================================================
 
 def _stable_seed(base_seed, *parts):
-    text = "|".join(
-        str(part)
-        for part in parts
-    )
-
-    digest = hashlib.md5(
-        text.encode()
-    ).hexdigest()
+    text = "|".join(str(part) for part in parts)
+    digest = hashlib.md5(text.encode()).hexdigest()
 
     return (
         int(digest[:8], 16)
         + int(base_seed)
     ) % (2 ** 32)
+
+
+def _dataset_param(value, dataset):
+    """
+    Allow either a global value or a dataset-specific mapping.
+
+    Missing dataset configuration means that the dataset is
+    skipped for that scenario.
+    """
+
+    if not isinstance(value, dict):
+        return value
+
+    if dataset in value:
+        return value[dataset]
+
+    if "default" in value:
+        return value["default"]
+
+    return []
 
 
 def _select_combinations(
@@ -50,38 +64,22 @@ def _select_combinations(
     seed,
     max_combinations=None,
 ):
-    """
-    Return selected combinations of values.
-    """
-
-    values = sorted(
-        list(values)
-    )
+    values = sorted(list(values))
 
     if count == "all":
-        return [
-            tuple(values)
-        ]
+        return [tuple(values)]
 
     count = int(count)
 
     if count == 0:
-        return [
-            tuple()
-        ]
+        return [tuple()]
 
     if count > len(values):
         return []
 
-    total = math.comb(
-        len(values),
-        count,
-    )
+    total = math.comb(len(values), count)
 
-    if (
-        max_combinations is None
-        or total <= max_combinations
-    ):
+    if max_combinations is None or total <= max_combinations:
         return list(
             itertools.combinations(
                 values,
@@ -89,14 +87,10 @@ def _select_combinations(
             )
         )
 
-    rng = np.random.default_rng(
-        seed
-    )
-
+    rng = np.random.default_rng(seed)
     selected = set()
 
     while len(selected) < max_combinations:
-
         combination = tuple(
             sorted(
                 rng.choice(
@@ -107,29 +101,12 @@ def _select_combinations(
             )
         )
 
-        selected.add(
-            combination
-        )
+        selected.add(combination)
 
-    return sorted(
-        selected
-    )
+    return sorted(selected)
 
 
-def _subject_domains(
-    dataframe,
-):
-    """
-    Elementary domain = subject.
-
-    Dataset is included in the ID so subjects from different
-    datasets can never collide.
-
-    Example:
-        bci2a|A01
-        eegmmidb|S001
-    """
-
+def _subject_domains(dataframe):
     return (
         dataframe[
             ["dataset", "subject"]
@@ -139,23 +116,10 @@ def _subject_domains(
     )
 
 
-def _session_domains(
-    dataframe,
-):
-    """
-    Elementary domain = session within a subject.
-
-    Example:
-        bci2a|A01|session_01
-    """
-
+def _session_domains(dataframe):
     return (
         dataframe[
-            [
-                "dataset",
-                "subject",
-                "session",
-            ]
+            ["dataset", "subject", "session"]
         ]
         .astype(str)
         .agg("|".join, axis=1)
@@ -185,13 +149,8 @@ def _make_split(
             list(target_elementary_domains)
         ),
 
-        "target_fraction": float(
-            target_fraction
-        ),
-
-        "seed": int(
-            seed
-        ),
+        "target_fraction": float(target_fraction),
+        "seed": int(seed),
     }
 
     split_id = (
@@ -205,9 +164,7 @@ def _make_split(
     )
 
 
-def _unique_splits(
-    splits,
-):
+def _unique_splits(splits):
     return list(
         {
             split.id: split
@@ -220,16 +177,7 @@ def _unique_splits(
 # Intra-subject
 # ============================================================
 
-def _generate_intra_subject(
-    dataframe,
-    params,
-):
-    """
-    One dataset at a time.
-
-    Each subject becomes one elementary domain and is divided
-    into train/test samples.
-    """
+def _generate_intra_subject(dataframe, params):
 
     train_fraction = params.get(
         "train_fraction",
@@ -241,18 +189,13 @@ def _generate_intra_subject(
         42,
     )
 
-    elementary_domains = (
-        _subject_domains(
-            dataframe
-        )
+    elementary_domains = _subject_domains(
+        dataframe
     )
 
     splits = []
 
-    for (
-        dataset,
-        subject,
-    ), group in dataframe.groupby(
+    for (dataset, subject), group in dataframe.groupby(
         ["dataset", "subject"]
     ):
 
@@ -274,19 +217,10 @@ def _generate_intra_subject(
         splits.append(
             _make_split(
                 scenario="intra_subject",
-
                 source_elementary_domains=[],
-
                 target_super_domain_elementary_domains=[],
-
-                target_elementary_domains=(
-                    target_domains
-                ),
-
-                target_fraction=(
-                    train_fraction
-                ),
-
+                target_elementary_domains=target_domains,
+                target_fraction=train_fraction,
                 seed=seed,
             )
         )
@@ -298,17 +232,9 @@ def _generate_intra_subject(
 # Cross-session
 # ============================================================
 
-def _generate_cross_session(
-    dataframe,
-    params,
-):
-    """
-    One dataset at a time.
+def _generate_cross_session(dataframe, params):
 
-    Elementary domain = session.
-    """
-
-    source_counts = params.get(
+    source_counts_config = params.get(
         "source_counts",
         [1, "all"],
     )
@@ -328,25 +254,23 @@ def _generate_cross_session(
         42,
     )
 
-    elementary_domains = (
-        _session_domains(
-            dataframe
-        )
+    elementary_domains = _session_domains(
+        dataframe
     )
 
     splits = []
 
-    for (
-        dataset,
-        subject,
-    ), group in dataframe.groupby(
+    for (dataset, subject), group in dataframe.groupby(
         ["dataset", "subject"]
     ):
 
+        source_counts = _dataset_param(
+            source_counts_config,
+            dataset,
+        )
+
         sessions = sorted(
-            group[
-                "session"
-            ].unique()
+            group["session"].unique()
         )
 
         if len(sessions) < 2:
@@ -363,10 +287,7 @@ def _generate_cross_session(
             target_mask = (
                 (dataframe["dataset"] == dataset)
                 & (dataframe["subject"] == subject)
-                & (
-                    dataframe["session"]
-                    == target_session
-                )
+                & (dataframe["session"] == target_session)
             )
 
             target_domains = (
@@ -389,17 +310,15 @@ def _generate_cross_session(
 
                 limit = (
                     None
-                    if source_count in [1, "all"]
+                    if source_count in ["all"]
                     else max_combinations
                 )
 
-                source_sets = (
-                    _select_combinations(
-                        source_candidates,
-                        source_count,
-                        selection_seed,
-                        limit,
-                    )
+                source_sets = _select_combinations(
+                    source_candidates,
+                    source_count,
+                    selection_seed,
+                    limit,
                 )
 
                 for source_sessions in source_sets:
@@ -407,9 +326,7 @@ def _generate_cross_session(
                     source_mask = (
                         (dataframe["dataset"] == dataset)
                         & (dataframe["subject"] == subject)
-                        & dataframe[
-                            "session"
-                        ].isin(
+                        & dataframe["session"].isin(
                             source_sessions
                         )
                     )
@@ -422,9 +339,7 @@ def _generate_cross_session(
                         .tolist()
                     )
 
-                    for target_fraction in (
-                        target_fractions
-                    ):
+                    for target_fraction in target_fractions:
 
                         seed = _stable_seed(
                             base_seed,
@@ -439,45 +354,24 @@ def _generate_cross_session(
                         splits.append(
                             _make_split(
                                 scenario="cross_session",
-
-                                source_elementary_domains=(
-                                    source_domains
-                                ),
-
+                                source_elementary_domains=source_domains,
                                 target_super_domain_elementary_domains=[],
-
-                                target_elementary_domains=(
-                                    target_domains
-                                ),
-
-                                target_fraction=(
-                                    target_fraction
-                                ),
-
+                                target_elementary_domains=target_domains,
+                                target_fraction=target_fraction,
                                 seed=seed,
                             )
                         )
 
-    return _unique_splits(
-        splits
-    )
+    return _unique_splits(splits)
 
 
 # ============================================================
 # Cross-subject
 # ============================================================
 
-def _generate_cross_subject(
-    dataframe,
-    params,
-):
-    """
-    One dataset at a time.
+def _generate_cross_subject(dataframe, params):
 
-    Elementary domain = subject.
-    """
-
-    source_counts = params.get(
+    source_counts_config = params.get(
         "source_counts",
         [1, "all"],
     )
@@ -497,10 +391,8 @@ def _generate_cross_subject(
         42,
     )
 
-    elementary_domains = (
-        _subject_domains(
-            dataframe
-        )
+    elementary_domains = _subject_domains(
+        dataframe
     )
 
     splits = []
@@ -509,10 +401,13 @@ def _generate_cross_subject(
         "dataset"
     ):
 
+        source_counts = _dataset_param(
+            source_counts_config,
+            dataset,
+        )
+
         subjects = sorted(
-            group[
-                "subject"
-            ].unique()
+            group["subject"].unique()
         )
 
         if len(subjects) < 2:
@@ -528,10 +423,7 @@ def _generate_cross_subject(
 
             target_mask = (
                 (dataframe["dataset"] == dataset)
-                & (
-                    dataframe["subject"]
-                    == target_subject
-                )
+                & (dataframe["subject"] == target_subject)
             )
 
             target_domains = (
@@ -553,26 +445,22 @@ def _generate_cross_subject(
 
                 limit = (
                     None
-                    if source_count in [1, "all"]
+                    if source_count in ["all"]
                     else max_combinations
                 )
 
-                source_sets = (
-                    _select_combinations(
-                        source_candidates,
-                        source_count,
-                        selection_seed,
-                        limit,
-                    )
+                source_sets = _select_combinations(
+                    source_candidates,
+                    source_count,
+                    selection_seed,
+                    limit,
                 )
 
                 for source_subjects in source_sets:
 
                     source_mask = (
                         (dataframe["dataset"] == dataset)
-                        & dataframe[
-                            "subject"
-                        ].isin(
+                        & dataframe["subject"].isin(
                             source_subjects
                         )
                     )
@@ -585,9 +473,7 @@ def _generate_cross_subject(
                         .tolist()
                     )
 
-                    for target_fraction in (
-                        target_fractions
-                    ):
+                    for target_fraction in target_fractions:
 
                         seed = _stable_seed(
                             base_seed,
@@ -601,61 +487,28 @@ def _generate_cross_subject(
                         splits.append(
                             _make_split(
                                 scenario="cross_subject",
-
-                                source_elementary_domains=(
-                                    source_domains
-                                ),
-
+                                source_elementary_domains=source_domains,
                                 target_super_domain_elementary_domains=[],
-
-                                target_elementary_domains=(
-                                    target_domains
-                                ),
-
-                                target_fraction=(
-                                    target_fraction
-                                ),
-
+                                target_elementary_domains=target_domains,
+                                target_fraction=target_fraction,
                                 seed=seed,
                             )
                         )
 
-    return _unique_splits(
-        splits
-    )
+    return _unique_splits(splits)
 
 
 # ============================================================
 # Cross-dataset
 # ============================================================
 
-def _generate_cross_dataset(
-    dataframe,
-    params,
-):
-    """
-    Combined dataset view.
-
-    Super-domain      = dataset
-    Elementary domain = subject
-
-    By default, this generates the simplified cross-dataset
-    benchmark:
-
-        source datasets -> held-out target subject
-
-    No target-super-domain adaptation is used unless
-    target_dataset_subject_counts is explicitly set to values
-    larger than zero.
-    """
+def _generate_cross_dataset(dataframe, params):
 
     source_dataset_counts = params.get(
         "source_dataset_counts",
         [1, "all"],
     )
 
-    # Default is now [0], not [0, "all"].
-    # This avoids accidental two-stage adaptation.
     target_dataset_subject_counts = params.get(
         "target_dataset_subject_counts",
         [0],
@@ -681,16 +534,12 @@ def _generate_cross_dataset(
         42,
     )
 
-    elementary_domains = (
-        _subject_domains(
-            dataframe
-        )
+    elementary_domains = _subject_domains(
+        dataframe
     )
 
     datasets = sorted(
-        dataframe[
-            "dataset"
-        ].unique()
+        dataframe["dataset"].unique()
     )
 
     if len(datasets) < 2:
@@ -698,74 +547,49 @@ def _generate_cross_dataset(
 
     splits = []
 
-    # --------------------------------------------------
-    # Choose held-out target dataset
-    # --------------------------------------------------
-
     for target_dataset in datasets:
 
-        source_dataset_candidates = [
+        source_candidates = [
             dataset
             for dataset in datasets
             if dataset != target_dataset
         ]
 
         target_data = dataframe[
-            dataframe["dataset"]
-            == target_dataset
+            dataframe["dataset"] == target_dataset
         ]
 
         target_subjects = sorted(
-            target_data[
-                "subject"
-            ].unique()
+            target_data["subject"].unique()
         )
 
-        # --------------------------------------------------
-        # Choose source datasets
-        # --------------------------------------------------
+        for source_count in source_dataset_counts:
 
-        for source_dataset_count in (
-            source_dataset_counts
-        ):
-
-            source_selection_seed = (
-                _stable_seed(
-                    base_seed,
-                    "source_datasets",
-                    target_dataset,
-                    source_dataset_count,
-                )
+            selection_seed = _stable_seed(
+                base_seed,
+                "source_datasets",
+                target_dataset,
+                source_count,
             )
 
-            source_limit = (
+            limit = (
                 None
-                if source_dataset_count in [
-                    1,
-                    "all",
-                ]
+                if source_count in ["all"]
                 else max_source_combinations
             )
 
-            source_dataset_sets = (
-                _select_combinations(
-                    source_dataset_candidates,
-                    source_dataset_count,
-                    source_selection_seed,
-                    source_limit,
-                )
+            source_sets = _select_combinations(
+                source_candidates,
+                source_count,
+                selection_seed,
+                limit,
             )
 
-            for source_datasets in (
-                source_dataset_sets
-            ):
+            for source_datasets in source_sets:
 
-                # All subjects from selected source datasets.
                 source_mask = dataframe[
                     "dataset"
-                ].isin(
-                    source_datasets
-                )
+                ].isin(source_datasets)
 
                 source_domains = (
                     elementary_domains.loc[
@@ -775,34 +599,22 @@ def _generate_cross_dataset(
                     .tolist()
                 )
 
-                # --------------------------------------------------
-                # Hold out one target subject
-                # --------------------------------------------------
-
                 for target_subject in target_subjects:
 
-                    target_individual_mask = (
-                        (
-                            dataframe["dataset"]
-                            == target_dataset
-                        )
-                        & (
-                            dataframe["subject"]
-                            == target_subject
-                        )
+                    target_mask = (
+                        (dataframe["dataset"] == target_dataset)
+                        & (dataframe["subject"] == target_subject)
                     )
 
-                    target_elementary_domains = (
+                    target_domains = (
                         elementary_domains.loc[
-                            target_individual_mask
+                            target_mask
                         ]
                         .unique()
                         .tolist()
                     )
 
-                    # Optional future two-stage setting:
-                    # other subjects from the held-out dataset.
-                    target_domain_candidates = [
+                    target_candidates = [
                         subject
                         for subject in target_subjects
                         if subject != target_subject
@@ -812,47 +624,33 @@ def _generate_cross_dataset(
                         target_dataset_subject_counts
                     ):
 
-                        target_selection_seed = (
-                            _stable_seed(
-                                base_seed,
-                                "target_super_domain",
-                                target_dataset,
-                                target_subject,
-                                target_count,
-                            )
+                        target_selection_seed = _stable_seed(
+                            base_seed,
+                            "target_super_domain",
+                            target_dataset,
+                            target_subject,
+                            target_count,
                         )
 
                         target_limit = (
                             None
-                            if target_count in [
-                                0,
-                                "all",
-                            ]
+                            if target_count in [0, "all"]
                             else max_target_combinations
                         )
 
-                        target_subject_sets = (
-                            _select_combinations(
-                                target_domain_candidates,
-                                target_count,
-                                target_selection_seed,
-                                target_limit,
-                            )
+                        target_sets = _select_combinations(
+                            target_candidates,
+                            target_count,
+                            target_selection_seed,
+                            target_limit,
                         )
 
-                        for target_domain_subjects in (
-                            target_subject_sets
-                        ):
+                        for target_subjects_selected in target_sets:
 
                             target_super_mask = (
-                                (
-                                    dataframe["dataset"]
-                                    == target_dataset
-                                )
-                                & dataframe[
-                                    "subject"
-                                ].isin(
-                                    target_domain_subjects
+                                (dataframe["dataset"] == target_dataset)
+                                & dataframe["subject"].isin(
+                                    target_subjects_selected
                                 )
                             )
 
@@ -873,7 +671,7 @@ def _generate_cross_dataset(
                                     "cross_dataset",
                                     source_datasets,
                                     target_dataset,
-                                    target_domain_subjects,
+                                    target_subjects_selected,
                                     target_subject,
                                     target_fraction,
                                 )
@@ -881,30 +679,17 @@ def _generate_cross_dataset(
                                 splits.append(
                                     _make_split(
                                         scenario="cross_dataset",
-
-                                        source_elementary_domains=(
-                                            source_domains
-                                        ),
-
+                                        source_elementary_domains=source_domains,
                                         target_super_domain_elementary_domains=(
                                             target_super_domains
                                         ),
-
-                                        target_elementary_domains=(
-                                            target_elementary_domains
-                                        ),
-
-                                        target_fraction=(
-                                            target_fraction
-                                        ),
-
+                                        target_elementary_domains=target_domains,
+                                        target_fraction=target_fraction,
                                         seed=seed,
                                     )
                                 )
 
-    return _unique_splits(
-        splits
-    )
+    return _unique_splits(splits)
 
 
 # ============================================================
@@ -943,10 +728,7 @@ def _get_output_paths(
     )
 
 
-def _save_splits(
-    splits,
-    path,
-):
+def _save_splits(splits, path):
     save_json(
         [
             split.to_dict()
@@ -956,19 +738,15 @@ def _save_splits(
     )
 
 
-def _load_splits(
-    path,
-):
+def _load_splits(path):
     return [
-        ScenarioSplit.from_dict(
-            item
-        )
+        ScenarioSplit.from_dict(item)
         for item in load_json(path)
     ]
 
 
 # ============================================================
-# Public function
+# Public
 # ============================================================
 
 def run_scenario(
@@ -976,11 +754,6 @@ def run_scenario(
     scenario,
     params,
 ):
-    """
-    Generate one scenario family for one DatasetView.
-
-    Parameters are supplied externally, normally from params.py.
-    """
 
     if scenario not in SCENARIO_GENERATORS:
         raise ValueError(
@@ -994,21 +767,15 @@ def run_scenario(
     effective_params = {
         "scenario": scenario,
         "params": params,
-        "input_signature": (
-            input_manifest["signature"]
-        ),
+        "input_signature": input_manifest[
+            "signature"
+        ],
     }
 
-    splits_path, manifest_path = (
-        _get_output_paths(
-            scenario,
-            effective_params,
-        )
+    splits_path, manifest_path = _get_output_paths(
+        scenario,
+        effective_params,
     )
-
-    # --------------------------------------------------
-    # Resume
-    # --------------------------------------------------
 
     if (
         exists(splits_path)
@@ -1021,26 +788,16 @@ def run_scenario(
             splits_path
         )
 
-    # --------------------------------------------------
-    # Generate
-    # --------------------------------------------------
-
     dataframe = load_data(
         dataset_view.path
     )
 
-    generator = SCENARIO_GENERATORS[
+    splits = SCENARIO_GENERATORS[
         scenario
-    ]
-
-    splits = generator(
+    ](
         dataframe,
         params,
     )
-
-    # --------------------------------------------------
-    # Persist definitions
-    # --------------------------------------------------
 
     _save_splits(
         splits,
@@ -1055,9 +812,7 @@ def run_scenario(
     manifest["output"] = {
         "scenario": scenario,
         "n_splits": len(splits),
-        "splits_path": str(
-            splits_path
-        ),
+        "splits_path": str(splits_path),
     }
 
     save_manifest(
