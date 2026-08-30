@@ -25,7 +25,23 @@ class SklearnERM(BaseLearningAlgorithm):
             target_elementary_domain,
         )
 
-        fit_params = training_params.get("fit_params", {})
+        seed = training_params.get(
+            "seed",
+            42,
+        )
+
+        fit_params = training_params.get(
+            "fit_params",
+            {},
+        )
+
+        if (
+            hasattr(model, "get_params")
+            and "random_state" in model.get_params()
+        ):
+            model.set_params(
+                random_state=seed
+            )
 
         model.fit(
             X,
@@ -37,14 +53,27 @@ class SklearnERM(BaseLearningAlgorithm):
 
         return self
 
-    def predict(self, X, domains=None, super_domains=None):
+    def predict(
+        self,
+        X,
+        domains=None,
+        super_domains=None,
+    ):
         self._check_fitted()
         return self.model.predict(X)
 
-    def predict_proba(self, X, domains=None, super_domains=None):
+    def predict_proba(
+        self,
+        X,
+        domains=None,
+        super_domains=None,
+    ):
         self._check_fitted()
 
-        if not hasattr(self.model, "predict_proba"):
+        if not hasattr(
+            self.model,
+            "predict_proba",
+        ):
             raise NotImplementedError(
                 "This model does not support predict_proba()."
             )
@@ -85,8 +114,12 @@ class SklearnERM(BaseLearningAlgorithm):
             mask = group.partitions == "train"
 
             if np.any(mask):
-                X_parts.append(group.X[mask])
-                y_parts.append(group.y[mask])
+                X_parts.append(
+                    group.X[mask]
+                )
+                y_parts.append(
+                    group.y[mask]
+                )
 
         if not X_parts:
             raise ValueError(

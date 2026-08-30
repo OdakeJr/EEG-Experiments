@@ -4,10 +4,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import (
-    DataLoader,
-    TensorDataset,
-)
+from torch.utils.data import DataLoader, TensorDataset
 
 from ml.learning.base import BaseLearningAlgorithm
 
@@ -33,41 +30,26 @@ class NeuralERM(BaseLearningAlgorithm):
             target_elementary_domain,
         )
 
-        epochs = training_params.get(
-            "epochs",
-            100,
-        )
-        batch_size = training_params.get(
-            "batch_size",
-            64,
-        )
-        learning_rate = training_params.get(
-            "learning_rate",
-            1e-3,
-        )
-        weight_decay = training_params.get(
-            "weight_decay",
-            0.0,
-        )
-        self.device = training_params.get(
-            "device",
-            "cpu",
-        )
-
-        seed = training_params.get(
-            "seed",
-            42,
-        )
+        epochs = training_params.get("epochs", 100)
+        batch_size = training_params.get("batch_size", 64)
+        learning_rate = training_params.get("learning_rate", 1e-3)
+        weight_decay = training_params.get("weight_decay", 0.0)
+        self.device = training_params.get("device", "cpu")
+        seed = training_params.get("seed", 42)
 
         np.random.seed(seed)
         torch.manual_seed(seed)
+
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+
+        model.apply(self._reset_parameters)
 
         self.classes_ = np.unique(y)
 
         class_to_index = {
             label: index
-            for index, label
-            in enumerate(self.classes_)
+            for index, label in enumerate(self.classes_)
         }
 
         y_encoded = np.array([
@@ -85,6 +67,9 @@ class NeuralERM(BaseLearningAlgorithm):
             dtype=torch.long,
         )
 
+        generator = torch.Generator()
+        generator.manual_seed(seed)
+
         loader = DataLoader(
             TensorDataset(
                 X_tensor,
@@ -92,6 +77,7 @@ class NeuralERM(BaseLearningAlgorithm):
             ),
             batch_size=batch_size,
             shuffle=True,
+            generator=generator,
         )
 
         model = model.to(self.device)
@@ -110,12 +96,8 @@ class NeuralERM(BaseLearningAlgorithm):
 
             for X_batch, y_batch in loader:
 
-                X_batch = X_batch.to(
-                    self.device
-                )
-                y_batch = y_batch.to(
-                    self.device
-                )
+                X_batch = X_batch.to(self.device)
+                y_batch = y_batch.to(self.device)
 
                 optimizer.zero_grad()
 
@@ -127,14 +109,18 @@ class NeuralERM(BaseLearningAlgorithm):
                 )
 
                 loss.backward()
-
                 optimizer.step()
 
         self.model = model
 
         return self
 
-    def predict(self, X, domains=None, super_domains=None):
+    def predict(
+        self,
+        X,
+        domains=None,
+        super_domains=None,
+    ):
         probabilities = self.predict_proba(
             X,
             domains,
@@ -165,20 +151,14 @@ class NeuralERM(BaseLearningAlgorithm):
 
         with torch.no_grad():
 
-            logits = self.model(
-                X_tensor
-            )
+            logits = self.model(X_tensor)
 
             probabilities = torch.softmax(
                 logits,
                 dim=1,
             )
 
-        return (
-            probabilities
-            .cpu()
-            .numpy()
-        )
+        return probabilities.cpu().numpy()
 
     def save(self, path):
         Path(path).parent.mkdir(
@@ -226,6 +206,11 @@ class NeuralERM(BaseLearningAlgorithm):
             np.concatenate(X_parts),
             np.concatenate(y_parts),
         )
+
+    @staticmethod
+    def _reset_parameters(module):
+        if hasattr(module, "reset_parameters"):
+            module.reset_parameters()
 
     def _check_fitted(self):
         if self.model is None:

@@ -1,4 +1,4 @@
-# ml/learning/domain_adaptation_labeled/joint_supervised.py
+# ml/learning/source_free/base.py
 
 import pickle
 from pathlib import Path
@@ -11,37 +11,33 @@ from torch.utils.data import DataLoader, TensorDataset
 from ml.learning.base import BaseLearningAlgorithm
 
 
-class JointSupervised(BaseLearningAlgorithm):
+class BaseSourceFree(BaseLearningAlgorithm):
 
     def __init__(self):
         self.model = None
         self.classes_ = None
         self.device = "cpu"
 
-    def fit(
+    def _pretrain_source_model(
         self,
         model,
-        source=None,
-        target_super_domain=None,
-        target_elementary_domain=None,
+        source,
         **training_params,
     ):
-        X, y = self._get_training_data(
-            source,
-            target_super_domain,
-            target_elementary_domain,
+        X_source, y_source = self._get_source_data(
+            source
         )
 
-        epochs = training_params.get(
-            "epochs",
+        source_epochs = training_params.get(
+            "source_epochs",
             100,
         )
         batch_size = training_params.get(
             "batch_size",
             64,
         )
-        learning_rate = training_params.get(
-            "learning_rate",
+        source_learning_rate = training_params.get(
+            "source_learning_rate",
             1e-3,
         )
         weight_decay = training_params.get(
@@ -57,11 +53,7 @@ class JointSupervised(BaseLearningAlgorithm):
             42,
         )
 
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(seed)
+        self._set_seed(seed)
 
         model.apply(
             self._reset_parameters
@@ -71,21 +63,17 @@ class JointSupervised(BaseLearningAlgorithm):
             self.device
         )
 
-        self.classes_ = np.unique(y)
+        self.classes_ = np.unique(
+            y_source
+        )
 
-        class_to_index = {
-            label: index
-            for index, label in enumerate(self.classes_)
-        }
-
-        y_encoded = np.array([
-            class_to_index[label]
-            for label in y
-        ])
+        y_encoded = self._encode_labels(
+            y_source
+        )
 
         dataset = TensorDataset(
             torch.as_tensor(
-                X,
+                X_source,
                 dtype=torch.float32,
             ),
             torch.as_tensor(
@@ -106,7 +94,7 @@ class JointSupervised(BaseLearningAlgorithm):
 
         optimizer = torch.optim.Adam(
             model.parameters(),
-            lr=learning_rate,
+            lr=source_learning_rate,
             weight_decay=weight_decay,
         )
 
@@ -114,13 +102,14 @@ class JointSupervised(BaseLearningAlgorithm):
 
         model.train()
 
-        for _ in range(epochs):
+        for _ in range(source_epochs):
 
             for X_batch, y_batch in loader:
 
                 X_batch = X_batch.to(
                     self.device
                 )
+
                 y_batch = y_batch.to(
                     self.device
                 )
@@ -141,7 +130,33 @@ class JointSupervised(BaseLearningAlgorithm):
 
         self.model = model
 
-        return self
+        return model
+
+    def _encode_labels(self, y):
+        if self.classes_ is None:
+            raise RuntimeError(
+                "Source classes have not been defined."
+            )
+
+        class_to_index = {
+            label: index
+            for index, label in enumerate(self.classes_)
+        }
+
+        unknown = (
+            set(np.unique(y))
+            - set(self.classes_)
+        )
+
+        if unknown:
+            raise ValueError(
+                f"Unknown classes: {sorted(unknown)}"
+            )
+
+        return np.array([
+            class_to_index[label]
+            for label in y
+        ])
 
     def predict(
         self,
@@ -180,7 +195,9 @@ class JointSupervised(BaseLearningAlgorithm):
 
         with torch.no_grad():
 
-            logits = self.model(X)
+            logits = self.model(
+                X
+            )
 
             probabilities = torch.softmax(
                 logits,
@@ -204,68 +221,43 @@ class JointSupervised(BaseLearningAlgorithm):
             return pickle.load(file)
 
     @staticmethod
-    def _get_training_data(
-        source,
-        target_super_domain,
-        target_elementary_domain,
-    ):
-        X_parts = []
-        y_parts = []
-
-        if source is not None:
-
-            mask = (
-                source.partitions
-                == "train"
-            )
-
-            if np.any(mask):
-                X_parts.append(
-                    source.X[mask]
-                )
-                y_parts.append(
-                    source.y[mask]
-                )
-
-        if target_super_domain is not None:
-
-            mask = np.isin(
-                target_super_domain.partitions,
-                ["train", "calibration"],
-            )
-
-            if np.any(mask):
-                X_parts.append(
-                    target_super_domain.X[mask]
-                )
-                y_parts.append(
-                    target_super_domain.y[mask]
-                )
-
-        if target_elementary_domain is not None:
-
-            mask = (
-                target_elementary_domain.partitions
-                == "calibration"
-            )
-
-            if np.any(mask):
-                X_parts.append(
-                    target_elementary_domain.X[mask]
-                )
-                y_parts.append(
-                    target_elementary_domain.y[mask]
-                )
-
-        if not X_parts:
+    def _get_source_data(source):
+        if source is None:
             raise ValueError(
-                "JointSupervised requires labeled training data."
+                "Source-free learning requires source data "
+                "for source-model pretraining."
+            )
+
+        mask = (
+            source.partitions
+            == "train"
+        )
+
+        if not np.any(mask):
+            raise ValueError(
+                "No source training samples found."
             )
 
         return (
-            np.concatenate(X_parts),
-            np.concatenate(y_parts),
+            source.X[mask],
+            source.y[mask],
         )
+
+    @staticmethod
+    def _set_seed(seed):
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+
+    @staticmethod
+    def _set_requires_grad(
+        module,
+        value,
+    ):
+        for parameter in module.parameters():
+            parameter.requires_grad = value
 
     @staticmethod
     def _reset_parameters(module):
