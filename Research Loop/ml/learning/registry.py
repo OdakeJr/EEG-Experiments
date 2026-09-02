@@ -2,6 +2,9 @@
 
 from ml.learning.classical.sklearn_erm import SklearnERM
 from ml.learning.classical.neural_erm import NeuralERM
+from ml.learning.classical.dev_positive_negative import (
+    PositiveNegativeLearning,
+)
 
 from ml.learning.domain_generalization.irm import IRM
 from ml.learning.domain_generalization.groupdro import GroupDRO
@@ -14,6 +17,9 @@ from ml.learning.domain_adaptation_unlabeled.dann import DANN
 from ml.learning.domain_adaptation_unlabeled.mcd import MCD
 from ml.learning.domain_adaptation_unlabeled.importance_weighting import (
     ImportanceWeighting,
+)
+from ml.learning.domain_adaptation_unlabeled.dev_structural_weighting_v1 import (
+    StructuralWeightingV1,
 )
 
 from ml.learning.domain_adaptation_labeled.joint_supervised import (
@@ -36,6 +42,7 @@ from ml.learning.source_free.source_free_labeled.fine_tuning import (
 from ml.learning.source_free.source_free_labeled.lp_ft import LPFT
 from ml.learning.source_free.source_free_labeled.l2_sp import L2SP
 
+
 # ============================================================
 # Main references
 # ============================================================
@@ -44,6 +51,13 @@ from ml.learning.source_free.source_free_labeled.l2_sp import L2SP
 # ERM:
 #   Standard empirical risk minimization baseline.
 #   No single method-specific reference required.
+#
+# Positive-Negative Learning:
+#   Development method.
+#   Positive classifier learns the target class while an independent
+#   negative classifier learns difficult incorrect alternatives.
+#   Predictions are fused using positive and negative evidence.
+
 
 # Domain Generalization
 # IRM:
@@ -69,6 +83,7 @@ from ml.learning.source_free.source_free_labeled.l2_sp import L2SP
 #   "A Kernel Two-Sample Test"
 #   MMD is used here as the source-domain alignment penalty.
 
+
 # Unlabeled Domain Adaptation
 # Deep CORAL:
 #   Sun and Saenko (ECCV 2016)
@@ -90,6 +105,13 @@ from ml.learning.source_free.source_free_labeled.l2_sp import L2SP
 # Importance Weighting / uLSIF:
 #   Kanamori et al. (JMLR 2009)
 #   "A Least-squares Approach to Direct Importance Estimation"
+#
+# Structural Weighting V1:
+#   Development method.
+#   Estimates source-target importance in an implicit second-order
+#   structural feature space while training the predictor in the
+#   original feature representation.
+
 
 # Labeled Domain Adaptation
 # Joint Supervised:
@@ -100,6 +122,7 @@ from ml.learning.source_free.source_free_labeled.l2_sp import L2SP
 #   Supervised extension of:
 #   Ganin et al. (JMLR 2016)
 #   "Domain-Adversarial Training of Neural Networks"
+
 
 # Source-Free Unlabeled
 # SHOT:
@@ -115,6 +138,7 @@ from ml.learning.source_free.source_free_labeled.l2_sp import L2SP
 # SFDA-DE:
 #   Ding et al. (CVPR 2022)
 #   "Source-Free Domain Adaptation via Distribution Estimation"
+
 
 # Source-Free Labeled
 # Linear Probe:
@@ -134,34 +158,64 @@ from ml.learning.source_free.source_free_labeled.l2_sp import L2SP
 #   with Convolutional Networks"
 
 
+# ============================================================
+# Learning algorithm registry
+# ============================================================
+
 LEARNING_ALGORITHMS = {
+
+    # --------------------------------------------------------
     # Classical
+    # --------------------------------------------------------
+
     "sklearn_erm": SklearnERM,
     "neural_erm": NeuralERM,
+    "dev_positive_negative": PositiveNegativeLearning,
 
+
+    # --------------------------------------------------------
     # Domain generalization
+    # --------------------------------------------------------
+
     "irm": IRM,
     "groupdro": GroupDRO,
     "vrex": VREx,
     "coral": CORAL,
     "mmd": MMD,
 
+
+    # --------------------------------------------------------
     # Unlabeled domain adaptation
+    # --------------------------------------------------------
+
     "deep_coral": DeepCORAL,
     "dann": DANN,
     "mcd": MCD,
     "importance_weighting": ImportanceWeighting,
+    "dev_structural_weighting_v1": StructuralWeightingV1,
 
+
+    # --------------------------------------------------------
     # Labeled domain adaptation
+    # --------------------------------------------------------
+
     "joint_supervised": JointSupervised,
     "supervised_dann": SupervisedDANN,
 
+
+    # --------------------------------------------------------
     # Source-free unlabeled
+    # --------------------------------------------------------
+
     "shot": SHOT,
     "nrc": NRC,
     "sfda_de": SFDADE,
 
+
+    # --------------------------------------------------------
     # Source-free labeled
+    # --------------------------------------------------------
+
     "linear_probe": LinearProbe,
     "fine_tuning": FineTuning,
     "lp_ft": LPFT,
@@ -169,8 +223,16 @@ LEARNING_ALGORITHMS = {
 }
 
 
-def get_learning_algorithm(name, params=None):
+# ============================================================
+# Factory
+# ============================================================
+
+def get_learning_algorithm(
+    name,
+    params=None,
+):
     if name not in LEARNING_ALGORITHMS:
+
         raise ValueError(
             f"Unknown learning algorithm '{name}'. "
             f"Available: {sorted(LEARNING_ALGORITHMS)}"
@@ -178,4 +240,8 @@ def get_learning_algorithm(name, params=None):
 
     params = params or {}
 
-    return LEARNING_ALGORITHMS[name](**params)
+    return LEARNING_ALGORITHMS[
+        name
+    ](
+        **params
+    )

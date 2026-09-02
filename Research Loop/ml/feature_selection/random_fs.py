@@ -5,12 +5,23 @@ from ml.feature_selection.base import FeatureTransformer
 
 class RandomSelector(FeatureTransformer):
 
-    def __init__(self, ratio=0.5, seed=42):
+    def __init__(
+        self,
+        ratio=0.5,
+        seed=42,
+        pre_scaler=None,
+        post_scaler=None,
+    ):
+        super().__init__(
+            pre_scaler=pre_scaler,
+            post_scaler=post_scaler,
+        )
+
         self.ratio = ratio
         self.seed = seed
         self.indices = None
 
-    def fit(self, X, y=None, domains=None):
+    def _fit(self, X, y=None, domains=None):
         if not 0 < self.ratio <= 1:
             raise ValueError(
                 "'ratio' must be in (0, 1]."
@@ -20,7 +31,7 @@ class RandomSelector(FeatureTransformer):
             1,
             int(round(
                 X.shape[1] * self.ratio
-            ))
+            )),
         )
 
         rng = np.random.default_rng(
@@ -37,7 +48,7 @@ class RandomSelector(FeatureTransformer):
 
         return self
 
-    def transform(self, X, domains=None):
+    def _transform(self, X, domains=None):
         if self.indices is None:
             raise RuntimeError(
                 "RandomSelector must be fitted before transform()."

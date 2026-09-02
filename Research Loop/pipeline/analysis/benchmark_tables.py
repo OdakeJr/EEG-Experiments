@@ -82,6 +82,14 @@ def run_benchmark_tables(
     model/domain result tables and writes one summary table per
     benchmark scenario.
 
+    The summary preserves performance from:
+
+        - source/train
+        - target/calibration
+        - target/test
+
+    Missing partitions are represented by NaN values.
+
     Regime and method display names are supplied through
     params["method_display"].
 
@@ -107,11 +115,15 @@ def run_benchmark_tables(
     effective_params = {
         "analysis": "benchmark_tables",
         "params": params,
-        "model_results_path": str(model_path),
+        "model_results_path": str(
+            model_path
+        ),
         "domain_results_path": (
             None
             if domain_path is None
-            else str(domain_path)
+            else str(
+                domain_path
+            )
         ),
     }
 
@@ -154,13 +166,18 @@ def run_benchmark_tables(
 
         return AnalysisArtifact(
             name="benchmark_tables",
-            output_dir=str(output_dir),
+            output_dir=str(
+                output_dir
+            ),
             tables={
                 name: str(path)
-                for name, path in table_paths.items()
+                for name, path
+                in table_paths.items()
             },
             figures={},
-            manifest_path=str(manifest_path),
+            manifest_path=str(
+                manifest_path
+            ),
             signature=signature,
         )
 
@@ -220,7 +237,9 @@ def run_benchmark_tables(
 
         written_tables[
             table_config["name"]
-        ] = str(path)
+        ] = str(
+            path
+        )
 
     # --------------------------------------------------------
     # Manifest
@@ -232,7 +251,9 @@ def run_benchmark_tables(
     )
 
     manifest["output"] = {
-        "output_dir": str(output_dir),
+        "output_dir": str(
+            output_dir
+        ),
         "tables": written_tables,
     }
 
@@ -243,10 +264,14 @@ def run_benchmark_tables(
 
     return AnalysisArtifact(
         name="benchmark_tables",
-        output_dir=str(output_dir),
+        output_dir=str(
+            output_dir
+        ),
         tables=written_tables,
         figures={},
-        manifest_path=str(manifest_path),
+        manifest_path=str(
+            manifest_path
+        ),
         signature=signature,
     )
 
@@ -261,16 +286,6 @@ def _with_default_params(
     defaults = {
         "tables": DEFAULT_TABLE_CONFIGS,
         "discrepancy_metric": "mmd",
-
-        # Display-only mapping. No computation depends on this.
-        #
-        # Example item:
-        # {
-        #     "learning_method": "sklearn_erm",
-        #     "model_name": "logistic_regression",
-        #     "regime": "Classical",
-        #     "method": "Logistic Regression",
-        # }
         "method_display": [],
     }
 
@@ -278,6 +293,7 @@ def _with_default_params(
         return defaults
 
     merged = defaults.copy()
+
     merged.update(
         params
     )
@@ -292,6 +308,7 @@ def _artifact_path(
         artifact,
         (str, Path),
     ):
+
         return Path(
             artifact
         )
@@ -300,6 +317,7 @@ def _artifact_path(
         artifact,
         "path",
     ):
+
         return Path(
             artifact.path
         )
@@ -390,32 +408,10 @@ def _prepare_model_summary(
     ]
 
     if "training_seed" in results.columns:
+
         key_columns.append(
             "training_seed"
         )
-
-    # --------------------------------------------------------
-    # Final target-test performance
-    # --------------------------------------------------------
-
-    target_test = results[
-        (
-            results["evaluation_group"]
-            == "target_elementary_domain"
-        )
-        & (
-            results["partition"]
-            == "test"
-        )
-    ].copy()
-
-    target_test = target_test.rename(
-        columns={
-            "balanced_accuracy": "target_ba",
-            "macro_f1": "target_macro_f1",
-            "auc": "target_auc",
-        }
-    )
 
     # --------------------------------------------------------
     # Source/train performance
@@ -423,26 +419,38 @@ def _prepare_model_summary(
 
     source_train = results[
         (
-            results["evaluation_group"]
+            results[
+                "evaluation_group"
+            ]
             == "source"
         )
         & (
-            results["partition"]
+            results[
+                "partition"
+            ]
             == "train"
         )
     ].copy()
 
+    # In intra-subject learning the training partition belongs
+    # to the target elementary domain itself.
     intra_train = results[
         (
-            results["scenario"]
+            results[
+                "scenario"
+            ]
             == "intra_subject"
         )
         & (
-            results["evaluation_group"]
+            results[
+                "evaluation_group"
+            ]
             == "target_elementary_domain"
         )
         & (
-            results["partition"]
+            results[
+                "partition"
+            ]
             == "train"
         )
     ].copy()
@@ -455,30 +463,164 @@ def _prepare_model_summary(
         ignore_index=True,
     )
 
-    train_rows = train_rows[
-        key_columns
-        + [
-            "balanced_accuracy",
-        ]
-    ].rename(
-        columns={
+    train_rows = _collapse_partition_metrics(
+        train_rows,
+        key_columns,
+        {
             "balanced_accuracy": "source_ba",
-        }
+            "macro_f1": "source_macro_f1",
+            "auc": "source_auc",
+        },
     )
 
     # --------------------------------------------------------
-    # Join train and target-test metrics
+    # Target/calibration performance
     # --------------------------------------------------------
 
-    summary = target_test.merge(
+    target_calibration = results[
+        (
+            results[
+                "evaluation_group"
+            ]
+            == "target_elementary_domain"
+        )
+        & (
+            results[
+                "partition"
+            ]
+            == "calibration"
+        )
+    ].copy()
+
+    calibration_rows = _collapse_partition_metrics(
+        target_calibration,
+        key_columns,
+        {
+            "balanced_accuracy": "target_calibration_ba",
+            "macro_f1": "target_calibration_macro_f1",
+            "auc": "target_calibration_auc",
+        },
+    )
+
+    # --------------------------------------------------------
+    # Target/test performance
+    # --------------------------------------------------------
+
+    target_test = results[
+        (
+            results[
+                "evaluation_group"
+            ]
+            == "target_elementary_domain"
+        )
+        & (
+            results[
+                "partition"
+            ]
+            == "test"
+        )
+    ].copy()
+
+    test_rows = _collapse_partition_metrics(
+        target_test,
+        key_columns,
+        {
+            "balanced_accuracy": "target_test_ba",
+            "macro_f1": "target_test_macro_f1",
+            "auc": "target_test_auc",
+        },
+    )
+
+    # --------------------------------------------------------
+    # Build experiment-level base table
+    #
+    # Important:
+    # Previously target/test was used as the base table.
+    # This meant experiments with no test partition disappeared.
+    #
+    # We now construct the base from the union of all available
+    # train/calibration/test experiment keys.
+    # --------------------------------------------------------
+
+    base_parts = []
+
+    for dataframe in [
+        train_rows,
+        calibration_rows,
+        test_rows,
+    ]:
+
+        if not dataframe.empty:
+
+            base_parts.append(
+                dataframe[
+                    key_columns
+                ]
+            )
+
+    if not base_parts:
+
+        return pd.DataFrame()
+
+    summary = (
+        pd.concat(
+            base_parts,
+            ignore_index=True,
+        )
+        .drop_duplicates(
+            subset=key_columns
+        )
+        .reset_index(
+            drop=True
+        )
+    )
+
+    # --------------------------------------------------------
+    # Join the three performance conditions
+    # --------------------------------------------------------
+
+    summary = summary.merge(
         train_rows,
         on=key_columns,
         how="left",
     )
 
-    summary["gap"] = (
-        summary["source_ba"]
-        - summary["target_ba"]
+    summary = summary.merge(
+        calibration_rows,
+        on=key_columns,
+        how="left",
+    )
+
+    summary = summary.merge(
+        test_rows,
+        on=key_columns,
+        how="left",
+    )
+
+    # --------------------------------------------------------
+    # Generalization gaps
+    # --------------------------------------------------------
+
+    summary[
+        "calibration_gap"
+    ] = (
+        summary[
+            "source_ba"
+        ]
+        - summary[
+            "target_calibration_ba"
+        ]
+    )
+
+    summary[
+        "test_gap"
+    ] = (
+        summary[
+            "source_ba"
+        ]
+        - summary[
+            "target_test_ba"
+        ]
     )
 
     # --------------------------------------------------------
@@ -486,21 +628,31 @@ def _prepare_model_summary(
     # --------------------------------------------------------
 
     summary["Dataset"] = (
-        summary["target_domains"]
+        summary[
+            "target_domains"
+        ]
         .apply(
             _dataset_from_domains
         )
     )
 
-    summary["Held-out Dataset"] = (
-        summary["target_domains"]
+    summary[
+        "Held-out Dataset"
+    ] = (
+        summary[
+            "target_domains"
+        ]
         .apply(
             _dataset_from_domains
         )
     )
 
-    summary["source_super_domain_count"] = (
-        summary["source_domains"]
+    summary[
+        "source_super_domain_count"
+    ] = (
+        summary[
+            "source_domains"
+        ]
         .apply(
             _dataset_count_from_domains
         )
@@ -519,15 +671,72 @@ def _prepare_model_summary(
         result_type="expand",
     )
 
-    summary["Regime"] = labels[
+    summary[
+        "Regime"
+    ] = labels[
         "Regime"
     ]
 
-    summary["Method"] = labels[
+    summary[
+        "Method"
+    ] = labels[
         "Method"
     ]
 
     return summary
+
+
+def _collapse_partition_metrics(
+    dataframe,
+    key_columns,
+    metric_mapping,
+):
+    """
+    Collapse a particular evaluation partition to one row per
+    experimental run.
+
+    Normally there is already one canonical result row per run and
+    partition. The groupby makes the benchmark robust to duplicated
+    or finer-grained evaluation rows.
+    """
+
+    output_columns = (
+        key_columns
+        + list(
+            metric_mapping.values()
+        )
+    )
+
+    if dataframe.empty:
+
+        return pd.DataFrame(
+            columns=output_columns
+        )
+
+    selected = dataframe[
+        key_columns
+        + list(
+            metric_mapping.keys()
+        )
+    ].copy()
+
+    selected = (
+        selected
+        .groupby(
+            key_columns,
+            dropna=False,
+            as_index=False,
+        )[
+            list(
+                metric_mapping.keys()
+            )
+        ]
+        .mean()
+    )
+
+    return selected.rename(
+        columns=metric_mapping
+    )
 
 
 def _display_labels(
@@ -535,11 +744,15 @@ def _display_labels(
     display_lookup,
 ):
     learning_method = str(
-        row["learning_method"]
+        row[
+            "learning_method"
+        ]
     )
 
     model_name = str(
-        row["model_name"]
+        row[
+            "model_name"
+        ]
     )
 
     key = (
@@ -596,15 +809,21 @@ def _prepare_discrepancy(
 
     selected = results[
         (
-            results["comparison"]
+            results[
+                "comparison"
+            ]
             == "source_to_target_elementary"
         )
         & (
-            results["representation"]
+            results[
+                "representation"
+            ]
             == "marginal"
         )
         & (
-            results["metric"]
+            results[
+                "metric"
+            ]
             == metric
         )
     ].copy()
@@ -623,7 +842,9 @@ def _prepare_discrepancy(
         .groupby(
             "split_id",
             as_index=False,
-        )["value"]
+        )[
+            "value"
+        ]
         .mean()
         .rename(
             columns={
@@ -650,8 +871,16 @@ def _build_table(
         "setting_column"
     ]
 
+    if model_summary.empty:
+
+        return _empty_table(
+            setting_column
+        )
+
     df = model_summary[
-        model_summary["scenario"]
+        model_summary[
+            "scenario"
+        ]
         == scenario
     ].copy()
 
@@ -665,6 +894,7 @@ def _build_table(
     )
 
     if df.empty:
+
         return _empty_table(
             setting_column
         )
@@ -682,7 +912,9 @@ def _build_table(
 
     else:
 
-        df["discrepancy"] = np.nan
+        df[
+            "discrepancy"
+        ] = np.nan
 
     group_columns = [
         setting_column,
@@ -692,7 +924,10 @@ def _build_table(
 
     rows = []
 
-    for group_values, group in df.groupby(
+    for (
+        group_values,
+        group,
+    ) in df.groupby(
         group_columns,
         dropna=False,
     ):
@@ -701,6 +936,7 @@ def _build_table(
             group_values,
             tuple,
         ):
+
             group_values = (
                 group_values,
             )
@@ -712,46 +948,151 @@ def _build_table(
             )
         )
 
-        row["Runs"] = int(
-            group["target_ba"]
+        # ----------------------------------------------------
+        # Run counts
+        # ----------------------------------------------------
+
+        row[
+            "Runs"
+        ] = int(
+            len(
+                group
+            )
+        )
+
+        row[
+            "Calibration Runs"
+        ] = int(
+            group[
+                "target_calibration_ba"
+            ]
             .notna()
             .sum()
         )
 
+        row[
+            "Test Runs"
+        ] = int(
+            group[
+                "target_test_ba"
+            ]
+            .notna()
+            .sum()
+        )
+
+        # ----------------------------------------------------
+        # Source/train
+        # ----------------------------------------------------
+
         _add_metric_columns(
             row,
             "Source BA",
-            group["source_ba"],
+            group[
+                "source_ba"
+            ],
         )
 
         _add_metric_columns(
             row,
+            "Source Macro-F1",
+            group[
+                "source_macro_f1"
+            ],
+        )
+
+        _add_metric_columns(
+            row,
+            "Source AUC",
+            group[
+                "source_auc"
+            ],
+        )
+
+        # ----------------------------------------------------
+        # Target/calibration
+        # ----------------------------------------------------
+
+        _add_metric_columns(
+            row,
+            "Target-Calibration BA",
+            group[
+                "target_calibration_ba"
+            ],
+        )
+
+        _add_metric_columns(
+            row,
+            "Target-Calibration Macro-F1",
+            group[
+                "target_calibration_macro_f1"
+            ],
+        )
+
+        _add_metric_columns(
+            row,
+            "Target-Calibration AUC",
+            group[
+                "target_calibration_auc"
+            ],
+        )
+
+        _add_metric_columns(
+            row,
+            "Calibration Gap",
+            group[
+                "calibration_gap"
+            ],
+        )
+
+        # ----------------------------------------------------
+        # Target/test
+        #
+        # The old names Macro-F1, AUC and Gap are intentionally
+        # retained for backward compatibility.
+        # ----------------------------------------------------
+
+        _add_metric_columns(
+            row,
             "Target-Test BA",
-            group["target_ba"],
+            group[
+                "target_test_ba"
+            ],
         )
 
         _add_metric_columns(
             row,
             "Gap",
-            group["gap"],
+            group[
+                "test_gap"
+            ],
         )
 
         _add_metric_columns(
             row,
             "Macro-F1",
-            group["target_macro_f1"],
+            group[
+                "target_test_macro_f1"
+            ],
         )
 
         _add_metric_columns(
             row,
             "AUC",
-            group["target_auc"],
+            group[
+                "target_test_auc"
+            ],
         )
+
+        # ----------------------------------------------------
+        # Domain discrepancy
+        # ----------------------------------------------------
 
         _add_metric_columns(
             row,
             "Discrepancy",
-            group["discrepancy"],
+            group[
+                "discrepancy"
+            ],
         )
 
         rows.append(
@@ -791,7 +1132,9 @@ def _add_metric_columns(
         f"{name} Std"
     )
 
-    if len(values) == 0:
+    if len(
+        values
+    ) == 0:
 
         row[
             mean_column
@@ -809,7 +1152,9 @@ def _add_metric_columns(
         values.mean()
     )
 
-    if len(values) == 1:
+    if len(
+        values
+    ) == 1:
 
         row[
             std_column
@@ -826,6 +1171,10 @@ def _add_metric_columns(
         )
 
 
+# ============================================================
+# Filters
+# ============================================================
+
 def _apply_filters(
     df,
     filters,
@@ -837,7 +1186,10 @@ def _apply_filters(
     # Direct column filters
     # --------------------------------------------------------
 
-    for column, value in filters.items():
+    for (
+        column,
+        value,
+    ) in filters.items():
 
         if column in [
             "use_max_source_domains",
@@ -879,7 +1231,9 @@ def _apply_filters(
         )
 
         result = result[
-            result["n_source_domains"]
+            result[
+                "n_source_domains"
+            ]
             == max_values
         ]
 
@@ -908,7 +1262,9 @@ def _apply_filters(
         )
 
         result = result[
-            result["source_super_domain_count"]
+            result[
+                "source_super_domain_count"
+            ]
             == max_values
         ]
 
@@ -925,29 +1281,45 @@ def _filter_column(
 
     if isinstance(
         value,
-        (list, tuple, set),
+        (
+            list,
+            tuple,
+            set,
+        ),
     ):
 
         return dataframe[
-            dataframe[column].isin(
-                list(value)
+            dataframe[
+                column
+            ]
+            .isin(
+                list(
+                    value
+                )
             )
         ]
 
     if (
         pd.api.types.is_numeric_dtype(
-            dataframe[column]
+            dataframe[
+                column
+            ]
         )
         and isinstance(
             value,
-            (int, float)
+            (
+                int,
+                float,
+            ),
         )
     ):
 
         return dataframe[
             np.isclose(
                 pd.to_numeric(
-                    dataframe[column],
+                    dataframe[
+                        column
+                    ],
                     errors="coerce",
                 ),
                 value,
@@ -956,10 +1328,16 @@ def _filter_column(
         ]
 
     return dataframe[
-        dataframe[column]
+        dataframe[
+            column
+        ]
         == value
     ]
 
+
+# ============================================================
+# Empty table
+# ============================================================
 
 def _empty_table(
     setting_column,
@@ -969,23 +1347,40 @@ def _empty_table(
             setting_column,
             "Regime",
             "Method",
-            "Runs",
 
+            "Runs",
+            "Calibration Runs",
+            "Test Runs",
+
+            # Source/train
             "Source BA Mean",
             "Source BA Std",
+            "Source Macro-F1 Mean",
+            "Source Macro-F1 Std",
+            "Source AUC Mean",
+            "Source AUC Std",
 
+            # Target/calibration
+            "Target-Calibration BA Mean",
+            "Target-Calibration BA Std",
+            "Target-Calibration Macro-F1 Mean",
+            "Target-Calibration Macro-F1 Std",
+            "Target-Calibration AUC Mean",
+            "Target-Calibration AUC Std",
+            "Calibration Gap Mean",
+            "Calibration Gap Std",
+
+            # Target/test
             "Target-Test BA Mean",
             "Target-Test BA Std",
-
             "Gap Mean",
             "Gap Std",
-
             "Macro-F1 Mean",
             "Macro-F1 Std",
-
             "AUC Mean",
             "AUC Std",
 
+            # Domain shift
             "Discrepancy Mean",
             "Discrepancy Std",
         ]
@@ -1008,14 +1403,22 @@ def _parse_domain_list(
     ) and pd.isna(
         value
     ):
+
         return []
 
     if isinstance(
         value,
-        (list, tuple, set),
+        (
+            list,
+            tuple,
+            set,
+        ),
     ):
+
         return [
-            str(item)
+            str(
+                item
+            )
             for item in value
         ]
 
@@ -1029,6 +1432,7 @@ def _parse_domain_list(
         "None",
         "nan",
     ]:
+
         return []
 
     try:
@@ -1039,11 +1443,17 @@ def _parse_domain_list(
 
         if isinstance(
             parsed,
-            (list, tuple, set),
+            (
+                list,
+                tuple,
+                set,
+            ),
         ):
 
             return [
-                str(item)
+                str(
+                    item
+                )
                 for item in parsed
             ]
 
@@ -1129,7 +1539,8 @@ def _require_columns(
     missing = [
         column
         for column in columns
-        if column not in dataframe.columns
+        if column
+        not in dataframe.columns
     ]
 
     if missing:
