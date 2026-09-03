@@ -281,3 +281,17 @@ class CORAL(BaseLearningAlgorithm):
             raise RuntimeError(
                 "Learning algorithm has not been fitted."
             )
+            
+    def save(self, path):
+        Path(path).parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        with open(path, "wb") as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def load(cls, path):
+        with open(path, "rb") as file:
+            return pickle.load(file)

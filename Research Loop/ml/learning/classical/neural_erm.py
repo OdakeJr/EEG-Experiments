@@ -30,12 +30,48 @@ class NeuralERM(BaseLearningAlgorithm):
             target_elementary_domain,
         )
 
-        epochs = training_params.get("epochs", 100)
-        batch_size = training_params.get("batch_size", 64)
-        learning_rate = training_params.get("learning_rate", 1e-3)
-        weight_decay = training_params.get("weight_decay", 0.0)
-        self.device = training_params.get("device", "cpu")
-        seed = training_params.get("seed", 42)
+        # ----------------------------------------------------
+        # Training parameters
+        # ----------------------------------------------------
+
+        epochs = training_params.get(
+            "epochs",
+            100,
+        )
+
+        batch_size = training_params.get(
+            "batch_size",
+            64,
+        )
+
+        learning_rate = training_params.get(
+            "learning_rate",
+            1e-3,
+        )
+
+        weight_decay = training_params.get(
+            "weight_decay",
+            1e-4,
+        )
+
+        optimizer_name = training_params.get(
+            "optimizer",
+            "adamw",
+        )
+
+        self.device = training_params.get(
+            "device",
+            "cpu",
+        )
+
+        seed = training_params.get(
+            "seed",
+            42,
+        )
+
+        # ----------------------------------------------------
+        # Reproducibility
+        # ----------------------------------------------------
 
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -43,19 +79,34 @@ class NeuralERM(BaseLearningAlgorithm):
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
-        model.apply(self._reset_parameters)
+        # ----------------------------------------------------
+        # Reset model
+        # ----------------------------------------------------
+
+        model.apply(
+            self._reset_parameters
+        )
+
+        # ----------------------------------------------------
+        # Labels
+        # ----------------------------------------------------
 
         self.classes_ = np.unique(y)
 
         class_to_index = {
             label: index
-            for index, label in enumerate(self.classes_)
+            for index, label
+            in enumerate(self.classes_)
         }
 
         y_encoded = np.array([
             class_to_index[label]
             for label in y
         ])
+
+        # ----------------------------------------------------
+        # Tensors
+        # ----------------------------------------------------
 
         X_tensor = torch.as_tensor(
             X,
@@ -80,15 +131,49 @@ class NeuralERM(BaseLearningAlgorithm):
             generator=generator,
         )
 
-        model = model.to(self.device)
+        # ----------------------------------------------------
+        # Model
+        # ----------------------------------------------------
 
-        optimizer = torch.optim.Adam(
-            model.parameters(),
-            lr=learning_rate,
-            weight_decay=weight_decay,
+        model = model.to(
+            self.device
         )
 
+        # ----------------------------------------------------
+        # Optimizer
+        # ----------------------------------------------------
+
+        if optimizer_name == "adamw":
+
+            optimizer = torch.optim.AdamW(
+                model.parameters(),
+                lr=learning_rate,
+                weight_decay=weight_decay,
+            )
+
+        elif optimizer_name == "adam":
+
+            optimizer = torch.optim.Adam(
+                model.parameters(),
+                lr=learning_rate,
+                weight_decay=weight_decay,
+            )
+
+        else:
+            raise ValueError(
+                f"Unknown optimizer '{optimizer_name}'. "
+                "Available: ['adam', 'adamw']."
+            )
+
+        # ----------------------------------------------------
+        # Loss
+        # ----------------------------------------------------
+
         criterion = nn.CrossEntropyLoss()
+
+        # ----------------------------------------------------
+        # Training
+        # ----------------------------------------------------
 
         model.train()
 
@@ -96,12 +181,19 @@ class NeuralERM(BaseLearningAlgorithm):
 
             for X_batch, y_batch in loader:
 
-                X_batch = X_batch.to(self.device)
-                y_batch = y_batch.to(self.device)
+                X_batch = X_batch.to(
+                    self.device
+                )
+
+                y_batch = y_batch.to(
+                    self.device
+                )
 
                 optimizer.zero_grad()
 
-                logits = model(X_batch)
+                logits = model(
+                    X_batch
+                )
 
                 loss = criterion(
                     logits,
@@ -109,6 +201,7 @@ class NeuralERM(BaseLearningAlgorithm):
                 )
 
                 loss.backward()
+
                 optimizer.step()
 
         self.model = model
@@ -132,7 +225,9 @@ class NeuralERM(BaseLearningAlgorithm):
             axis=1,
         )
 
-        return self.classes_[indices]
+        return self.classes_[
+            indices
+        ]
 
     def predict_proba(
         self,
@@ -147,32 +242,57 @@ class NeuralERM(BaseLearningAlgorithm):
         X_tensor = torch.as_tensor(
             X,
             dtype=torch.float32,
-        ).to(self.device)
+        ).to(
+            self.device
+        )
 
         with torch.no_grad():
 
-            logits = self.model(X_tensor)
+            logits = self.model(
+                X_tensor
+            )
 
             probabilities = torch.softmax(
                 logits,
                 dim=1,
             )
 
-        return probabilities.cpu().numpy()
+        return (
+            probabilities
+            .cpu()
+            .numpy()
+        )
 
-    def save(self, path):
+    def save(
+        self,
+        path,
+    ):
         Path(path).parent.mkdir(
             parents=True,
             exist_ok=True,
         )
 
-        with open(path, "wb") as file:
-            pickle.dump(self, file)
+        with open(
+            path,
+            "wb",
+        ) as file:
+            pickle.dump(
+                self,
+                file,
+            )
 
     @classmethod
-    def load(cls, path):
-        with open(path, "rb") as file:
-            return pickle.load(file)
+    def load(
+        cls,
+        path,
+    ):
+        with open(
+            path,
+            "rb",
+        ) as file:
+            return pickle.load(
+                file
+            )
 
     @staticmethod
     def _get_training_data(
@@ -191,11 +311,19 @@ class NeuralERM(BaseLearningAlgorithm):
             if group is None:
                 continue
 
-            mask = group.partitions == "train"
+            mask = (
+                group.partitions
+                == "train"
+            )
 
             if np.any(mask):
-                X_parts.append(group.X[mask])
-                y_parts.append(group.y[mask])
+                X_parts.append(
+                    group.X[mask]
+                )
+
+                y_parts.append(
+                    group.y[mask]
+                )
 
         if not X_parts:
             raise ValueError(
@@ -203,13 +331,22 @@ class NeuralERM(BaseLearningAlgorithm):
             )
 
         return (
-            np.concatenate(X_parts),
-            np.concatenate(y_parts),
+            np.concatenate(
+                X_parts
+            ),
+            np.concatenate(
+                y_parts
+            ),
         )
 
     @staticmethod
-    def _reset_parameters(module):
-        if hasattr(module, "reset_parameters"):
+    def _reset_parameters(
+        module,
+    ):
+        if hasattr(
+            module,
+            "reset_parameters",
+        ):
             module.reset_parameters()
 
     def _check_fitted(self):

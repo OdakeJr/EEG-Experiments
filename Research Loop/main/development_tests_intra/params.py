@@ -29,6 +29,7 @@ COMMON_CLASSES = [
     "left_hand_imagery",
     "right_hand_imagery",
     "both_feet_imagery",
+    "tongue_imagery",
 ]
 
 
@@ -130,7 +131,7 @@ SCENARIO_PARAMS = {
 # ANOVA is supervised, deterministic, and substantially more
 # meaningful here than random feature selection.
 
-FS_K = 150
+FS_K = 256
 FEATURE_SELECTION_PARAMS = [
     {
         "method": "anova",
@@ -150,17 +151,30 @@ FEATURE_SELECTION_PARAMS = [
 
 LOGISTIC_REGRESSION_PARAMS = {
     "C": 1.0,
-    "max_iter": 1000,
+    "max_iter": 5000,
 }
 
+SVM_PARAMS = {
+    "C": 1.0,
+    "kernel": "rbf",
+    "gamma": "scale",
+    "probability": True,
+}
+
+RANDOM_FOREST_PARAMS = {
+    "n_estimators": 300,
+    "max_depth": None,
+    "min_samples_leaf": 1,
+    "random_state": 0,
+    "n_jobs": -1,
+}
 
 MLP_PARAMS = {
-    "hidden_dims": (
-        128,
-        64,
-    ),
+    "hidden_dims": (128, 64, 32),
+    "activation": "relu",
+    "dropout": 0.3,
+    "batch_norm": True,
 }
-
 
 # ============================================================
 # Shared neural training parameters
@@ -170,7 +184,8 @@ _NEURAL_BASE_PARAMS = {
     "epochs": 100,
     "batch_size": 64,
     "learning_rate": 1e-3,
-    "weight_decay": 0.0,
+    "weight_decay": 1e-4,
+    "optimizer": "adamw",
     "device": "cpu",
     "seed": 0,
 }
@@ -185,55 +200,64 @@ TRAINING_PARAMS = [
     # --------------------------------------------------------
     # Logistic Regression
     # --------------------------------------------------------
-
     {
         "name": "logistic_regression",
         "learning": "sklearn_erm",
-
         "model": "logistic_regression",
         "model_params": LOGISTIC_REGRESSION_PARAMS,
-
         "training_params": {},
     },
 
+    # --------------------------------------------------------
+    # SVM
+    # --------------------------------------------------------
+    {
+        "name": "svm",
+        "learning": "sklearn_erm",
+        "model": "svm",
+        "model_params": SVM_PARAMS,
+        "training_params": {},
+    },
+
+    # --------------------------------------------------------
+    # Random Forest
+    # --------------------------------------------------------
+    {
+        "name": "random_forest",
+        "learning": "sklearn_erm",
+        "model": "random_forest",
+        "model_params": RANDOM_FOREST_PARAMS,
+        "training_params": {},
+    },
 
     # --------------------------------------------------------
     # MLP ERM
     # --------------------------------------------------------
-
     {
         "name": "mlp_erm",
         "learning": "neural_erm",
-
         "model": "mlp",
         "model_params": MLP_PARAMS,
-
         "training_params": {
             **_NEURAL_BASE_PARAMS,
         },
     },
 
-
     # --------------------------------------------------------
     # Positive-Negative Learning
     # --------------------------------------------------------
-
     {
         "name": "dev_positive_negative",
         "learning": "dev_positive_negative",
-
         "model": "mlp",
         "model_params": MLP_PARAMS,
-
         "training_params": {
             **_NEURAL_BASE_PARAMS,
-
             "beta": 1.0,
             "fusion_lambda": 1.0,
         },
     },
 ]
-
 
 # ============================================================
 # Evaluation
@@ -241,6 +265,10 @@ TRAINING_PARAMS = [
 
 MODEL_EVALUATION_PARAMS = {}
 
+
+# ============================================================
+# Benchmark tables
+# ============================================================
 
 # ============================================================
 # Benchmark tables
@@ -258,6 +286,20 @@ BENCHMARK_TABLES_PARAMS = {
         },
 
         {
+            "learning_method": "sklearn_erm",
+            "model_name": "svm",
+            "regime": "Classical",
+            "method": "SVM",
+        },
+
+        {
+            "learning_method": "sklearn_erm",
+            "model_name": "random_forest",
+            "regime": "Classical",
+            "method": "Random Forest",
+        },
+
+        {
             "learning_method": "neural_erm",
             "model_name": "mlp",
             "regime": "Classical",
@@ -267,7 +309,7 @@ BENCHMARK_TABLES_PARAMS = {
         {
             "learning_method": "dev_positive_negative",
             "model_name": "mlp",
-            "regime": "Classical",
+            "regime": "Development",
             "method": "Positive-Negative",
         },
     ],
@@ -276,11 +318,8 @@ BENCHMARK_TABLES_PARAMS = {
         {
             "name": "intra_subject",
             "scenario": "intra_subject",
-
             "setting_column": "Dataset",
-
             "output_name": "intra_subject_table.csv",
-
             "include_discrepancy": False,
 
             "filters": {
