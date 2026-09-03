@@ -1,10 +1,10 @@
 # pipeline/feature_selection.py
 
-import time
 import json
 import re
-from pathlib import Path
+import time
 from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 
@@ -32,17 +32,13 @@ OUTPUT_ROOT = Path("outputs/feature_selection")
 # ============================================================
 
 def _safe_label(text):
-    text = str(text)
-
     text = re.sub(
         r"[^A-Za-z0-9_.-]+",
         "_",
-        text,
+        str(text),
     )
 
-    text = text.strip("_")
-
-    return text
+    return text.strip("_")
 
 
 def _params_label(params):
@@ -51,21 +47,17 @@ def _params_label(params):
 
     parts = []
 
-    for key in sorted(params.keys()):
+    for key in sorted(params):
         value = params[key]
 
         if isinstance(value, float):
-            value_text = f"{value:g}"
-        else:
-            value_text = str(value)
+            value = f"{value:g}"
 
         parts.append(
-            f"{key}_{value_text}"
+            f"{key}_{value}"
         )
 
-    return "_".join(
-        parts
-    )
+    return "_".join(parts)
 
 
 def _feature_selection_config_label(
@@ -73,32 +65,22 @@ def _feature_selection_config_label(
     method,
     method_params,
 ):
-    """
-    Human-readable FS config label.
-
-    This is the label used in analysis, e.g.
-    anova_k_2, anova_k_3, no_fs, etc.
-    """
-
     if "feature_selection_config_label" in fs_params:
         return _safe_label(
-            fs_params[
-                "feature_selection_config_label"
-            ]
+            fs_params["feature_selection_config_label"]
         )
 
     if "config_label" in fs_params:
         return _safe_label(
-            fs_params[
-                "config_label"
-            ]
+            fs_params["config_label"]
         )
 
-    if "name" in fs_params and fs_params["name"] != method:
+    if (
+        "name" in fs_params
+        and fs_params["name"] != method
+    ):
         return _safe_label(
-            fs_params[
-                "name"
-            ]
+            fs_params["name"]
         )
 
     params_text = _params_label(
@@ -110,16 +92,10 @@ def _feature_selection_config_label(
             f"{method}_{params_text}"
         )
 
-    return _safe_label(
-        method
-    )
+    return _safe_label(method)
 
 
 def _json_copy(value):
-    """
-    Make params safe for manifests/artifacts.
-    """
-
     try:
         return json.loads(
             json.dumps(
@@ -129,18 +105,24 @@ def _json_copy(value):
         )
 
     except TypeError:
-        return deepcopy(
-            value
-        )
+        return deepcopy(value)
 
 
 # ============================================================
 # Fitting data
 # ============================================================
 
-def _get_fit_data(data, fit_partitions):
+def _get_fit_data(
+    data,
+    fit_partitions,
+):
     """
-    Collect samples allowed to fit the feature transformer.
+    Collect samples allowed to fit the transformer.
+
+    X may be:
+        [samples, features]
+        [samples, channels, time]
+        [samples, bands, channels, time]
     """
 
     X_parts = []
@@ -180,14 +162,46 @@ def _get_fit_data(data, fit_partitions):
 
     if not X_parts:
         raise ValueError(
-            "No samples available to fit feature selection."
+            "No samples available to fit feature transformation."
         )
 
     return (
-        np.concatenate(X_parts),
-        np.concatenate(y_parts),
-        np.concatenate(domain_parts),
+        np.concatenate(X_parts, axis=0),
+        np.concatenate(y_parts, axis=0),
+        np.concatenate(domain_parts, axis=0),
     )
+
+
+# ============================================================
+# Representation compatibility
+# ============================================================
+
+def _validate_representation(
+    transformer,
+    representation,
+):
+    """
+    Check whether the transformer accepts the current input.
+
+    Existing transformers default to feature input until they
+    explicitly declare otherwise.
+    """
+
+    expected = getattr(
+        transformer,
+        "input_representation",
+        "features",
+    )
+
+    if expected == "any":
+        return
+
+    if expected != representation:
+        raise ValueError(
+            f"Transformer expects '{expected}' input, "
+            f"but preprocessing produced "
+            f"'{representation}'."
+        )
 
 
 # ============================================================
@@ -201,7 +215,6 @@ def _get_output_paths(
     name,
     signature,
 ):
-
     output_dir = (
         OUTPUT_ROOT
         / scenario
@@ -217,7 +230,7 @@ def _get_output_paths(
 
 
 # ============================================================
-# Artifact builder
+# Artifact
 # ============================================================
 
 def _make_feature_selection_artifact(
@@ -232,7 +245,6 @@ def _make_feature_selection_artifact(
 ):
     return FeatureSelectionArtifact(
         split_id=split.id,
-
         method=method,
 
         transformer_path=str(
@@ -268,7 +280,7 @@ def _make_feature_selection_artifact(
 
 
 # ============================================================
-# Public function
+# Public
 # ============================================================
 
 def run_feature_selection(
@@ -289,9 +301,9 @@ def run_feature_selection(
     )
 
     config_label = _feature_selection_config_label(
-        fs_params=fs_params,
-        method=method,
-        method_params=method_params,
+        fs_params,
+        method,
+        method_params,
     )
 
     name = fs_params.get(
@@ -304,9 +316,15 @@ def run_feature_selection(
         ["train"],
     )
 
-    # --------------------------------------------------
+    representation = getattr(
+        view,
+        "representation",
+        "features",
+    )
+
+    # --------------------------------------------------------
     # Signature
-    # --------------------------------------------------
+    # --------------------------------------------------------
 
     input_manifest = load_manifest(
         view.manifest_path
@@ -315,6 +333,7 @@ def run_feature_selection(
     effective_params = {
         "split": split.to_dict(),
         "input_signature": input_manifest["signature"],
+        "input_representation": representation,
         "method": method,
         "params": method_params,
         "feature_selection_config_label": config_label,
@@ -335,9 +354,9 @@ def run_feature_selection(
         )
     )
 
-    # --------------------------------------------------
+    # --------------------------------------------------------
     # Resume
-    # --------------------------------------------------
+    # --------------------------------------------------------
 
     if (
         exists(transformer_path)
@@ -347,19 +366,15 @@ def run_feature_selection(
         )
     ):
         return _make_feature_selection_artifact(
-            split=split,
-            transformer_path=transformer_path,
-            manifest_path=manifest_path,
-            signature=signature,
-            method=method,
-            method_params=method_params,
-            config_label=config_label,
-            view=view,
+            split,
+            transformer_path,
+            manifest_path,
+            signature,
+            method,
+            method_params,
+            config_label,
+            view,
         )
-
-    # --------------------------------------------------
-    # Running manifest
-    # --------------------------------------------------
 
     save_manifest(
         make_manifest(
@@ -373,9 +388,9 @@ def run_feature_selection(
 
     try:
 
-        # --------------------------------------------------
+        # ----------------------------------------------------
         # Materialize split
-        # --------------------------------------------------
+        # ----------------------------------------------------
 
         data = split.materialize(
             view
@@ -386,13 +401,18 @@ def run_feature_selection(
             fit_partitions,
         )
 
-        # --------------------------------------------------
-        # Fit transformer
-        # --------------------------------------------------
+        # ----------------------------------------------------
+        # Transformer
+        # ----------------------------------------------------
 
         transformer = get_feature_transformer(
             method,
             method_params,
+        )
+
+        _validate_representation(
+            transformer,
+            representation,
         )
 
         transformer.fit(
@@ -400,10 +420,6 @@ def run_feature_selection(
             y,
             domains,
         )
-
-        # --------------------------------------------------
-        # Save transformer
-        # --------------------------------------------------
 
         save_pickle(
             transformer,
@@ -414,6 +430,10 @@ def run_feature_selection(
             time.perf_counter()
             - start
         )
+
+        # ----------------------------------------------------
+        # Manifest
+        # ----------------------------------------------------
 
         manifest = make_manifest(
             status="done",
@@ -426,9 +446,12 @@ def run_feature_selection(
                 transformer_path
             ),
 
-            "n_input_features": int(
-                X.shape[1]
-            ),
+            "input_representation": representation,
+
+            "input_shape": [
+                int(value)
+                for value in X.shape[1:]
+            ],
 
             "n_fit_samples": int(
                 X.shape[0]
@@ -462,16 +485,14 @@ def run_feature_selection(
 
     except Exception as error:
 
-        execution_time = (
-            time.perf_counter()
-            - start
-        )
-
         save_manifest(
             make_manifest(
                 status="failed",
                 params=effective_params,
-                execution_time=execution_time,
+                execution_time=(
+                    time.perf_counter()
+                    - start
+                ),
                 error=str(error),
             ),
             manifest_path,
@@ -479,17 +500,13 @@ def run_feature_selection(
 
         raise
 
-    # --------------------------------------------------
-    # Artifact
-    # --------------------------------------------------
-
     return _make_feature_selection_artifact(
-        split=split,
-        transformer_path=transformer_path,
-        manifest_path=manifest_path,
-        signature=signature,
-        method=method,
-        method_params=method_params,
-        config_label=config_label,
-        view=view,
+        split,
+        transformer_path,
+        manifest_path,
+        signature,
+        method,
+        method_params,
+        config_label,
+        view,
     )

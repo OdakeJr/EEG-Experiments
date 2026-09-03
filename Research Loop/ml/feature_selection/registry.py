@@ -1,14 +1,12 @@
 # ml/feature_selection/registry.py
 
-from ml.feature_selection.classical import (
+from ml.feature_selection.feature_to_feature.classical import (
     VarianceSelector,
     ANOVASelector,
     MutualInformationSelector,
 )
-
-from ml.feature_selection.random_fs import (
-    RandomSelector,
-)
+from ml.feature_selection.feature_to_feature.random_fs import RandomSelector
+from ml.feature_selection.signal_to_feature.csp import CSPTransformer
 
 
 FEATURE_TRANSFORMERS = {
@@ -16,6 +14,7 @@ FEATURE_TRANSFORMERS = {
     "anova": ANOVASelector,
     "mutual_information": MutualInformationSelector,
     "random": RandomSelector,
+    "csp": CSPTransformer,
 }
 
 
@@ -26,6 +25,4 @@ def get_feature_transformer(name, params=None):
             f"Available: {sorted(FEATURE_TRANSFORMERS)}"
         )
 
-    params = params or {}
-
-    return FEATURE_TRANSFORMERS[name](**params)
+    return FEATURE_TRANSFORMERS[name](**(params or {}))

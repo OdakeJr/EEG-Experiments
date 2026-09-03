@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 
+import numpy as np
 import pandas as pd
 
 from eeg.lib.filtering import apply_filters_to_dataset
@@ -12,12 +13,11 @@ from eeg.lib.feature_extraction import (
 )
 
 
-def _split_batches(values, batch_size):
-    """
-    Split values into batches.
+# ============================================================
+# Helpers
+# ============================================================
 
-    If batch_size is None, process everything together.
-    """
+def _split_batches(values, batch_size):
     values = list(values)
 
     if batch_size is None:
@@ -29,21 +29,17 @@ def _split_batches(values, batch_size):
         )
 
     return [
-        values[start:start + batch_size]
-        for start in range(0, len(values), batch_size)
+        values[i:i + batch_size]
+        for i in range(0, len(values), batch_size)
     ]
 
 
 def _get_dataset_info(dataset):
-    """
-    Get channel names and sampling rate from a standardized
-    EEG dataset.
-    """
     for sessions in dataset.values():
-        for session_data in sessions.values():
+        for data in sessions.values():
             return (
-                list(session_data["channel_names"]),
-                float(session_data["sampling_rate"]),
+                list(data["channel_names"]),
+                float(data["sampling_rate"]),
             )
 
     raise ValueError(
@@ -51,25 +47,128 @@ def _get_dataset_info(dataset):
     )
 
 
+def _extract_signal(
+    dataset,
+    dataset_name,
+    session_name=None,
+):
+    """
+    Convert filtered EEG to trial-first signal representation.
+
+    X:
+        [trials, channels, time]
+        or
+        [trials, bands, channels, time]
+    """
+
+    X_all = []
+    dataset_all = []
+    subject_all = []
+    session_all = []
+    trial_all = []
+    label_all = []
+
+    for subject, sessions in dataset.items():
+
+        trial_indices = {}
+
+        for session, data in sessions.items():
+
+            X = np.asarray(data["X"])
+            y = np.asarray(data["y"])
+
+            output_session = (
+                session_name
+                if session_name is not None
+                else session
+            )
+
+            trial_indices.setdefault(
+                output_session,
+                0,
+            )
+
+            # Filtered stacked bands currently use:
+            # [bands, trials, channels, time].
+            # Normalize to trial-first.
+            if X.ndim == 4:
+                X = np.transpose(
+                    X,
+                    (1, 0, 2, 3),
+                )
+
+            elif X.ndim != 3:
+                raise ValueError(
+                    f"Unexpected signal shape: {X.shape}"
+                )
+
+            if len(X) != len(y):
+                raise ValueError(
+                    "Signal and label counts do not match."
+                )
+
+            n = len(X)
+            start = trial_indices[
+                output_session
+            ]
+
+            X_all.append(
+                X.astype(np.float32, copy=False)
+            )
+
+            dataset_all.extend(
+                [dataset_name] * n
+            )
+
+            subject_all.extend(
+                [subject] * n
+            )
+
+            session_all.extend(
+                [output_session] * n
+            )
+
+            trial_all.extend(
+                range(start, start + n)
+            )
+
+            label_all.extend(
+                y.astype(str)
+            )
+
+            trial_indices[
+                output_session
+            ] += n
+
+    if not X_all:
+        return None
+
+    return {
+        "X": np.concatenate(X_all, axis=0),
+        "dataset": np.asarray(dataset_all),
+        "subject": np.asarray(subject_all),
+        "session": np.asarray(session_all),
+        "trial_index": np.asarray(trial_all),
+        "label": np.asarray(label_all),
+    }
+
+
+# ============================================================
+# Batch preparation
+# ============================================================
+
 def _prepare_batch(
     loader,
     loader_kwargs,
     loader_config,
     filter_config,
+    representation,
     extract_config,
     dataset_name,
     band_labels=None,
     session_name=None,
     show_progress=False,
 ):
-    """
-    Prepare one dataset batch.
-    """
-
-    # --------------------------------------------------
-    # Load
-    # --------------------------------------------------
-
     dataset = loader(
         **loader_kwargs,
         config=loader_config,
@@ -77,10 +176,6 @@ def _prepare_batch(
 
     if not dataset:
         return None, None, None
-
-    # --------------------------------------------------
-    # Filter / resample
-    # --------------------------------------------------
 
     dataset = apply_filters_to_dataset(
         dataset=dataset,
@@ -91,9 +186,15 @@ def _prepare_batch(
         dataset
     )
 
-    # --------------------------------------------------
-    # Feature extraction
-    # --------------------------------------------------
+    if representation == "signal":
+
+        data = _extract_signal(
+            dataset,
+            dataset_name,
+            session_name,
+        )
+
+        return data, channels, sampling_rate
 
     dataframe = extract_features_to_dataframe(
         dataset=dataset,
@@ -107,10 +208,16 @@ def _prepare_batch(
     if dataframe.empty:
         return None, channels, sampling_rate
 
-    validate_feature_dataframe(dataframe)
+    validate_feature_dataframe(
+        dataframe
+    )
 
     return dataframe, channels, sampling_rate
 
+
+# ============================================================
+# Main preparation
+# ============================================================
 
 def prepare_eeg_dataframe(
     loader,
@@ -119,6 +226,7 @@ def prepare_eeg_dataframe(
     filter_config,
     feature_config,
     dataset_name,
+    representation="features",
     subjects=None,
     subject_batch_size=None,
     band_labels=None,
@@ -127,25 +235,20 @@ def prepare_eeg_dataframe(
     show_progress=False,
 ):
     """
-    Run the common EEG preparation pipeline.
+    Common EEG preparation.
 
-    Processing
-    ----------
-    1. Load dataset.
-    2. Optionally process subjects in batches.
-    3. Filter and resample EEG signals.
-    4. Extract features.
-    5. Combine batches.
-    6. Validate the final feature DataFrame.
-
-    Returns
-    -------
-    dataframe : pandas.DataFrame
-        Standardized feature-level dataset.
-
-    info : dict
-        Information describing the generated dataset.
+    representation:
+        "features" -> [trials, features]
+        "signal"   -> [trials, ..., channels, time]
     """
+
+    if representation not in {
+        "features",
+        "signal",
+    }:
+        raise ValueError(
+            f"Unknown representation: {representation}"
+        )
 
     loader_kwargs = deepcopy(
         loader_kwargs or {}
@@ -163,150 +266,167 @@ def prepare_eeg_dataframe(
         metadata or {}
     )
 
-    # --------------------------------------------------
-    # Feature configuration
-    # --------------------------------------------------
-
-    extract_config = build_extract_config(
-        feature_config
+    extract_config = (
+        build_extract_config(feature_config)
+        if representation == "features"
+        else None
     )
 
-    # --------------------------------------------------
-    # Determine batches
-    # --------------------------------------------------
-
-    if subjects is None:
-        batches = [None]
-
-    else:
-        batches = _split_batches(
+    batches = (
+        [None]
+        if subjects is None
+        else _split_batches(
             subjects,
             subject_batch_size,
         )
+    )
 
-    dataframes = []
-
+    prepared = []
     channels = None
     sampling_rate = None
 
-    # --------------------------------------------------
-    # Process batches
-    # --------------------------------------------------
-
     for subject_batch in batches:
 
-        current_loader_config = deepcopy(
+        config = deepcopy(
             loader_config
         )
 
         if subject_batch is not None:
-            current_loader_config[
-                "subjects"
-            ] = subject_batch
+            config["subjects"] = subject_batch
 
-        (
-            dataframe,
-            batch_channels,
-            batch_sampling_rate,
-        ) = _prepare_batch(
-            loader=loader,
-            loader_kwargs=loader_kwargs,
-            loader_config=current_loader_config,
-            filter_config=filter_config,
-            extract_config=extract_config,
-            dataset_name=dataset_name,
-            band_labels=band_labels,
-            session_name=session_name,
-            show_progress=show_progress,
+        data, batch_channels, batch_fs = (
+            _prepare_batch(
+                loader=loader,
+                loader_kwargs=loader_kwargs,
+                loader_config=config,
+                filter_config=filter_config,
+                representation=representation,
+                extract_config=extract_config,
+                dataset_name=dataset_name,
+                band_labels=band_labels,
+                session_name=session_name,
+                show_progress=show_progress,
+            )
         )
 
-        if dataframe is None:
+        if data is None:
             continue
-
-        # --------------------------------------------------
-        # Ensure batches are compatible
-        # --------------------------------------------------
 
         if channels is None:
             channels = batch_channels
-            sampling_rate = batch_sampling_rate
+            sampling_rate = batch_fs
 
-        else:
+        elif (
+            batch_channels != channels
+            or batch_fs != sampling_rate
+        ):
+            raise ValueError(
+                "Dataset configuration changed "
+                "between batches."
+            )
 
-            if batch_channels != channels:
-                raise ValueError(
-                    "Channel configuration changed "
-                    "between batches."
-                )
-
-            if batch_sampling_rate != sampling_rate:
-                raise ValueError(
-                    "Sampling rate changed "
-                    "between batches."
-                )
-
-        dataframes.append(dataframe)
-
-    # --------------------------------------------------
-    # Combine
-    # --------------------------------------------------
-
-    if not dataframes:
-        raise RuntimeError(
-            f"No feature data were generated for "
-            f"dataset '{dataset_name}'."
+        prepared.append(
+            data
         )
 
-    dataframe = pd.concat(
-        dataframes,
-        ignore_index=True,
-    )
+    if not prepared:
+        raise RuntimeError(
+            f"No data generated for '{dataset_name}'."
+        )
 
-    # --------------------------------------------------
-    # Final validation
-    # --------------------------------------------------
+    # --------------------------------------------------------
+    # Combine
+    # --------------------------------------------------------
 
-    validate_feature_dataframe(
-        dataframe
-    )
+    if representation == "features":
 
-    metadata_columns = [
-        "dataset",
-        "subject",
-        "session",
-        "trial_index",
-        "label",
-    ]
+        data = pd.concat(
+            prepared,
+            ignore_index=True,
+        )
 
-    feature_columns = [
-        column
-        for column in dataframe.columns
-        if column not in metadata_columns
-    ]
+        validate_feature_dataframe(
+            data
+        )
 
-    # --------------------------------------------------
-    # Dataset information
-    # --------------------------------------------------
+        metadata_columns = [
+            "dataset",
+            "subject",
+            "session",
+            "trial_index",
+            "label",
+        ]
+
+        feature_columns = [
+            column
+            for column in data.columns
+            if column not in metadata_columns
+        ]
+
+        input_shape = (
+            len(feature_columns),
+        )
+
+        subjects_data = data["subject"]
+        sessions_data = data["session"]
+        n_trials = len(data)
+
+    else:
+
+        keys = [
+            "X",
+            "dataset",
+            "subject",
+            "session",
+            "trial_index",
+            "label",
+        ]
+
+        data = {
+            key: np.concatenate(
+                [batch[key] for batch in prepared],
+                axis=0,
+            )
+            for key in keys
+        }
+
+        feature_columns = None
+
+        input_shape = tuple(
+            data["X"].shape[1:]
+        )
+
+        subjects_data = data["subject"]
+        sessions_data = data["session"]
+        n_trials = len(data["X"])
+
+    # --------------------------------------------------------
+    # Metadata
+    # --------------------------------------------------------
 
     metadata.setdefault(
         "n_subjects",
-        dataframe["subject"].nunique(),
+        len(np.unique(subjects_data)),
     )
 
     metadata.setdefault(
         "n_sessions",
-        dataframe["session"].nunique(),
+        len(np.unique(sessions_data)),
     )
 
     metadata.setdefault(
         "n_trials",
-        len(dataframe),
+        n_trials,
     )
 
     info = {
         "dataset_name": dataset_name,
+        "representation": representation,
         "channels": channels,
+        "channel_names": channels,
         "sampling_rate": sampling_rate,
+        "band_labels": band_labels,
+        "input_shape": input_shape,
         "feature_columns": feature_columns,
         "label_column": "label",
         "domain_columns": [
@@ -320,4 +440,4 @@ def prepare_eeg_dataframe(
         "metadata": metadata,
     }
 
-    return dataframe, info
+    return data, info

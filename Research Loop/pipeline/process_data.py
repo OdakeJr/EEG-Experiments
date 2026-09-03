@@ -4,6 +4,9 @@ import time
 from pathlib import Path
 from copy import deepcopy
 
+import numpy as np
+import pandas as pd
+
 from eeg.datasets.bci2a import prepare_bci2a
 from eeg.datasets.eegmmidb import prepare_eegmmidb
 from eeg.datasets.weibo import prepare_weibo
@@ -41,6 +44,43 @@ DATASET_PREPARERS = {
 
 
 # ============================================================
+# Representation
+# ============================================================
+
+SUPPORTED_REPRESENTATIONS = {
+    "features",
+    "signal",
+}
+
+
+def _get_representation(params):
+    """
+    Return and validate the preprocessing output representation.
+
+    features:
+        X is a 2D feature matrix [trials, features].
+
+    signal:
+        X is a multidimensional EEG tensor, typically
+        [trials, bands, channels, time].
+    """
+
+    representation = params.get(
+        "representation",
+        "features",
+    )
+
+    if representation not in SUPPORTED_REPRESENTATIONS:
+        raise ValueError(
+            f"Unknown representation '{representation}'. "
+            f"Available representations: "
+            f"{sorted(SUPPORTED_REPRESENTATIONS)}"
+        )
+
+    return representation
+
+
+# ============================================================
 # Helpers
 # ============================================================
 
@@ -64,7 +104,11 @@ def _preprocessing_config_label(params):
     )
 
 
-def _add_preprocessing_trace(info, params):
+def _add_preprocessing_trace(
+    info,
+    params,
+    representation,
+):
     """
     Add clean preprocessing trace to the saved output info.
 
@@ -73,6 +117,8 @@ def _add_preprocessing_trace(info, params):
     """
 
     traced_info = deepcopy(info)
+
+    traced_info["representation"] = representation
 
     traced_info["preprocessing_signature"] = (
         _preprocessing_signature(params)
@@ -113,6 +159,172 @@ def _get_output_paths(params):
     )
 
 
+# ============================================================
+# Prepared data normalization
+# ============================================================
+
+def _prepare_feature_data(
+    prepared_data,
+    info,
+):
+    """
+    Convert the current feature DataFrame representation into
+    the dictionary format expected by storage.
+    """
+
+    if not isinstance(
+        prepared_data,
+        pd.DataFrame,
+    ):
+        raise TypeError(
+            "Feature representation must be returned "
+            "as a pandas DataFrame."
+        )
+
+    data = {
+        column: prepared_data[
+            column
+        ].to_numpy()
+        for column in prepared_data.columns
+    }
+
+    feature_columns = info.get(
+        "feature_columns",
+        [],
+    )
+
+    info["feature_columns"] = list(
+        feature_columns
+    )
+
+    info["input_shape"] = (
+        len(feature_columns),
+    )
+
+    return data, info
+
+
+def _prepare_signal_data(
+    prepared_data,
+    info,
+):
+    """
+    Validate the signal representation.
+
+    Expected structure
+    ------------------
+    prepared_data = {
+        "X": ndarray [trials, ..., channels, time],
+        "dataset": ...,
+        "subject": ...,
+        "session": ...,
+        "trial_index": ...,
+        "label": ...,
+    }
+
+    All metadata arrays must share the same first dimension as X.
+    """
+
+    if not isinstance(
+        prepared_data,
+        dict,
+    ):
+        raise TypeError(
+            "Signal representation must be returned "
+            "as a dictionary."
+        )
+
+    if "X" not in prepared_data:
+        raise ValueError(
+            "Signal representation must contain an 'X' array."
+        )
+
+    X = np.asarray(
+        prepared_data["X"]
+    )
+
+    if X.ndim < 3:
+        raise ValueError(
+            "Signal X must have at least 3 dimensions: "
+            "[trials, channels, time], optionally with "
+            "additional dimensions such as frequency bands."
+        )
+
+    n_trials = X.shape[0]
+
+    metadata_columns = info.get(
+        "metadata_columns",
+        [],
+    )
+
+    for column in metadata_columns:
+
+        if column not in prepared_data:
+            raise ValueError(
+                f"Signal representation is missing "
+                f"metadata column '{column}'."
+            )
+
+        values = np.asarray(
+            prepared_data[column]
+        )
+
+        if len(values) != n_trials:
+            raise ValueError(
+                f"Metadata column '{column}' has "
+                f"{len(values)} samples, but X has "
+                f"{n_trials} trials."
+            )
+
+    data = {
+        key: np.asarray(value)
+        for key, value in prepared_data.items()
+    }
+
+    info["feature_columns"] = None
+
+    info["input_shape"] = tuple(
+        int(value)
+        for value in X.shape[1:]
+    )
+
+    return data, info
+
+
+def _prepare_output_data(
+    prepared_data,
+    info,
+    representation,
+):
+    """
+    Normalize dataset-specific preparer outputs into one
+    common storage contract.
+    """
+
+    info = deepcopy(info)
+
+    if representation == "features":
+        return _prepare_feature_data(
+            prepared_data,
+            info,
+        )
+
+    if representation == "signal":
+        return _prepare_signal_data(
+            prepared_data,
+            info,
+        )
+
+    raise ValueError(
+        f"Unsupported representation: "
+        f"{representation}"
+    )
+
+
+# ============================================================
+# DatasetView
+# ============================================================
+
 def _make_dataset_view(
     data_path,
     manifest_path,
@@ -122,12 +334,36 @@ def _make_dataset_view(
     Build the lightweight reference returned by preprocessing.
     """
 
+    input_shape = info.get(
+        "input_shape"
+    )
+
+    if input_shape is not None:
+        input_shape = tuple(
+            input_shape
+        )
+
+    band_labels = info.get(
+        "band_labels"
+    )
+
+    if band_labels is not None:
+        band_labels = [
+            tuple(band)
+            for band in band_labels
+        ]
+
     return DatasetView(
         path=str(data_path),
 
-        feature_columns=info[
+        representation=info.get(
+            "representation",
+            "features",
+        ),
+
+        feature_columns=info.get(
             "feature_columns"
-        ],
+        ),
 
         label_column=info[
             "label_column"
@@ -144,6 +380,14 @@ def _make_dataset_view(
         manifest_path=str(
             manifest_path
         ),
+
+        input_shape=input_shape,
+
+        channel_names=info.get(
+            "channel_names"
+        ),
+
+        band_labels=band_labels,
 
         preprocessing_signature=info.get(
             "preprocessing_signature"
@@ -167,6 +411,16 @@ def run_preprocessing(params):
     """
     Run one preprocessing configuration.
 
+    Supported output representations
+    --------------------------------
+    features:
+        [trials, features]
+
+    signal:
+        [trials, channels, time]
+        or
+        [trials, bands, channels, time]
+
     If the same configuration was already completed,
     reuse the stored result.
 
@@ -175,6 +429,10 @@ def run_preprocessing(params):
     DatasetView
         Lightweight reference to the processed dataset.
     """
+
+    representation = _get_representation(
+        params
+    )
 
     dataset_name = params["dataset"]
 
@@ -211,6 +469,7 @@ def run_preprocessing(params):
         info = _add_preprocessing_trace(
             manifest["output"],
             params,
+            representation,
         )
 
         return _make_dataset_view(
@@ -239,26 +498,29 @@ def run_preprocessing(params):
         # Dataset-specific preparation
         # ----------------------------------------------------
 
-        dataframe, info = preparer(
+        prepared_data, info = preparer(
             params
+        )
+
+        # ----------------------------------------------------
+        # Normalize representation
+        # ----------------------------------------------------
+
+        data, info = _prepare_output_data(
+            prepared_data=prepared_data,
+            info=info,
+            representation=representation,
         )
 
         info = _add_preprocessing_trace(
             info,
             params,
+            representation,
         )
 
         # ----------------------------------------------------
         # Save processed dataset
         # ----------------------------------------------------
-
-        data = {
-            column: dataframe[
-                column
-            ].to_numpy()
-            for column
-            in dataframe.columns
-        }
 
         save_data(
             data,
