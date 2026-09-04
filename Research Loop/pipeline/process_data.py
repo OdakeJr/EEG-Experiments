@@ -7,10 +7,10 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-from eeg.datasets.bci2a import prepare_bci2a
-from eeg.datasets.eegmmidb import prepare_eegmmidb
-from eeg.datasets.weibo import prepare_weibo
-from eeg.datasets.zhou import prepare_zhou
+from eeg.dataset_handlers.bci2a import prepare_bci2a
+from eeg.dataset_handlers.eegmmidb import prepare_eegmmidb
+from eeg.dataset_handlers.weibo import prepare_weibo
+from eeg.dataset_handlers.zhou import prepare_zhou
 
 from models.dataset_view import DatasetView
 
