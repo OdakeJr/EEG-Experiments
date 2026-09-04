@@ -32,70 +32,25 @@ COMMON_CLASSES = [
     "tongue_imagery",
 ]
 
-
-FILTER_CONFIG = {
-    "bandpass": {
-        "enabled": True,
-        "bands": [
-            (8, 12),
-            (13, 30),
-        ],
-        "order": 5,
-        "stack_bands": True,
-    },
-
-    "resample": {
-        "enabled": True,
-        "new_fs": 128.0,
-    },
-}
-
-
-FEATURE_CONFIG = {
-    # Strongest / most relevant
-    "logvar": {},
-    "logcov": {},
-    "std": {},
-    "eig": {},
-    "mom": {},
-
-    # Useful but somewhat redundant
-    # "cov": {},
-    # "bandpower": {},
-
-    # Lower priority
-    # "q_stats": {},
-    # "h_diff": {},
-    # "mean": {},
-    # "min": {},
-    # "max": {},
-
-    # Lowest priority in current implementation
-    # "fft": {},
-}
-
-
-# ------------------------------------------------------------
-# Motor-region channel configuration
-# ------------------------------------------------------------
-
 CHANNELS = [
     "Fz",
     "FC3", "FC1", "FCz", "FC2", "FC4",
     "C5", "C3", "C1", "Cz", "C2", "C4", "C6",
     "CP3", "CP1", "CPz", "CP2", "CP4",
-    "P1", "Pz", "P2",
-    "POz",
+    "P1", "Pz", "P2", "POz",
 ]
 
+BAND_CONFIGS = {
+    #"8_30": [(8, 30)],
+    "mu_beta": [(8, 12), (13, 30)],
+}
 
 PREPROCESSING_PARAMS = [
     {
         "dataset": "bci2a",
         "root_gdf": "data/bci2a/gdf",
         "root_mat": "data/bci2a/mat",
-        "name": "bci2a_intra_csp",
-
+        "name": f"bci2a_intra_csp_{name}",
         "representation": "signal",
 
         "loader": {
@@ -103,9 +58,22 @@ PREPROCESSING_PARAMS = [
             "classes": COMMON_CLASSES,
         },
 
-        "filter": FILTER_CONFIG,
+        "filter": {
+            "bandpass": {
+                "enabled": True,
+                "bands": bands,
+                "order": 5,
+                "stack_bands": True,
+            },
+            "resample": {
+                "enabled": True,
+                "new_fs": 128.0,
+            },
+        },
+
         "show_progress": False,
     }
+    for name, bands in BAND_CONFIGS.items()
 ]
 
 
@@ -126,20 +94,21 @@ SCENARIO_PARAMS = {
 # Feature selection
 # ============================================================
 
-CSP_COMPONENTS = 4
+#CSP_COMPONENTS = [2, 4, 6, 8]
+CSP_COMPONENTS = [6]
 
 FEATURE_SELECTION_PARAMS = [
     {
         "method": "csp",
-        "config_label": f"csp_{CSP_COMPONENTS}_standard",
+        "config_label": f"csp_{n}_standard",
         "params": {
-            "n_components": CSP_COMPONENTS,
+            "n_components": n,
             "reg": 1e-6,
             "post_scaler": "standard",
         },
     }
+    for n in CSP_COMPONENTS
 ]
-
 
 # ============================================================
 # Models
@@ -260,11 +229,6 @@ TRAINING_PARAMS = [
 # ============================================================
 
 MODEL_EVALUATION_PARAMS = {}
-
-
-# ============================================================
-# Benchmark tables
-# ============================================================
 
 # ============================================================
 # Benchmark tables
