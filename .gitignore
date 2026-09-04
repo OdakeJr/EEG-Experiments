@@ -1,5 +1,8 @@
-Datasets/
-Research Loop/data
-Research Loop/outputs
-Research Loop/tests/output
-Lab/positive-negative/data
+datasets/
+outputs/
+output/
+__pycache__/
+.pytest_cache/
+*.pyc
+.DS_Store
+.venv/
