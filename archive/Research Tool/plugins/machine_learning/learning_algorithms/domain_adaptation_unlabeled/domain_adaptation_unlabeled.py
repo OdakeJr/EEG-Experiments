@@ -7,9 +7,9 @@ import torch.optim as optim
 
 sys.path.append(os.path.abspath("../../../../"))
 
-import lib.learning_algorithms.benchmark_models.baseline_nn as my_models
+import archieve.lib.learning_algorithms.benchmark_models.baseline_nn as my_models
 import lib.learning_algorithms.density_ratio_estimator.density_ratio_estimator as iw_estimators
-from lib.learning_algorithms.helper import wrap_model
+from archieve.lib.learning_algorithms.helper import wrap_model
 
 def train_deep_coral(
     X_source, y_source, source_domains=None,

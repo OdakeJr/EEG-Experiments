@@ -1,3 +1,5 @@
+import argparse
+import importlib.util
 import os
 import sys
 import time
@@ -18,22 +20,6 @@ os.chdir(PROJECT_ROOT)
 
 
 # ============================================================
-# Parameters
-# ============================================================
-
-from params import (
-    EXECUTION_PARAMS,
-    PREPROCESSING_PARAMS,
-    SCENARIO,
-    SCENARIO_PARAMS,
-    FEATURE_SELECTION_PARAMS,
-    TRAINING_PARAMS,
-    MODEL_EVALUATION_PARAMS,
-    BENCHMARK_TABLES_PARAMS,
-)
-
-
-# ============================================================
 # Pipeline
 # ============================================================
 
@@ -43,6 +29,23 @@ from pipeline.feature_selection import run_feature_selection
 from pipeline.training import run_training
 from pipeline.evaluation.model_results import run_model_evaluation
 from pipeline.analysis.benchmark_tables import run_benchmark_tables
+
+
+# ============================================================
+# Parameters
+# ============================================================
+
+def _load_params(path):
+    path = Path(path)
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+
+    path = path.resolve()
+    spec = importlib.util.spec_from_file_location("experiment_params", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    return module, path.relative_to(PROJECT_ROOT)
 
 
 # ============================================================
@@ -109,34 +112,34 @@ def _training_task(task):
 # Stages
 # ============================================================
 
-def preprocessing_stage():
+def preprocessing_stage(params):
     return [
         {
-            "group": params["name"],
-            "view": run_preprocessing(params),
+            "group": config["name"],
+            "view": run_preprocessing(config),
         }
-        for params in PREPROCESSING_PARAMS
+        for config in params
     ]
 
 
-def scenario_stage(preprocessing):
+def scenario_stage(preprocessing, scenario, params):
     return [
         {
             **item,
             "splits": run_scenario(
-                item["view"], SCENARIO, SCENARIO_PARAMS
+                item["view"], scenario, params
             ),
         }
         for item in preprocessing
     ]
 
 
-def feature_selection_stage(scenarios, max_workers=1):
+def feature_selection_stage(scenarios, params, max_workers=1):
     tasks = [
-        (item["group"], item["view"], split, params)
+        (item["group"], item["view"], split, config)
         for item in scenarios
         for split in item["splits"]
-        for params in FEATURE_SELECTION_PARAMS
+        for config in params
     ]
 
     return _run_tasks(
@@ -146,11 +149,11 @@ def feature_selection_stage(scenarios, max_workers=1):
     )
 
 
-def training_stage(features, max_workers=1):
+def training_stage(features, params, max_workers=1):
     artifacts = [
         {
             **item,
-            "artifacts": [None] * len(TRAINING_PARAMS),
+            "artifacts": [None] * len(params),
         }
         for item in features
     ]
@@ -163,10 +166,10 @@ def training_stage(features, max_workers=1):
             item["view"],
             item["split"],
             item["fs_artifact"],
-            params,
+            config,
         )
         for item_idx, item in enumerate(features)
-        for model_idx, params in enumerate(TRAINING_PARAMS)
+        for model_idx, config in enumerate(params)
     ]
 
     for item_idx, model_idx, model in _run_tasks(
@@ -179,18 +182,18 @@ def training_stage(features, max_workers=1):
     return artifacts
 
 
-def evaluation_stage(models):
+def evaluation_stage(models, scenario, params):
     return run_model_evaluation(
-        {SCENARIO: models},
-        MODEL_EVALUATION_PARAMS,
+        {scenario: models},
+        params,
     )
 
 
-def analysis_stage(model_results):
+def analysis_stage(model_results, params):
     return run_benchmark_tables(
         model_results,
         None,
-        BENCHMARK_TABLES_PARAMS,
+        params,
     )
 
 
@@ -198,23 +201,47 @@ def analysis_stage(model_results):
 # Main
 # ============================================================
 
-def main():
-    max_workers = EXECUTION_PARAMS.get("max_workers", 1)
+def main(params_path):
+    params, params_path = _load_params(params_path)
+
+    max_workers = params.EXECUTION_PARAMS.get("max_workers", 1)
     start = time.perf_counter()
 
     print(
-        f"\n[Pipeline] Starting | scenario={SCENARIO} | workers={max_workers}",
+        f"\n[Pipeline] Starting | scenario={params.SCENARIO} | workers={max_workers}",
         flush=True,
     )
+    print(f"[Pipeline] Params | {params_path}", flush=True)
 
-    preprocessing = _run_stage("Preprocessing", preprocessing_stage)
-    scenarios = _run_stage("Scenarios", scenario_stage, preprocessing)
-    features = _run_stage(
-        "Feature selection", feature_selection_stage, scenarios, max_workers
+    preprocessing = _run_stage(
+        "Preprocessing", preprocessing_stage,
+        params.PREPROCESSING_PARAMS,
     )
-    models = _run_stage("Training", training_stage, features, max_workers)
-    model_results = _run_stage("Evaluation", evaluation_stage, models)
-    results = _run_stage("Analysis", analysis_stage, model_results)
+
+    scenarios = _run_stage(
+        "Scenarios", scenario_stage,
+        preprocessing, params.SCENARIO, params.SCENARIO_PARAMS,
+    )
+
+    features = _run_stage(
+        "Feature selection", feature_selection_stage,
+        scenarios, params.FEATURE_SELECTION_PARAMS, max_workers,
+    )
+
+    models = _run_stage(
+        "Training", training_stage,
+        features, params.TRAINING_PARAMS, max_workers,
+    )
+
+    model_results = _run_stage(
+        "Evaluation", evaluation_stage,
+        models, params.SCENARIO, params.MODEL_EVALUATION_PARAMS,
+    )
+
+    results = _run_stage(
+        "Analysis", analysis_stage,
+        model_results, params.BENCHMARK_TABLES_PARAMS,
+    )
 
     print(
         f"\n[Pipeline] Finished in {time.perf_counter() - start:.1f}s",
@@ -225,4 +252,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--params", required=True)
+    args = parser.parse_args()
+
+    main(args.params)

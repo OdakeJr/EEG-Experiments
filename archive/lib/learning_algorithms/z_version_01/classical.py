@@ -12,7 +12,7 @@ from sklearn.svm import SVC
 sys.path.append(os.path.abspath("../../../../"))
 PROJECT_ROOT = "../../../../"
 
-import lib.learning_algorithms.z_version_01.benchmark_architectures as my_models
+import archieve.lib.learning_algorithms.z_version_01.benchmark_architectures as my_models
 
 # ==========================================================
 # 1) Logistic Regression

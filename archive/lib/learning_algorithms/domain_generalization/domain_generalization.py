@@ -7,8 +7,8 @@ import torch.optim as optim
 
 sys.path.append(os.path.abspath("../../../../"))
 
-import lib.learning_algorithms.benchmark_models.baseline_nn as my_models
-from lib.learning_algorithms.helper import wrap_model
+import archieve.lib.learning_algorithms.benchmark_models.baseline_nn as my_models
+from archieve.lib.learning_algorithms.helper import wrap_model
 
 def train_vrex(
     X_source, y_source, source_domains=None,

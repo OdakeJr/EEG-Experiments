@@ -1,4 +1,4 @@
-import lib.learning_algorithms.z_version_01.benchmark_architectures as my_models
+import archieve.lib.learning_algorithms.z_version_01.benchmark_architectures as my_models
 
 import numpy as np
 import torch

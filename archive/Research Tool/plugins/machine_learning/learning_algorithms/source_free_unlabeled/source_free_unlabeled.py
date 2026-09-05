@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 sys.path.append(os.path.abspath("../../../../"))
 
-from lib.learning_algorithms.helper import wrap_model
+from archieve.lib.learning_algorithms.helper import wrap_model
 
 
 # ============================================================

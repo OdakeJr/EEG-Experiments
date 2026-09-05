@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 os.chdir(PROJECT_ROOT)
 
-from params import (
+from main.old.extensive_tests.params import (
     PREPROCESSING_PARAMS,
     COMBINE_PARAMS,
     SCENARIO_PARAMS,

@@ -37,7 +37,7 @@ os.chdir(
 # Parameters
 # ============================================================
 
-from params import (
+from main.old.development_tests_cross_sub.params import (
     PREPROCESSING_PARAMS,
     SCENARIO,
     SCENARIO_PARAMS,

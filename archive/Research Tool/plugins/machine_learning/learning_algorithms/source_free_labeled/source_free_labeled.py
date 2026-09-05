@@ -8,7 +8,7 @@ import torch.optim as optim
 
 sys.path.append(os.path.abspath("../../../../"))
 
-from lib.learning_algorithms.helper import wrap_model
+from archieve.lib.learning_algorithms.helper import wrap_model
 
 def train_linear_probe(
     X_source=None, y_source=None, source_domains=None,
