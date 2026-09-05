@@ -1,80 +1,50 @@
 # pipeline/analysis/benchmark_tables.py
 
 import ast
+import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from models.analysis_artifact import AnalysisArtifact
-from utils.storage import exists, save_manifest
 from utils.status import is_done, make_manifest, make_signature
+from utils.storage import exists, save_manifest
 
 
 OUTPUT_ROOT = Path("outputs/analysis/benchmark_tables")
 
-
 DEFAULT_TABLE_CONFIGS = [
     {
-        "name": "intra_subject",
-        "scenario": "intra_subject",
-        "setting_column": "Dataset",
-        "output_name": "intra_subject_table.csv",
-        "include_discrepancy": False,
-        "group_by_configs": True,
-        "filters": {},
+        "name": "intra_subject", "scenario": "intra_subject",
+        "setting_column": "Dataset", "output_name": "intra_subject_table.csv",
+        "include_discrepancy": False, "group_by_configs": True, "filters": {},
     },
     {
-        "name": "cross_session",
-        "scenario": "cross_session",
-        "setting_column": "Dataset",
-        "output_name": "cross_session_table.csv",
-        "include_discrepancy": True,
-        "group_by_configs": True,
-        "filters": {
-            "n_target_super_domains": 0,
-            "use_max_source_domains": True,
-        },
+        "name": "cross_session", "scenario": "cross_session",
+        "setting_column": "Dataset", "output_name": "cross_session_table.csv",
+        "include_discrepancy": True, "group_by_configs": True,
+        "filters": {"n_target_super_domains": 0, "use_max_source_domains": True},
     },
     {
-        "name": "cross_subject",
-        "scenario": "cross_subject",
-        "setting_column": "Dataset",
-        "output_name": "cross_subject_table.csv",
-        "include_discrepancy": True,
-        "group_by_configs": True,
-        "filters": {
-            "n_target_super_domains": 0,
-            "use_max_source_domains": True,
-        },
+        "name": "cross_subject", "scenario": "cross_subject",
+        "setting_column": "Dataset", "output_name": "cross_subject_table.csv",
+        "include_discrepancy": True, "group_by_configs": True,
+        "filters": {"n_target_super_domains": 0, "use_max_source_domains": True},
     },
     {
-        "name": "cross_dataset",
-        "scenario": "cross_dataset",
-        "setting_column": "Held-out Dataset",
-        "output_name": "cross_dataset_table.csv",
-        "include_discrepancy": True,
-        "group_by_configs": True,
-        "filters": {
-            "n_target_super_domains": 0,
-            "use_max_source_super_domains": True,
-        },
+        "name": "cross_dataset", "scenario": "cross_dataset",
+        "setting_column": "Held-out Dataset", "output_name": "cross_dataset_table.csv",
+        "include_discrepancy": True, "group_by_configs": True,
+        "filters": {"n_target_super_domains": 0, "use_max_source_super_domains": True},
     },
 ]
 
 
-# ============================================================
-# Public
-# ============================================================
-
 def run_benchmark_tables(model_results_artifact, domain_results_artifact=None, params=None):
     params = _with_default_params(params)
-
     model_path = _artifact_path(model_results_artifact)
-    domain_path = (
-        None if domain_results_artifact is None
-        else _artifact_path(domain_results_artifact)
-    )
+    domain_path = None if domain_results_artifact is None else _artifact_path(domain_results_artifact)
 
     effective_params = {
         "analysis": "benchmark_tables",
@@ -82,27 +52,19 @@ def run_benchmark_tables(model_results_artifact, domain_results_artifact=None, p
         "model_results_path": str(model_path),
         "domain_results_path": None if domain_path is None else str(domain_path),
     }
-
     signature = make_signature(effective_params)
-    output_dir = OUTPUT_ROOT / signature[:12]
+    output_dir = _output_dir(params, signature)
     manifest_path = output_dir / "manifest.json"
-
     table_paths = {
         config["name"]: output_dir / config["output_name"]
         for config in params["tables"]
     }
 
-    if (
-        all(exists(path) for path in table_paths.values())
-        and is_done(manifest_path, effective_params)
-    ):
+    if all(exists(path) for path in table_paths.values()) and is_done(manifest_path, effective_params):
         return AnalysisArtifact(
-            name="benchmark_tables",
-            output_dir=str(output_dir),
+            name="benchmark_tables", output_dir=str(output_dir),
             tables={name: str(path) for name, path in table_paths.items()},
-            figures={},
-            manifest_path=str(manifest_path),
-            signature=signature,
+            figures={}, manifest_path=str(manifest_path), signature=signature,
         )
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -112,13 +74,9 @@ def run_benchmark_tables(model_results_artifact, domain_results_artifact=None, p
 
     display_lookup = _build_display_lookup(params["method_display"])
     model_summary = _prepare_model_summary(model_results, display_lookup)
-    discrepancy = _prepare_discrepancy(
-        domain_results,
-        params["discrepancy_metric"],
-    )
+    discrepancy = _prepare_discrepancy(domain_results, params["discrepancy_metric"])
 
     written_tables = {}
-
     for config in params["tables"]:
         table = _build_table(model_summary, discrepancy, config)
         path = table_paths[config["name"]]
@@ -126,25 +84,15 @@ def run_benchmark_tables(model_results_artifact, domain_results_artifact=None, p
         written_tables[config["name"]] = str(path)
 
     manifest = make_manifest(status="done", params=effective_params)
-    manifest["output"] = {
-        "output_dir": str(output_dir),
-        "tables": written_tables,
-    }
+    manifest["output"] = {"output_dir": str(output_dir), "tables": written_tables}
     save_manifest(manifest, manifest_path)
 
     return AnalysisArtifact(
-        name="benchmark_tables",
-        output_dir=str(output_dir),
-        tables=written_tables,
-        figures={},
-        manifest_path=str(manifest_path),
-        signature=signature,
+        name="benchmark_tables", output_dir=str(output_dir),
+        tables=written_tables, figures={},
+        manifest_path=str(manifest_path), signature=signature,
     )
 
-
-# ============================================================
-# Parameters
-# ============================================================
 
 def _with_default_params(params):
     defaults = {
@@ -152,112 +100,80 @@ def _with_default_params(params):
         "discrepancy_metric": "mmd",
         "method_display": [],
     }
-
-    if params is None:
-        return defaults
-
-    merged = defaults.copy()
-    merged.update(params)
-    return merged
+    return defaults if params is None else {**defaults, **params}
 
 
 def _artifact_path(artifact):
     if isinstance(artifact, (str, Path)):
         return Path(artifact)
-
     if hasattr(artifact, "path"):
         return Path(artifact.path)
-
     raise TypeError("Expected path-like object or artifact with .path.")
 
 
-def _build_display_lookup(method_display):
-    lookup = {}
+def _slug(value):
+    return re.sub(r"[^a-zA-Z0-9]+", "_", str(value)).strip("_").lower()
 
-    for item in method_display:
-        key = (str(item["learning_method"]), str(item["model_name"]))
-        lookup[key] = {
+
+def _output_dir(params, signature):
+    names = [config["name"] for config in params["tables"]]
+    default_names = [config["name"] for config in DEFAULT_TABLE_CONFIGS]
+    tables_label = "all_scenarios" if names == default_names else "-".join(map(_slug, names))
+    metric = _slug(params["discrepancy_metric"])
+    return OUTPUT_ROOT / f"{tables_label}__{metric}__{signature[:12]}"
+
+
+def _build_display_lookup(method_display):
+    return {
+        (str(item["learning_method"]), str(item["model_name"])): {
             "regime": item.get("regime", item["learning_method"]),
             "method": item.get("method", item["model_name"]),
         }
+        for item in method_display
+    }
 
-    return lookup
-
-
-# ============================================================
-# Model result preparation
-# ============================================================
 
 def _prepare_model_summary(results, display_lookup):
-    required_columns = [
-        "split_id",
-        "scenario",
-        "group",
-        "n_source_domains",
-        "n_target_super_domains",
-        "target_fraction",
-        "source_domains",
-        "target_domains",
-        "feature_selection_signature",
-        "learning_method",
-        "model_name",
-        "model_signature",
-        "evaluation_group",
-        "partition",
-        "balanced_accuracy",
-        "macro_f1",
-        "auc",
+    required = [
+        "split_id", "scenario", "group", "n_source_domains",
+        "n_target_super_domains", "target_fraction", "source_domains",
+        "target_domains", "feature_selection_signature", "learning_method",
+        "model_name", "model_signature", "evaluation_group", "partition",
+        "balanced_accuracy", "macro_f1", "auc",
+    ]
+    _require_columns(results, required)
+
+    keys = [
+        "split_id", "scenario", "group", "n_source_domains",
+        "n_target_super_domains", "target_fraction", "source_domains",
+        "target_domains", "feature_selection_signature", "learning_method",
+        "model_name", "model_signature",
     ]
 
-    _require_columns(results, required_columns)
-
-    key_columns = [
-        "split_id",
-        "scenario",
-        "group",
-        "n_source_domains",
-        "n_target_super_domains",
-        "target_fraction",
-        "source_domains",
-        "target_domains",
-        "feature_selection_signature",
-        "learning_method",
-        "model_name",
-        "model_signature",
-    ]
-
-    # Preserve preprocessing / FS configurations if available.
     for column in [
         "preprocessing_config_label",
         "feature_selection_config_label",
         "preprocessing_signature",
     ]:
         if column in results.columns:
-            key_columns.append(column)
+            keys.append(column)
 
     if "training_seed" in results.columns:
-        key_columns.append("training_seed")
-
-    # --------------------------------------------------------
-    # Source/train
-    # --------------------------------------------------------
+        keys.append("training_seed")
 
     source_train = results[
-        (results["evaluation_group"] == "source")
-        & (results["partition"] == "train")
+        (results["evaluation_group"] == "source") &
+        (results["partition"] == "train")
     ].copy()
 
     intra_train = results[
-        (results["scenario"] == "intra_subject")
-        & (results["evaluation_group"] == "target_elementary_domain")
-        & (results["partition"] == "train")
+        (results["scenario"] == "intra_subject") &
+        (results["evaluation_group"] == "target_elementary_domain") &
+        (results["partition"] == "train")
     ].copy()
 
-    train_rows = pd.concat([source_train, intra_train], ignore_index=True)
-
-    train_rows = _collapse_partition_metrics(
-        train_rows,
-        key_columns,
+    train = _collapse_partition_metrics(
+        pd.concat([source_train, intra_train], ignore_index=True), keys,
         {
             "balanced_accuracy": "source_ba",
             "macro_f1": "source_macro_f1",
@@ -265,18 +181,12 @@ def _prepare_model_summary(results, display_lookup):
         },
     )
 
-    # --------------------------------------------------------
-    # Target/calibration
-    # --------------------------------------------------------
-
-    target_calibration = results[
-        (results["evaluation_group"] == "target_elementary_domain")
-        & (results["partition"] == "calibration")
-    ].copy()
-
-    calibration_rows = _collapse_partition_metrics(
-        target_calibration,
-        key_columns,
+    calibration = _collapse_partition_metrics(
+        results[
+            (results["evaluation_group"] == "target_elementary_domain") &
+            (results["partition"] == "calibration")
+        ].copy(),
+        keys,
         {
             "balanced_accuracy": "target_calibration_ba",
             "macro_f1": "target_calibration_macro_f1",
@@ -284,18 +194,12 @@ def _prepare_model_summary(results, display_lookup):
         },
     )
 
-    # --------------------------------------------------------
-    # Target/test
-    # --------------------------------------------------------
-
-    target_test = results[
-        (results["evaluation_group"] == "target_elementary_domain")
-        & (results["partition"] == "test")
-    ].copy()
-
-    test_rows = _collapse_partition_metrics(
-        target_test,
-        key_columns,
+    test = _collapse_partition_metrics(
+        results[
+            (results["evaluation_group"] == "target_elementary_domain") &
+            (results["partition"] == "test")
+        ].copy(),
+        keys,
         {
             "balanced_accuracy": "target_test_ba",
             "macro_f1": "target_test_macro_f1",
@@ -303,132 +207,67 @@ def _prepare_model_summary(results, display_lookup):
         },
     )
 
-    # --------------------------------------------------------
-    # Experiment-level summary
-    # --------------------------------------------------------
-
-    base_parts = [
-        df[key_columns]
-        for df in [train_rows, calibration_rows, test_rows]
-        if not df.empty
-    ]
-
-    if not base_parts:
+    base = [df[keys] for df in [train, calibration, test] if not df.empty]
+    if not base:
         return pd.DataFrame()
 
-    summary = (
-        pd.concat(base_parts, ignore_index=True)
-        .drop_duplicates(subset=key_columns)
-        .reset_index(drop=True)
-    )
+    summary = pd.concat(base, ignore_index=True).drop_duplicates(subset=keys).reset_index(drop=True)
+    for dataframe in [train, calibration, test]:
+        summary = summary.merge(dataframe, on=keys, how="left")
 
-    summary = summary.merge(train_rows, on=key_columns, how="left")
-    summary = summary.merge(calibration_rows, on=key_columns, how="left")
-    summary = summary.merge(test_rows, on=key_columns, how="left")
-
-    summary["calibration_gap"] = (
-        summary["source_ba"] - summary["target_calibration_ba"]
-    )
+    summary["calibration_gap"] = summary["source_ba"] - summary["target_calibration_ba"]
     summary["test_gap"] = summary["source_ba"] - summary["target_test_ba"]
-
-    # --------------------------------------------------------
-    # Dataset labels
-    # --------------------------------------------------------
-
     summary["Dataset"] = summary["target_domains"].apply(_dataset_from_domains)
-    summary["Held-out Dataset"] = summary["target_domains"].apply(
-        _dataset_from_domains
-    )
-    summary["source_super_domain_count"] = summary["source_domains"].apply(
-        _dataset_count_from_domains
-    )
+    summary["Held-out Dataset"] = summary["target_domains"].apply(_dataset_from_domains)
+    summary["source_super_domain_count"] = summary["source_domains"].apply(_dataset_count_from_domains)
 
-    # --------------------------------------------------------
-    # Configuration labels
-    # --------------------------------------------------------
-
-    if "preprocessing_config_label" in summary.columns:
+    if "preprocessing_config_label" in summary:
         summary["Preprocessing"] = summary["preprocessing_config_label"]
-
-    if "feature_selection_config_label" in summary.columns:
+    if "feature_selection_config_label" in summary:
         summary["Feature Selection"] = summary["feature_selection_config_label"]
-
-    # --------------------------------------------------------
-    # Display labels
-    # --------------------------------------------------------
 
     labels = summary.apply(
         lambda row: _display_labels(row, display_lookup),
-        axis=1,
-        result_type="expand",
+        axis=1, result_type="expand",
     )
-
-    summary["Regime"] = labels["Regime"]
-    summary["Method"] = labels["Method"]
-
+    summary["Regime"], summary["Method"] = labels["Regime"], labels["Method"]
     return summary
 
 
-def _collapse_partition_metrics(dataframe, key_columns, metric_mapping):
-    output_columns = key_columns + list(metric_mapping.values())
-
+def _collapse_partition_metrics(dataframe, keys, mapping):
+    columns = keys + list(mapping.values())
     if dataframe.empty:
-        return pd.DataFrame(columns=output_columns)
+        return pd.DataFrame(columns=columns)
 
-    selected = dataframe[
-        key_columns + list(metric_mapping.keys())
-    ].copy()
-
-    selected = (
-        selected.groupby(key_columns, dropna=False, as_index=False)[
-            list(metric_mapping.keys())
-        ]
+    metrics = list(mapping)
+    return (
+        dataframe[keys + metrics]
+        .groupby(keys, dropna=False, as_index=False)[metrics]
         .mean()
+        .rename(columns=mapping)
     )
 
-    return selected.rename(columns=metric_mapping)
 
-
-def _display_labels(row, display_lookup):
-    key = (
-        str(row["learning_method"]),
-        str(row["model_name"]),
-    )
-
-    if key in display_lookup:
-        return {
-            "Regime": display_lookup[key]["regime"],
-            "Method": display_lookup[key]["method"],
-        }
-
+def _display_labels(row, lookup):
+    key = (str(row["learning_method"]), str(row["model_name"]))
+    item = lookup.get(key)
     return {
-        "Regime": key[0],
-        "Method": key[1],
+        "Regime": key[0] if item is None else item["regime"],
+        "Method": key[1] if item is None else item["method"],
     }
 
-
-# ============================================================
-# Domain discrepancy
-# ============================================================
 
 def _prepare_discrepancy(results, metric):
     if results is None:
         return pd.DataFrame(columns=["split_id", "discrepancy"])
 
-    required_columns = [
-        "split_id",
-        "comparison",
-        "representation",
-        "metric",
-        "value",
-    ]
-    _require_columns(results, required_columns)
+    _require_columns(results, ["split_id", "comparison", "representation", "metric", "value"])
 
     selected = results[
-        (results["comparison"] == "source_to_target_elementary")
-        & (results["representation"] == "marginal")
-        & (results["metric"] == metric)
-    ].copy()
+        (results["comparison"] == "source_to_target_elementary") &
+        (results["representation"] == "marginal") &
+        (results["metric"] == metric)
+    ]
 
     if selected.empty:
         return pd.DataFrame(columns=["split_id", "discrepancy"])
@@ -440,153 +279,86 @@ def _prepare_discrepancy(results, metric):
     )
 
 
-# ============================================================
-# Table construction
-# ============================================================
-
-def _build_table(model_summary, discrepancy, table_config):
-    scenario = table_config["scenario"]
-    setting_column = table_config["setting_column"]
+def _build_table(model_summary, discrepancy, config):
+    scenario, setting = config["scenario"], config["setting_column"]
 
     if model_summary.empty:
-        return _empty_table(setting_column)
+        return _empty_table(setting)
 
-    df = model_summary[
-        model_summary["scenario"] == scenario
-    ].copy()
-
-    df = _apply_filters(
-        df,
-        table_config.get("filters", {}),
-        setting_column,
-    )
+    df = model_summary[model_summary["scenario"] == scenario].copy()
+    df = _apply_filters(df, config.get("filters", {}), setting)
 
     if df.empty:
-        return _empty_table(setting_column)
+        return _empty_table(setting)
 
-    if table_config.get("include_discrepancy", True):
+    if config.get("include_discrepancy", True):
         df = df.merge(discrepancy, on="split_id", how="left")
     else:
         df["discrepancy"] = np.nan
 
-    group_columns = [setting_column]
-
-    if table_config.get("group_by_configs", True):
-        for column in ["Preprocessing", "Feature Selection"]:
-            if column in df.columns:
-                group_columns.append(column)
-
+    group_columns = [setting]
+    if config.get("group_by_configs", True):
+        group_columns += [
+            column for column in ["Preprocessing", "Feature Selection"]
+            if column in df.columns
+        ]
     group_columns += ["Regime", "Method"]
 
     rows = []
+    for values, group in df.groupby(group_columns, dropna=False):
+        values = values if isinstance(values, tuple) else (values,)
+        row = dict(zip(group_columns, values))
 
-    for group_values, group in df.groupby(group_columns, dropna=False):
-        if not isinstance(group_values, tuple):
-            group_values = (group_values,)
+        row.update({
+            "Runs": len(group),
+            "Calibration Runs": int(group["target_calibration_ba"].notna().sum()),
+            "Test Runs": int(group["target_test_ba"].notna().sum()),
+        })
 
-        row = dict(zip(group_columns, group_values))
+        metrics = {
+            "Source BA": "source_ba",
+            "Source Macro-F1": "source_macro_f1",
+            "Source AUC": "source_auc",
+            "Target-Calibration BA": "target_calibration_ba",
+            "Target-Calibration Macro-F1": "target_calibration_macro_f1",
+            "Target-Calibration AUC": "target_calibration_auc",
+            "Calibration Gap": "calibration_gap",
+            "Target-Test BA": "target_test_ba",
+            "Gap": "test_gap",
+            "Macro-F1": "target_test_macro_f1",
+            "AUC": "target_test_auc",
+            "Discrepancy": "discrepancy",
+        }
 
-        row["Runs"] = int(len(group))
-        row["Calibration Runs"] = int(group["target_calibration_ba"].notna().sum())
-        row["Test Runs"] = int(group["target_test_ba"].notna().sum())
-
-        _add_metric_columns(row, "Source BA", group["source_ba"])
-        _add_metric_columns(row, "Source Macro-F1", group["source_macro_f1"])
-        _add_metric_columns(row, "Source AUC", group["source_auc"])
-
-        _add_metric_columns(
-            row,
-            "Target-Calibration BA",
-            group["target_calibration_ba"],
-        )
-        _add_metric_columns(
-            row,
-            "Target-Calibration Macro-F1",
-            group["target_calibration_macro_f1"],
-        )
-        _add_metric_columns(
-            row,
-            "Target-Calibration AUC",
-            group["target_calibration_auc"],
-        )
-        _add_metric_columns(row, "Calibration Gap", group["calibration_gap"])
-
-        _add_metric_columns(row, "Target-Test BA", group["target_test_ba"])
-        _add_metric_columns(row, "Gap", group["test_gap"])
-        _add_metric_columns(row, "Macro-F1", group["target_test_macro_f1"])
-        _add_metric_columns(row, "AUC", group["target_test_auc"])
-
-        _add_metric_columns(row, "Discrepancy", group["discrepancy"])
+        for name, column in metrics.items():
+            _add_metric_columns(row, name, group[column])
 
         rows.append(row)
 
-    return (
-        pd.DataFrame(rows)
-        .sort_values(group_columns)
-        .reset_index(drop=True)
-    )
+    return pd.DataFrame(rows).sort_values(group_columns).reset_index(drop=True)
 
 
 def _add_metric_columns(row, name, values):
     values = pd.to_numeric(values, errors="coerce").dropna()
+    row[f"{name} Mean"] = np.nan if values.empty else float(values.mean())
+    row[f"{name} Std"] = np.nan if len(values) <= 1 else float(values.std(ddof=1))
 
-    mean_column = f"{name} Mean"
-    std_column = f"{name} Std"
-
-    if len(values) == 0:
-        row[mean_column] = np.nan
-        row[std_column] = np.nan
-        return
-
-    row[mean_column] = float(values.mean())
-    row[std_column] = (
-        np.nan if len(values) == 1
-        else float(values.std(ddof=1))
-    )
-
-
-# ============================================================
-# Filters
-# ============================================================
 
 def _apply_filters(df, filters, setting_column):
     result = df.copy()
+    special = {"use_max_source_domains", "use_max_source_super_domains"}
 
     for column, value in filters.items():
-        if column in [
-            "use_max_source_domains",
-            "use_max_source_super_domains",
-        ]:
-            continue
-
-        if column in result.columns:
+        if column not in special and column in result.columns:
             result = _filter_column(result, column, value)
 
-    if filters.get("use_max_source_domains", False):
-        if result.empty:
-            return result
+    if filters.get("use_max_source_domains") and not result.empty:
+        max_values = result.groupby(setting_column)["n_source_domains"].transform("max")
+        result = result[result["n_source_domains"] == max_values]
 
-        max_values = (
-            result.groupby(setting_column)["n_source_domains"]
-            .transform("max")
-        )
-
-        result = result[
-            result["n_source_domains"] == max_values
-        ]
-
-    if filters.get("use_max_source_super_domains", False):
-        if result.empty:
-            return result
-
-        max_values = (
-            result.groupby(setting_column)["source_super_domain_count"]
-            .transform("max")
-        )
-
-        result = result[
-            result["source_super_domain_count"] == max_values
-        ]
+    if filters.get("use_max_source_super_domains") and not result.empty:
+        max_values = result.groupby(setting_column)["source_super_domain_count"].transform("max")
+        result = result[result["source_super_domain_count"] == max_values]
 
     return result
 
@@ -594,142 +366,67 @@ def _apply_filters(df, filters, setting_column):
 def _filter_column(dataframe, column, value):
     if value is None:
         return dataframe
-
     if isinstance(value, (list, tuple, set)):
-        return dataframe[
-            dataframe[column].isin(list(value))
-        ]
+        return dataframe[dataframe[column].isin(value)]
+    if pd.api.types.is_numeric_dtype(dataframe[column]) and isinstance(value, (int, float)):
+        return dataframe[np.isclose(pd.to_numeric(dataframe[column], errors="coerce"), value)]
+    return dataframe[dataframe[column] == value]
 
-    if (
-        pd.api.types.is_numeric_dtype(dataframe[column])
-        and isinstance(value, (int, float))
-    ):
-        return dataframe[
-            np.isclose(
-                pd.to_numeric(dataframe[column], errors="coerce"),
-                value,
-                equal_nan=False,
-            )
-        ]
-
-    return dataframe[
-        dataframe[column] == value
-    ]
-
-
-# ============================================================
-# Empty table
-# ============================================================
 
 def _empty_table(setting_column):
-    return pd.DataFrame(
-        columns=[
-            setting_column,
-            "Preprocessing",
-            "Feature Selection",
-            "Regime",
-            "Method",
-            "Runs",
-            "Calibration Runs",
-            "Test Runs",
-            "Source BA Mean",
-            "Source BA Std",
-            "Source Macro-F1 Mean",
-            "Source Macro-F1 Std",
-            "Source AUC Mean",
-            "Source AUC Std",
-            "Target-Calibration BA Mean",
-            "Target-Calibration BA Std",
-            "Target-Calibration Macro-F1 Mean",
-            "Target-Calibration Macro-F1 Std",
-            "Target-Calibration AUC Mean",
-            "Target-Calibration AUC Std",
-            "Calibration Gap Mean",
-            "Calibration Gap Std",
-            "Target-Test BA Mean",
-            "Target-Test BA Std",
-            "Gap Mean",
-            "Gap Std",
-            "Macro-F1 Mean",
-            "Macro-F1 Std",
-            "AUC Mean",
-            "AUC Std",
-            "Discrepancy Mean",
-            "Discrepancy Std",
-        ]
-    )
+    metrics = [
+        "Source BA", "Source Macro-F1", "Source AUC",
+        "Target-Calibration BA", "Target-Calibration Macro-F1",
+        "Target-Calibration AUC", "Calibration Gap",
+        "Target-Test BA", "Gap", "Macro-F1", "AUC", "Discrepancy",
+    ]
+    columns = [
+        setting_column, "Preprocessing", "Feature Selection", "Regime", "Method",
+        "Runs", "Calibration Runs", "Test Runs",
+    ]
+    columns += [f"{metric} {stat}" for metric in metrics for stat in ["Mean", "Std"]]
+    return pd.DataFrame(columns=columns)
 
-
-# ============================================================
-# Domain parsing
-# ============================================================
 
 def _parse_domain_list(value):
-    if value is None:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
         return []
-
-    if isinstance(value, float) and pd.isna(value):
-        return []
-
     if isinstance(value, (list, tuple, set)):
         return [str(item) for item in value]
 
     text = str(value).strip()
-
-    if text in ["", "[]", "None", "nan"]:
+    if text in {"", "[]", "None", "nan"}:
         return []
 
     try:
         parsed = ast.literal_eval(text)
-
         if isinstance(parsed, (list, tuple, set)):
             return [str(item) for item in parsed]
-
     except Exception:
         pass
 
     for separator in [";", ","]:
         if separator in text:
-            return [
-                item.strip()
-                for item in text.split(separator)
-                if item.strip()
-            ]
+            return [item.strip() for item in text.split(separator) if item.strip()]
 
     return [text]
 
 
 def _dataset_from_domains(value):
-    domains = _parse_domain_list(value)
-
-    datasets = sorted({
+    return "+".join(sorted({
         domain.split("|", 1)[0]
-        for domain in domains
-    })
-
-    return "+".join(datasets)
+        for domain in _parse_domain_list(value)
+    }))
 
 
 def _dataset_count_from_domains(value):
-    domains = _parse_domain_list(value)
-
     return len({
         domain.split("|", 1)[0]
-        for domain in domains
+        for domain in _parse_domain_list(value)
     })
 
 
-# ============================================================
-# Validation
-# ============================================================
-
 def _require_columns(dataframe, columns):
-    missing = [
-        column for column in columns
-        if column not in dataframe.columns
-    ]
-
+    missing = [column for column in columns if column not in dataframe.columns]
     if missing:
-        raise ValueError(
-            "Missing required columns: " + ", ".join(missing)
-        )
+        raise ValueError("Missing required columns: " + ", ".join(missing))

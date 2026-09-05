@@ -20,6 +20,13 @@
 # Protocol:
 #       80% train / 20% test within each subject.
 
+# ============================================================
+# Execution
+# ============================================================
+
+EXECUTION_PARAMS = {
+    "max_workers": 5,
+}
 
 # ============================================================
 # Preprocessing
@@ -131,7 +138,7 @@ RANDOM_FOREST_PARAMS = {
     "max_depth": None,
     "min_samples_leaf": 1,
     "random_state": 0,
-    "n_jobs": -1,
+    "n_jobs": 1,
 }
 
 MLP_PARAMS = {

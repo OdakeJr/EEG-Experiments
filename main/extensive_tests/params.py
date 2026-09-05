@@ -246,7 +246,7 @@ SVM_PARAMS = {
 RANDOM_FOREST_PARAMS = {
     "n_estimators": 200,
     "max_depth": None,
-    "n_jobs": -1,
+    "n_jobs": 1,
 }
 
 MLP_PARAMS = {

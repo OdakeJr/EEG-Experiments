@@ -1,5 +1,7 @@
 import os
 import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 
@@ -7,30 +9,12 @@ from pathlib import Path
 # Paths
 # ============================================================
 
-EXPERIMENT_DIR = Path(
-    __file__
-).resolve().parent
+EXPERIMENT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-PROJECT_ROOT = Path(
-    __file__
-).resolve().parents[2]
-
-
-# Make sure this experiment's params.py is imported.
-sys.path.insert(
-    0,
-    str(EXPERIMENT_DIR),
-)
-
-# Make project packages available.
-sys.path.append(
-    str(PROJECT_ROOT),
-)
-
-# Keep all relative project paths relative to project root.
-os.chdir(
-    PROJECT_ROOT
-)
+sys.path.insert(0, str(EXPERIMENT_DIR))
+sys.path.append(str(PROJECT_ROOT))
+os.chdir(PROJECT_ROOT)
 
 
 # ============================================================
@@ -38,6 +22,7 @@ os.chdir(
 # ============================================================
 
 from params import (
+    EXECUTION_PARAMS,
     PREPROCESSING_PARAMS,
     SCENARIO,
     SCENARIO_PARAMS,
@@ -52,175 +37,161 @@ from params import (
 # Pipeline
 # ============================================================
 
-from pipeline.process_data import (
-    run_preprocessing,
-)
-
-from pipeline.scenarios import (
-    run_scenario,
-)
-
-from pipeline.feature_selection import (
-    run_feature_selection,
-)
-
-from pipeline.training import (
-    run_training,
-)
-
-from pipeline.evaluation.model_results import (
-    run_model_evaluation,
-)
-
-from pipeline.analysis.benchmark_tables import (
-    run_benchmark_tables,
-)
+from pipeline.process_data import run_preprocessing
+from pipeline.scenarios import run_scenario
+from pipeline.feature_selection import run_feature_selection
+from pipeline.training import run_training
+from pipeline.evaluation.model_results import run_model_evaluation
+from pipeline.analysis.benchmark_tables import run_benchmark_tables
 
 
 # ============================================================
-# Preprocessing
+# Execution helpers
+# ============================================================
+
+def _run_stage(name, function, *args):
+    print(f"\n[{name}] Starting...", flush=True)
+    start = time.perf_counter()
+    result = function(*args)
+    print(f"[{name}] Done in {time.perf_counter() - start:.1f}s", flush=True)
+    return result
+
+
+def _run_tasks(function, tasks, max_workers):
+    if max_workers <= 1:
+        return [function(task) for task in tasks]
+
+    results = [None] * len(tasks)
+
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(function, task): i
+            for i, task in enumerate(tasks)
+        }
+
+        try:
+            for future in as_completed(futures):
+                results[futures[future]] = future.result()
+        except Exception:
+            for future in futures:
+                future.cancel()
+            raise
+
+    return results
+
+
+def _feature_selection_task(task):
+    group, view, split, params = task
+
+    fs = run_feature_selection(
+        split, view, params, group=group
+    )
+
+    return {
+        "group": group,
+        "view": view,
+        "split": split,
+        "fs_artifact": fs,
+    }
+
+
+def _training_task(task):
+    item_idx, model_idx, group, view, split, fs_artifact, params = task
+
+    model = run_training(
+        split, view, fs_artifact, params, group=group
+    )
+
+    return item_idx, model_idx, model
+
+
+# ============================================================
+# Stages
 # ============================================================
 
 def preprocessing_stage():
-    artifacts = []
-
-    for params in PREPROCESSING_PARAMS:
-
-        view = run_preprocessing(
-            params
-        )
-
-        artifacts.append({
-            "group": params["name"],
-            "view": view,
-        })
-
-    return artifacts
-
-
-# ============================================================
-# Scenario
-# ============================================================
-
-def scenario_stage(
-    preprocessing,
-):
-    artifacts = []
-
-    for item in preprocessing:
-
-        splits = run_scenario(
-            item["view"],
-            SCENARIO,
-            SCENARIO_PARAMS,
-        )
-
-        artifacts.append({
-            **item,
-            "splits": splits,
-        })
-
-    return artifacts
-
-
-# ============================================================
-# Feature selection
-# ============================================================
-
-def feature_selection_stage(
-    scenarios,
-):
-    artifacts = []
-
-    for item in scenarios:
-
-        for split in item["splits"]:
-
-            for params in FEATURE_SELECTION_PARAMS:
-
-                fs = run_feature_selection(
-                    split,
-                    item["view"],
-                    params,
-                    group=item["group"],
-                )
-
-                artifacts.append({
-                    "group": item["group"],
-                    "view": item["view"],
-                    "split": split,
-                    "fs_artifact": fs,
-                })
-
-    return artifacts
-
-
-# ============================================================
-# Training
-# ============================================================
-
-def training_stage(
-    features,
-):
-    artifacts = []
-
-    for item in features:
-
-        models = []
-
-        for params in TRAINING_PARAMS:
-
-            model = run_training(
-                item["split"],
-                item["view"],
-                item["fs_artifact"],
-                params,
-                group=item["group"],
-            )
-
-            models.append(
-                model
-            )
-
-        artifacts.append({
-            **item,
-            "artifacts": models,
-        })
-
-    return artifacts
-
-
-# ============================================================
-# Evaluation
-# ============================================================
-
-def evaluation_stage(
-    models,
-):
-    model_results = run_model_evaluation(
+    return [
         {
-            SCENARIO: models,
-        },
+            "group": params["name"],
+            "view": run_preprocessing(params),
+        }
+        for params in PREPROCESSING_PARAMS
+    ]
+
+
+def scenario_stage(preprocessing):
+    return [
+        {
+            **item,
+            "splits": run_scenario(
+                item["view"], SCENARIO, SCENARIO_PARAMS
+            ),
+        }
+        for item in preprocessing
+    ]
+
+
+def feature_selection_stage(scenarios, max_workers=1):
+    tasks = [
+        (item["group"], item["view"], split, params)
+        for item in scenarios
+        for split in item["splits"]
+        for params in FEATURE_SELECTION_PARAMS
+    ]
+
+    return _run_tasks(
+        _feature_selection_task,
+        tasks,
+        max_workers,
+    )
+
+
+def training_stage(features, max_workers=1):
+    artifacts = [
+        {
+            **item,
+            "artifacts": [None] * len(TRAINING_PARAMS),
+        }
+        for item in features
+    ]
+
+    tasks = [
+        (
+            item_idx,
+            model_idx,
+            item["group"],
+            item["view"],
+            item["split"],
+            item["fs_artifact"],
+            params,
+        )
+        for item_idx, item in enumerate(features)
+        for model_idx, params in enumerate(TRAINING_PARAMS)
+    ]
+
+    for item_idx, model_idx, model in _run_tasks(
+        _training_task,
+        tasks,
+        max_workers,
+    ):
+        artifacts[item_idx]["artifacts"][model_idx] = model
+
+    return artifacts
+
+
+def evaluation_stage(models):
+    return run_model_evaluation(
+        {SCENARIO: models},
         MODEL_EVALUATION_PARAMS,
     )
 
-    return model_results
 
-
-# ============================================================
-# Analysis
-# ============================================================
-
-def analysis_stage(
-    model_results,
-):
-    benchmark_tables = run_benchmark_tables(
+def analysis_stage(model_results):
+    return run_benchmark_tables(
         model_results,
         None,
         BENCHMARK_TABLES_PARAMS,
     )
-
-    return benchmark_tables
 
 
 # ============================================================
@@ -228,32 +199,29 @@ def analysis_stage(
 # ============================================================
 
 def main():
+    max_workers = EXECUTION_PARAMS.get("max_workers", 1)
+    start = time.perf_counter()
 
-    preprocessing = (
-        preprocessing_stage()
+    print(
+        f"\n[Pipeline] Starting | scenario={SCENARIO} | workers={max_workers}",
+        flush=True,
     )
 
-    scenarios = scenario_stage(
-        preprocessing
+    preprocessing = _run_stage("Preprocessing", preprocessing_stage)
+    scenarios = _run_stage("Scenarios", scenario_stage, preprocessing)
+    features = _run_stage(
+        "Feature selection", feature_selection_stage, scenarios, max_workers
+    )
+    models = _run_stage("Training", training_stage, features, max_workers)
+    model_results = _run_stage("Evaluation", evaluation_stage, models)
+    results = _run_stage("Analysis", analysis_stage, model_results)
+
+    print(
+        f"\n[Pipeline] Finished in {time.perf_counter() - start:.1f}s",
+        flush=True,
     )
 
-    features = feature_selection_stage(
-        scenarios
-    )
-
-    models = training_stage(
-        features
-    )
-
-    model_results = evaluation_stage(
-        models
-    )
-
-    benchmark_tables = analysis_stage(
-        model_results
-    )
-
-    return benchmark_tables
+    return results
 
 
 if __name__ == "__main__":
