@@ -1,5 +1,5 @@
 # ============================================================
-# Intra-subject EEGNet development experiment
+# Cross-session EEGNet development experiment
 # ============================================================
 
 # Goal:
@@ -10,10 +10,16 @@
 #       BCI Competition IV 2a
 #
 # Scenario:
-#       Intra-subject
+#       Cross-session
 #
 # Protocol:
-#       80% train / 20% test within each subject.
+#       Train on one session and evaluate on the other session
+#       within the same subject.
+#
+#       With two sessions, both directions are generated:
+#           session_01 -> session_02
+#           session_02 -> session_01
+
 
 # ============================================================
 # Execution
@@ -22,6 +28,7 @@
 EXECUTION_PARAMS = {
     "max_workers": 1,
 }
+
 
 # ============================================================
 # Preprocessing
@@ -47,7 +54,7 @@ PREPROCESSING_PARAMS = [
         "dataset": "bci2a",
         "root_gdf": "datasets/bci2a/gdf",
         "root_mat": "datasets/bci2a/mat",
-        "name": "bci2a_intra_eegnet_4_38",
+        "name": "bci2a_cross_session_eegnet_4_38",
         "representation": "signal",
         "loader": {
             "channels": CHANNELS,
@@ -74,10 +81,11 @@ PREPROCESSING_PARAMS = [
 # Scenario
 # ============================================================
 
-SCENARIO = "intra_subject"
+SCENARIO = "cross_session"
 
 SCENARIO_PARAMS = {
-    "train_fraction": 0.8,
+    "source_counts": ["all"],
+    "target_fractions": [0.0],
     "seed": 0,
 }
 
@@ -103,21 +111,21 @@ FEATURE_SELECTION_PARAMS = [
 # ============================================================
 
 EEGNET_PARAMS = {
-    "F1": 8,
+    "F1": 16,
     "D": 2,
-    "F2": 16,
+    "F2": 32,
     "kernel_length": 64,
-    "drop_prob": 0.5,
+    "drop_prob": 0.25,
     "pool_mode": "mean",
 }
 
 _NEURAL_BASE_PARAMS = {
-    "epochs": 500,
+    "epochs": 300,
     "batch_size": 64,
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
     "optimizer": "adam",
-    #"device": "cpu",
+    # "device": "cpu",
     "device": "mps",
     "seed": 0,
     "validation_fraction": 0.0,
@@ -164,13 +172,13 @@ BENCHMARK_TABLES_PARAMS = {
     ],
     "tables": [
         {
-            "name": "intra_subject_eegnet",
-            "scenario": "intra_subject",
+            "name": "cross_session_eegnet",
+            "scenario": "cross_session",
             "setting_column": "Dataset",
-            "output_name": "intra_subject_eegnet_table.csv",
+            "output_name": "cross_session_eegnet_table.csv",
             "include_discrepancy": False,
             "filters": {
-                "target_fraction": 0.8,
+                "target_fraction": 0.0,
             },
         },
     ],

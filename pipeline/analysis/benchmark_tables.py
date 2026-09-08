@@ -1,5 +1,3 @@
-# pipeline/analysis/benchmark_tables.py
-
 import ast
 import re
 from pathlib import Path
@@ -139,7 +137,7 @@ def _prepare_model_summary(results, display_lookup):
         "n_target_super_domains", "target_fraction", "source_domains",
         "target_domains", "feature_selection_signature", "learning_method",
         "model_name", "model_signature", "evaluation_group", "partition",
-        "balanced_accuracy", "macro_f1", "auc",
+        "accuracy", "balanced_accuracy", "macro_f1", "auc",
     ]
     _require_columns(results, required)
 
@@ -175,6 +173,7 @@ def _prepare_model_summary(results, display_lookup):
     train = _collapse_partition_metrics(
         pd.concat([source_train, intra_train], ignore_index=True), keys,
         {
+            "accuracy": "source_accuracy",
             "balanced_accuracy": "source_ba",
             "macro_f1": "source_macro_f1",
             "auc": "source_auc",
@@ -188,6 +187,7 @@ def _prepare_model_summary(results, display_lookup):
         ].copy(),
         keys,
         {
+            "accuracy": "target_calibration_accuracy",
             "balanced_accuracy": "target_calibration_ba",
             "macro_f1": "target_calibration_macro_f1",
             "auc": "target_calibration_auc",
@@ -201,6 +201,7 @@ def _prepare_model_summary(results, display_lookup):
         ].copy(),
         keys,
         {
+            "accuracy": "target_test_accuracy",
             "balanced_accuracy": "target_test_ba",
             "macro_f1": "target_test_macro_f1",
             "auc": "target_test_auc",
@@ -231,6 +232,7 @@ def _prepare_model_summary(results, display_lookup):
         axis=1, result_type="expand",
     )
     summary["Regime"], summary["Method"] = labels["Regime"], labels["Method"]
+
     return summary
 
 
@@ -251,6 +253,7 @@ def _collapse_partition_metrics(dataframe, keys, mapping):
 def _display_labels(row, lookup):
     key = (str(row["learning_method"]), str(row["model_name"]))
     item = lookup.get(key)
+
     return {
         "Regime": key[0] if item is None else item["regime"],
         "Method": key[1] if item is None else item["method"],
@@ -261,7 +264,10 @@ def _prepare_discrepancy(results, metric):
     if results is None:
         return pd.DataFrame(columns=["split_id", "discrepancy"])
 
-    _require_columns(results, ["split_id", "comparison", "representation", "metric", "value"])
+    _require_columns(
+        results,
+        ["split_id", "comparison", "representation", "metric", "value"],
+    )
 
     selected = results[
         (results["comparison"] == "source_to_target_elementary") &
@@ -297,14 +303,18 @@ def _build_table(model_summary, discrepancy, config):
         df["discrepancy"] = np.nan
 
     group_columns = [setting]
+
     if config.get("group_by_configs", True):
         group_columns += [
-            column for column in ["Preprocessing", "Feature Selection"]
+            column
+            for column in ["Preprocessing", "Feature Selection"]
             if column in df.columns
         ]
+
     group_columns += ["Regime", "Method"]
 
     rows = []
+
     for values, group in df.groupby(group_columns, dropna=False):
         values = values if isinstance(values, tuple) else (values,)
         row = dict(zip(group_columns, values))
@@ -316,13 +326,16 @@ def _build_table(model_summary, discrepancy, config):
         })
 
         metrics = {
+            "Source Accuracy": "source_accuracy",
             "Source BA": "source_ba",
             "Source Macro-F1": "source_macro_f1",
             "Source AUC": "source_auc",
+            "Target-Calibration Accuracy": "target_calibration_accuracy",
             "Target-Calibration BA": "target_calibration_ba",
             "Target-Calibration Macro-F1": "target_calibration_macro_f1",
             "Target-Calibration AUC": "target_calibration_auc",
             "Calibration Gap": "calibration_gap",
+            "Target-Test Accuracy": "target_test_accuracy",
             "Target-Test BA": "target_test_ba",
             "Gap": "test_gap",
             "Macro-F1": "target_test_macro_f1",
@@ -366,35 +379,54 @@ def _apply_filters(df, filters, setting_column):
 def _filter_column(dataframe, column, value):
     if value is None:
         return dataframe
+
     if isinstance(value, (list, tuple, set)):
         return dataframe[dataframe[column].isin(value)]
+
     if pd.api.types.is_numeric_dtype(dataframe[column]) and isinstance(value, (int, float)):
-        return dataframe[np.isclose(pd.to_numeric(dataframe[column], errors="coerce"), value)]
+        return dataframe[
+            np.isclose(
+                pd.to_numeric(dataframe[column], errors="coerce"),
+                value,
+            )
+        ]
+
     return dataframe[dataframe[column] == value]
 
 
 def _empty_table(setting_column):
     metrics = [
-        "Source BA", "Source Macro-F1", "Source AUC",
-        "Target-Calibration BA", "Target-Calibration Macro-F1",
-        "Target-Calibration AUC", "Calibration Gap",
-        "Target-Test BA", "Gap", "Macro-F1", "AUC", "Discrepancy",
+        "Source Accuracy", "Source BA", "Source Macro-F1", "Source AUC",
+        "Target-Calibration Accuracy", "Target-Calibration BA",
+        "Target-Calibration Macro-F1", "Target-Calibration AUC",
+        "Calibration Gap",
+        "Target-Test Accuracy", "Target-Test BA", "Gap",
+        "Macro-F1", "AUC", "Discrepancy",
     ]
+
     columns = [
         setting_column, "Preprocessing", "Feature Selection", "Regime", "Method",
         "Runs", "Calibration Runs", "Test Runs",
     ]
-    columns += [f"{metric} {stat}" for metric in metrics for stat in ["Mean", "Std"]]
+
+    columns += [
+        f"{metric} {stat}"
+        for metric in metrics
+        for stat in ["Mean", "Std"]
+    ]
+
     return pd.DataFrame(columns=columns)
 
 
 def _parse_domain_list(value):
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return []
+
     if isinstance(value, (list, tuple, set)):
         return [str(item) for item in value]
 
     text = str(value).strip()
+
     if text in {"", "[]", "None", "nan"}:
         return []
 
@@ -407,7 +439,11 @@ def _parse_domain_list(value):
 
     for separator in [";", ","]:
         if separator in text:
-            return [item.strip() for item in text.split(separator) if item.strip()]
+            return [
+                item.strip()
+                for item in text.split(separator)
+                if item.strip()
+            ]
 
     return [text]
 
@@ -427,6 +463,13 @@ def _dataset_count_from_domains(value):
 
 
 def _require_columns(dataframe, columns):
-    missing = [column for column in columns if column not in dataframe.columns]
+    missing = [
+        column
+        for column in columns
+        if column not in dataframe.columns
+    ]
+
     if missing:
-        raise ValueError("Missing required columns: " + ", ".join(missing))
+        raise ValueError(
+            "Missing required columns: " + ", ".join(missing)
+        )

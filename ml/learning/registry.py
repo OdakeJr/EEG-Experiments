@@ -227,21 +227,14 @@ LEARNING_ALGORITHMS = {
 # Factory
 # ============================================================
 
-def get_learning_algorithm(
-    name,
-    params=None,
-):
-    if name not in LEARNING_ALGORITHMS:
+def get_learning_algorithm(name, params=None):
+    base_name = name.split("__", 1)[0]
 
+    if base_name not in LEARNING_ALGORITHMS:
         raise ValueError(
             f"Unknown learning algorithm '{name}'. "
             f"Available: {sorted(LEARNING_ALGORITHMS)}"
         )
 
     params = params or {}
-
-    return LEARNING_ALGORITHMS[
-        name
-    ](
-        **params
-    )
+    return LEARNING_ALGORITHMS[base_name](**params)
