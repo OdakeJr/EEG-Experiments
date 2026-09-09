@@ -238,6 +238,13 @@ def run_training(
     model_params = training_params.get("model_params", {})
     fit_params = training_params.get("training_params", {})
 
+    signature_fit_params = deepcopy(fit_params)
+    signature_fit_params.pop("device", None)
+
+    runtime = {
+        "device": fit_params.get("device"),
+    }
+
     name = training_params.get(
         "name",
         f"{learning_method}_{model_name}",
@@ -264,7 +271,7 @@ def run_training(
         "learning_params": learning_params,
         "model": model_name,
         "model_params": model_params,
-        "training_params": fit_params,
+        "training_params": signature_fit_params,
     }
 
     signature = make_signature(effective_params)
@@ -293,10 +300,9 @@ def run_training(
 
     start = time.time()
 
-    save_manifest(
-        make_manifest("running", effective_params),
-        manifest_path,
-    )
+    manifest = make_manifest("running", effective_params)
+    manifest["runtime"] = runtime
+    save_manifest(manifest, manifest_path)
 
     try:
         # Materialize scenario
@@ -344,6 +350,7 @@ def run_training(
             execution_time=execution_time,
         )
 
+        manifest["runtime"] = runtime
         manifest["output"] = {
             "model_path": str(model_path),
             "model_context": _json_copy(model_context),
@@ -371,15 +378,14 @@ def run_training(
     except Exception as error:
         execution_time = time.time() - start
 
-        save_manifest(
-            make_manifest(
-                "failed",
-                effective_params,
-                execution_time=execution_time,
-                error=str(error),
-            ),
-            manifest_path,
+        manifest = make_manifest(
+            "failed",
+            effective_params,
+            execution_time=execution_time,
+            error=str(error),
         )
+        manifest["runtime"] = runtime
+        save_manifest(manifest, manifest_path)
 
         raise
 

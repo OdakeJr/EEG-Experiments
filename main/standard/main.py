@@ -52,30 +52,66 @@ def _load_params(path):
 # Execution helpers
 # ============================================================
 
+def _log(message):
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
+
+
+def _format_time(seconds):
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    if seconds < 3600:
+        return f"{seconds / 60:.1f}m"
+    return f"{seconds / 3600:.2f}h"
+
+
 def _run_stage(name, function, *args):
-    print(f"\n[{name}] Starting...", flush=True)
+    _log(f"[{name}] Starting...")
     start = time.perf_counter()
     result = function(*args)
-    print(f"[{name}] Done in {time.perf_counter() - start:.1f}s", flush=True)
+    _log(f"[{name}] Done | elapsed={_format_time(time.perf_counter() - start)}")
     return result
 
 
 def _run_tasks(function, tasks, max_workers):
-    if max_workers <= 1:
-        return [function(task) for task in tasks]
+    total = len(tasks)
+    label = function.__name__.removeprefix("_").removesuffix("_task").replace("_", " ").title()
 
-    results = [None] * len(tasks)
+    if total == 0:
+        _log(f"[{label}] No tasks")
+        return []
+
+    _log(f"[{label}] Tasks={total} | workers={max_workers}")
+    start = time.perf_counter()
+
+    def log_progress(completed):
+        elapsed = time.perf_counter() - start
+        remaining = total - completed
+        eta = elapsed / completed * remaining if completed else 0
+        _log(
+            f"[{label}] Progress {completed}/{total} | remaining={remaining} | "
+            f"elapsed={_format_time(elapsed)} | eta≈{_format_time(eta)}"
+        )
+
+    if max_workers <= 1:
+        results = []
+        for completed, task in enumerate(tasks, 1):
+            results.append(function(task))
+            log_progress(completed)
+        return results
+
+    results = [None] * total
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(function, task): i
-            for i, task in enumerate(tasks)
-        }
+        futures = {executor.submit(function, task): i for i, task in enumerate(tasks)}
 
         try:
+            completed = 0
             for future in as_completed(futures):
                 results[futures[future]] = future.result()
+                completed += 1
+                log_progress(completed)
         except Exception:
+            _log(f"[{label}] ERROR | cancelling remaining tasks")
             for future in futures:
                 future.cancel()
             raise
@@ -85,10 +121,7 @@ def _run_tasks(function, tasks, max_workers):
 
 def _feature_selection_task(task):
     group, view, split, params = task
-
-    fs = run_feature_selection(
-        split, view, params, group=group
-    )
+    fs = run_feature_selection(split, view, params, group=group)
 
     return {
         "group": group,
@@ -100,9 +133,24 @@ def _feature_selection_task(task):
 
 def _training_task(task):
     item_idx, model_idx, group, view, split, fs_artifact, params = task
+    name = params.get("name", params.get("learning", "unknown"))
+    pid = os.getpid()
 
-    model = run_training(
-        split, view, fs_artifact, params, group=group
+    _log(f"[Training task] Starting | pid={pid} | item={item_idx + 1} | model={name}")
+    start = time.perf_counter()
+
+    try:
+        model = run_training(split, view, fs_artifact, params, group=group)
+    except Exception as exc:
+        _log(
+            f"[Training task] FAILED | pid={pid} | item={item_idx + 1} | "
+            f"model={name} | {type(exc).__name__}: {exc}"
+        )
+        raise
+
+    _log(
+        f"[Training task] Done | pid={pid} | item={item_idx + 1} | "
+        f"model={name} | elapsed={_format_time(time.perf_counter() - start)}"
     )
 
     return item_idx, model_idx, model
@@ -126,9 +174,7 @@ def scenario_stage(preprocessing, scenario, params):
     return [
         {
             **item,
-            "splits": run_scenario(
-                item["view"], scenario, params
-            ),
+            "splits": run_scenario(item["view"], scenario, params),
         }
         for item in preprocessing
     ]
@@ -142,11 +188,7 @@ def feature_selection_stage(scenarios, params, max_workers=1):
         for config in params
     ]
 
-    return _run_tasks(
-        _feature_selection_task,
-        tasks,
-        max_workers,
-    )
+    return _run_tasks(_feature_selection_task, tasks, max_workers)
 
 
 def training_stage(features, params, max_workers=1):
@@ -172,29 +214,18 @@ def training_stage(features, params, max_workers=1):
         for model_idx, config in enumerate(params)
     ]
 
-    for item_idx, model_idx, model in _run_tasks(
-        _training_task,
-        tasks,
-        max_workers,
-    ):
+    for item_idx, model_idx, model in _run_tasks(_training_task, tasks, max_workers):
         artifacts[item_idx]["artifacts"][model_idx] = model
 
     return artifacts
 
 
 def evaluation_stage(models, scenario, params):
-    return run_model_evaluation(
-        {scenario: models},
-        params,
-    )
+    return run_model_evaluation({scenario: models}, params)
 
 
 def analysis_stage(model_results, params):
-    return run_benchmark_tables(
-        model_results,
-        None,
-        params,
-    )
+    return run_benchmark_tables(model_results, None, params)
 
 
 # ============================================================
@@ -207,11 +238,11 @@ def main(params_path):
     max_workers = params.EXECUTION_PARAMS.get("max_workers", 1)
     start = time.perf_counter()
 
-    print(
-        f"\n[Pipeline] Starting | scenario={params.SCENARIO} | workers={max_workers}",
-        flush=True,
+    _log(
+        f"[Pipeline] Starting | pid={os.getpid()} | "
+        f"scenario={params.SCENARIO} | workers={max_workers}"
     )
-    print(f"[Pipeline] Params | {params_path}", flush=True)
+    _log(f"[Pipeline] Params | {params_path}")
 
     preprocessing = _run_stage(
         "Preprocessing", preprocessing_stage,
@@ -243,11 +274,7 @@ def main(params_path):
         model_results, params.BENCHMARK_TABLES_PARAMS,
     )
 
-    print(
-        f"\n[Pipeline] Finished in {time.perf_counter() - start:.1f}s",
-        flush=True,
-    )
-
+    _log(f"[Pipeline] Finished | total={_format_time(time.perf_counter() - start)}")
     return results
 
 
@@ -255,5 +282,4 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--params", required=True)
     args = parser.parse_args()
-
     main(args.params)
