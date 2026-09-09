@@ -46,7 +46,7 @@ class DeepCORAL(BaseLearningAlgorithm):
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
-        model.apply(self._reset_parameters)
+        #model.apply(self._reset_parameters)
         model = model.to(self.device)
 
         if not hasattr(model, "extract_features"):
