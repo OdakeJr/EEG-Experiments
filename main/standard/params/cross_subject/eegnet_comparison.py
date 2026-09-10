@@ -181,7 +181,9 @@ TRAINING_PARAMS = [
 # Evaluation
 # ============================================================
 
-MODEL_EVALUATION_PARAMS = {}
+MODEL_EVALUATION_PARAMS = {
+    "device": "auto",
+}
 
 
 # ============================================================

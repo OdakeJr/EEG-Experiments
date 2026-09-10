@@ -1,52 +1,109 @@
 nohup: ignorando entrada
-[2026-09-09 13:58:37] [Pipeline] Starting | pid=208119 | scenario=cross_subject | workers=1
-[2026-09-09 13:58:37] [Pipeline] Params | main/standard/params/cross_subject/eegnet_comparison.py
-[2026-09-09 13:58:37] [Preprocessing] Starting...
-[2026-09-09 13:58:37] [Preprocessing] Done | elapsed=0s
-[2026-09-09 13:58:37] [Scenarios] Starting...
-[2026-09-09 13:58:37] [Scenarios] Done | elapsed=0s
-[2026-09-09 13:58:37] [Feature selection] Starting...
-[2026-09-09 13:58:37] [Feature Selection] Tasks=9 | workers=1
-[2026-09-09 13:58:37] [Feature Selection] Progress 1/9 | remaining=8 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature Selection] Progress 2/9 | remaining=7 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature Selection] Progress 3/9 | remaining=6 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature Selection] Progress 4/9 | remaining=5 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature Selection] Progress 5/9 | remaining=4 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature Selection] Progress 6/9 | remaining=3 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature Selection] Progress 7/9 | remaining=2 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature Selection] Progress 8/9 | remaining=1 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature Selection] Progress 9/9 | remaining=0 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Feature selection] Done | elapsed=0s
-[2026-09-09 13:58:37] [Training] Starting...
-[2026-09-09 13:58:37] [Training] Tasks=27 | workers=1
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=1 | model=eegnet_canonical_low_dropout
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=1 | model=eegnet_canonical_low_dropout | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 1/27 | remaining=26 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=1 | model=eegnet_deep_coral
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=1 | model=eegnet_deep_coral | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 2/27 | remaining=25 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=1 | model=eegnet_dann
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=1 | model=eegnet_dann | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 3/27 | remaining=24 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=2 | model=eegnet_canonical_low_dropout
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=2 | model=eegnet_canonical_low_dropout | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 4/27 | remaining=23 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=2 | model=eegnet_deep_coral
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=2 | model=eegnet_deep_coral | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 5/27 | remaining=22 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=2 | model=eegnet_dann
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=2 | model=eegnet_dann | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 6/27 | remaining=21 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=3 | model=eegnet_canonical_low_dropout
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=3 | model=eegnet_canonical_low_dropout | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 7/27 | remaining=20 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=3 | model=eegnet_deep_coral
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=3 | model=eegnet_deep_coral | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 8/27 | remaining=19 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=3 | model=eegnet_dann
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=3 | model=eegnet_dann | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 9/27 | remaining=18 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=4 | model=eegnet_canonical_low_dropout
-[2026-09-09 13:58:37] [Training task] Done | pid=208119 | item=4 | model=eegnet_canonical_low_dropout | elapsed=0s
-[2026-09-09 13:58:37] [Training] Progress 10/27 | remaining=17 | elapsed=0s | eta≈0s
-[2026-09-09 13:58:37] [Training task] Starting | pid=208119 | item=4 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Pipeline] Starting | pid=318144 | scenario=cross_subject | workers=1
+[2026-09-10 07:53:09] [Pipeline] Params | main/standard/params/cross_subject/eegnet_comparison.py
+[2026-09-10 07:53:09] [Preprocessing] Starting...
+[2026-09-10 07:53:09] [Preprocessing] Done | elapsed=0s
+[2026-09-10 07:53:09] [Scenarios] Starting...
+[2026-09-10 07:53:09] [Scenarios] Done | elapsed=0s
+[2026-09-10 07:53:09] [Feature selection] Starting...
+[2026-09-10 07:53:09] [Feature Selection] Tasks=9 | workers=1
+[2026-09-10 07:53:09] [Feature Selection] Progress 1/9 | remaining=8 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature Selection] Progress 2/9 | remaining=7 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature Selection] Progress 3/9 | remaining=6 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature Selection] Progress 4/9 | remaining=5 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature Selection] Progress 5/9 | remaining=4 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature Selection] Progress 6/9 | remaining=3 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature Selection] Progress 7/9 | remaining=2 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature Selection] Progress 8/9 | remaining=1 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature Selection] Progress 9/9 | remaining=0 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Feature selection] Done | elapsed=0s
+[2026-09-10 07:53:09] [Training] Starting...
+[2026-09-10 07:53:09] [Training] Tasks=27 | workers=1
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=1 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=1 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 1/27 | remaining=26 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=1 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=1 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 2/27 | remaining=25 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=1 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=1 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 3/27 | remaining=24 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=2 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=2 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 4/27 | remaining=23 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=2 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=2 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 5/27 | remaining=22 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=2 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=2 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 6/27 | remaining=21 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=3 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=3 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 7/27 | remaining=20 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=3 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=3 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 8/27 | remaining=19 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=3 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=3 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 9/27 | remaining=18 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=4 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=4 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 10/27 | remaining=17 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=4 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=4 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 11/27 | remaining=16 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=4 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=4 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 12/27 | remaining=15 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=5 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=5 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 13/27 | remaining=14 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=5 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=5 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 14/27 | remaining=13 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=5 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=5 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 15/27 | remaining=12 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=6 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=6 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 16/27 | remaining=11 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=6 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=6 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 17/27 | remaining=10 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=6 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=6 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 18/27 | remaining=9 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=7 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=7 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 19/27 | remaining=8 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=7 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=7 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 20/27 | remaining=7 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=7 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=7 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 21/27 | remaining=6 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=8 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=8 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 22/27 | remaining=5 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=8 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=8 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 23/27 | remaining=4 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=8 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=8 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 24/27 | remaining=3 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=9 | model=eegnet_canonical_low_dropout
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=9 | model=eegnet_canonical_low_dropout | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 25/27 | remaining=2 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=9 | model=eegnet_deep_coral
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=9 | model=eegnet_deep_coral | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 26/27 | remaining=1 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training task] Starting | pid=318144 | item=9 | model=eegnet_dann
+[2026-09-10 07:53:09] [Training task] Done | pid=318144 | item=9 | model=eegnet_dann | elapsed=0s
+[2026-09-10 07:53:09] [Training] Progress 27/27 | remaining=0 | elapsed=0s | eta≈0s
+[2026-09-10 07:53:09] [Training] Done | elapsed=0s
+[2026-09-10 07:53:09] [Evaluation] Starting...
+[Evaluation] Device | cpu
+[2026-09-10 07:55:43] [Evaluation] Done | elapsed=2.6m
+[2026-09-10 07:55:43] [Analysis] Starting...
+[2026-09-10 07:55:43] [Analysis] Done | elapsed=0s
+[2026-09-10 07:55:43] [Pipeline] Finished | total=2.6m

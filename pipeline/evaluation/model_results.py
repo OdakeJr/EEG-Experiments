@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import torch
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, roc_auc_score
 
 from models.model_result import ModelResult
@@ -17,6 +18,10 @@ from utils.storage import exists, load_manifest, load_pickle, save_data, save_ma
 
 OUTPUT_ROOT = Path("outputs/model_results")
 
+
+# ============================================================
+# Helpers
+# ============================================================
 
 def _json_copy(value):
     return json.loads(json.dumps(value, default=str))
@@ -30,12 +35,49 @@ def _coalesce(*values):
     return next((value for value in values if value is not None), None)
 
 
+def _resolve_device(device):
+    if device == "auto":
+        if torch.cuda.is_available():
+            return "cuda"
+        if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+            return "mps"
+        return "cpu"
+
+    if device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA requested for evaluation but is not available.")
+
+    if device == "mps" and not (
+        getattr(torch.backends, "mps", None) and torch.backends.mps.is_available()
+    ):
+        raise RuntimeError("MPS requested for evaluation but is not available.")
+
+    if device not in {"cpu", "cuda", "mps"}:
+        raise ValueError(f"Unknown evaluation device: {device}")
+
+    return device
+
+
+def _set_learner_device(learner, device):
+    if hasattr(learner, "device"):
+        learner.device = device
+
+    for value in vars(learner).values():
+        if isinstance(value, torch.nn.Module):
+            value.to(device)
+
+    return learner
+
+
 def _manifest_output(artifact):
     try:
         return load_manifest(artifact.manifest_path).get("output", {})
     except Exception:
         return {}
 
+
+# ============================================================
+# Trace helpers
+# ============================================================
 
 def _get_feature_selection_trace(artifact):
     output = _manifest_output(artifact)
@@ -86,11 +128,17 @@ def _get_preprocessing_trace(view, model_artifact=None):
     }
 
 
+# ============================================================
+# Metrics
+# ============================================================
+
 def _get_classes(learner):
     if getattr(learner, "classes_", None) is not None:
         return np.asarray(learner.classes_)
+
     if getattr(getattr(learner, "model", None), "classes_", None) is not None:
         return np.asarray(learner.model.classes_)
+
     return None
 
 
@@ -122,16 +170,23 @@ def _count_parameters(learner):
     model = getattr(learner, "model", None)
     if model is None or not hasattr(model, "parameters"):
         return None
+
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def _get_training_seed(manifest):
     params = manifest.get("params", {})
     training_params = params.get("training_params", {})
+
     if "seed" in training_params:
         return training_params["seed"]
+
     return params.get("model_params", {}).get("random_state")
 
+
+# ============================================================
+# Evaluation
+# ============================================================
 
 def _iter_evaluation_sets(data):
     groups = {
@@ -178,6 +233,10 @@ def _evaluate_partition(learner, transformer, X, y, domains, super_domains):
     }
 
 
+# ============================================================
+# Paths
+# ============================================================
+
 def _slug(value):
     return re.sub(r"[^a-zA-Z0-9]+", "-", str(value)).strip("-").lower()
 
@@ -196,8 +255,16 @@ def _output_dir(model_artifacts, signature):
     return OUTPUT_ROOT / scenarios / f"{methods}__{signature[:12]}"
 
 
+# ============================================================
+# Public function
+# ============================================================
+
 def run_model_evaluation(model_artifacts, params=None):
-    params = params or {}
+    params = dict(params or {})
+    device = _resolve_device(params.get("device", "auto"))
+    params["device"] = device
+
+    #print(f"[Evaluation] Device | {device}", flush=True)
 
     model_signatures = sorted(
         model.signature
@@ -205,6 +272,7 @@ def run_model_evaluation(model_artifacts, params=None):
         for artifact in artifacts
         for model in artifact["artifacts"]
     )
+
     effective_params = {"models": model_signatures, "params": params}
     signature = make_signature(effective_params)
 
@@ -215,8 +283,10 @@ def run_model_evaluation(model_artifacts, params=None):
     if exists(results_path) and is_done(manifest_path, effective_params):
         manifest = load_manifest(manifest_path)
         return ModelResultsArtifact(
-            path=str(results_path), manifest_path=str(manifest_path),
-            signature=signature, n_rows=manifest["output"]["n_rows"],
+            path=str(results_path),
+            manifest_path=str(manifest_path),
+            signature=signature,
+            n_rows=manifest["output"]["n_rows"],
         )
 
     start = time.time()
@@ -226,7 +296,9 @@ def run_model_evaluation(model_artifacts, params=None):
     try:
         for scenario, artifacts in model_artifacts.items():
             for artifact in artifacts:
-                group_name, view, split = artifact["group"], artifact["view"], artifact["split"]
+                group_name = artifact["group"]
+                view = artifact["view"]
+                split = artifact["split"]
                 fs_artifact = artifact["fs_artifact"]
                 fs_trace = _get_feature_selection_trace(fs_artifact)
 
@@ -234,10 +306,17 @@ def run_model_evaluation(model_artifacts, params=None):
                 transformer = load_pickle(fs_artifact.transformer_path)
 
                 for model_artifact in artifact["artifacts"]:
-                    learner = load_pickle(model_artifact.model_path)
+                    learner = load_pickle(
+                        model_artifact.model_path,
+                        map_location=device,
+                    )
+                    learner = _set_learner_device(learner, device)
+
                     model_manifest = load_manifest(model_artifact.manifest_path)
                     model_trace = _get_model_trace(model_artifact)
-                    preprocessing_trace = _get_preprocessing_trace(view, model_artifact)
+                    preprocessing_trace = _get_preprocessing_trace(
+                        view, model_artifact
+                    )
 
                     fs_method = _coalesce(
                         model_trace["feature_selection_method"],
@@ -276,13 +355,21 @@ def run_model_evaluation(model_artifacts, params=None):
                             group=group_name,
 
                             n_source_domains=len(split.source_elementary_domains),
-                            n_target_super_domains=len(split.target_super_domain_elementary_domains),
+                            n_target_super_domains=len(
+                                split.target_super_domain_elementary_domains
+                            ),
                             target_fraction=split.target_fraction,
                             split_seed=split.seed,
 
-                            source_domains=";".join(map(str, split.source_elementary_domains)),
-                            target_super_domains=";".join(map(str, split.target_super_domain_elementary_domains)),
-                            target_domains=";".join(map(str, split.target_elementary_domains)),
+                            source_domains=";".join(
+                                map(str, split.source_elementary_domains)
+                            ),
+                            target_super_domains=";".join(
+                                map(str, split.target_super_domain_elementary_domains)
+                            ),
+                            target_domains=";".join(
+                                map(str, split.target_elementary_domains)
+                            ),
 
                             feature_selection_signature=fs_artifact.signature,
                             learning_method=model_artifact.learning_method,
@@ -301,7 +388,9 @@ def run_model_evaluation(model_artifacts, params=None):
 
                             training_time=training_time,
                             inference_time=metrics["inference_time"],
-                            inference_time_per_sample=metrics["inference_time_per_sample"],
+                            inference_time_per_sample=metrics[
+                                "inference_time_per_sample"
+                            ],
                             model_size_bytes=model_size,
                             n_parameters=n_parameters,
                         )
@@ -320,20 +409,30 @@ def run_model_evaluation(model_artifacts, params=None):
         save_data(dataframe, results_path)
 
         manifest = make_manifest(
-            "done", effective_params, execution_time=time.time() - start
+            "done", effective_params,
+            execution_time=time.time() - start,
         )
-        manifest["output"] = {"path": str(results_path), "n_rows": len(dataframe)}
+        manifest["output"] = {
+            "path": str(results_path),
+            "n_rows": len(dataframe),
+        }
         save_manifest(manifest, manifest_path)
 
     except Exception as error:
-        save_manifest(make_manifest(
-            "failed", effective_params,
-            execution_time=time.time() - start,
-            error=str(error),
-        ), manifest_path)
+        save_manifest(
+            make_manifest(
+                "failed",
+                effective_params,
+                execution_time=time.time() - start,
+                error=str(error),
+            ),
+            manifest_path,
+        )
         raise
 
     return ModelResultsArtifact(
-        path=str(results_path), manifest_path=str(manifest_path),
-        signature=signature, n_rows=len(rows),
+        path=str(results_path),
+        manifest_path=str(manifest_path),
+        signature=signature,
+        n_rows=len(rows),
     )
