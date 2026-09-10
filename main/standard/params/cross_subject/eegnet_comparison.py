@@ -95,7 +95,6 @@ SCENARIO_PARAMS = {
     "seed": 0,
 }
 
-
 # ============================================================
 # Feature transformation
 # ============================================================
@@ -110,7 +109,6 @@ FEATURE_SELECTION_PARAMS = [
         },
     },
 ]
-
 
 # ============================================================
 # EEGNet
@@ -154,23 +152,14 @@ TRAINING_PARAMS = [
         },
     },
     {
-        "name": "eegnet_deep_coral",
-        "learning": "deep_coral",
+        "name": "eegnet_dann_v2",
+        "learning": "dann__progressive_0_3",
         "model": "eegnet",
         "model_params": EEGNET_PARAMS,
         "training_params": {
             **_NEURAL_BASE_PARAMS,
-            "coral_lambda": 1.0,
-        },
-    },
-    {
-        "name": "eegnet_dann",
-        "learning": "dann",
-        "model": "eegnet",
-        "model_params": EEGNET_PARAMS,
-        "training_params": {
-            **_NEURAL_BASE_PARAMS,
-            "dann_lambda": 1.0,
+            "dann_lambda": 0.3,
+            "dann_gamma": 10.0,
             "domain_hidden_dim": 64,
         },
     },
@@ -199,13 +188,7 @@ BENCHMARK_TABLES_PARAMS = {
             "method": "EEGNet ERM",
         },
         {
-            "learning_method": "deep_coral",
-            "model_name": "eegnet",
-            "regime": "UDA",
-            "method": "Deep CORAL",
-        },
-        {
-            "learning_method": "dann",
+            "learning_method": "dann__progressive_0_3",
             "model_name": "eegnet",
             "regime": "UDA",
             "method": "DANN",

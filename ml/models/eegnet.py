@@ -37,10 +37,9 @@ class EEGNet(nn.Module):
                     f"EEGNet requires one signal band, got {tuple(X.shape)}."
                 )
             X = X[:, 0]
-
         return X
 
-    def extract_features(self, X):
+    def extract_feature_map(self, X):
         X = self._prepare_input(X)
 
         for name, layer in self.model.named_children():
@@ -48,7 +47,13 @@ class EEGNet(nn.Module):
                 break
             X = layer(X)
 
-        return X.flatten(1)
+        return X
+
+    def extract_features(self, X):
+        return self.extract_feature_map(X).flatten(1)
+
+    def classify_feature_map(self, X):
+        return self.model.final_layer(X)
 
     def forward(self, X):
         return self.model(self._prepare_input(X))

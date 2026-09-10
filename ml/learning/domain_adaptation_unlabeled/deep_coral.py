@@ -46,7 +46,6 @@ class DeepCORAL(BaseLearningAlgorithm):
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
-        #model.apply(self._reset_parameters)
         model = model.to(self.device)
 
         if not hasattr(model, "extract_features"):
@@ -108,16 +107,27 @@ class DeepCORAL(BaseLearningAlgorithm):
 
                 optimizer.zero_grad()
 
-                source_logits = model(X_source_batch)
+                if (
+                    hasattr(model, "extract_feature_map")
+                    and hasattr(model, "classify_feature_map")
+                ):
+                    source_map = model.extract_feature_map(X_source_batch)
+                    target_map = model.extract_feature_map(X_target_batch)
+
+                    source_logits = model.classify_feature_map(source_map)
+                    source_features = source_map.flatten(1)
+                    target_features = target_map.flatten(1)
+                else:
+                    source_logits = model(X_source_batch)
+                    source_features = model.extract_features(X_source_batch)
+                    target_features = model.extract_features(X_target_batch)
+
                 source_loss = criterion(source_logits, y_source_batch)
-
-                source_features = model.extract_features(X_source_batch)
-                target_features = model.extract_features(X_target_batch)
-
                 coral_loss = self._coral_loss(
                     source_features,
                     target_features,
                 )
+
                 loss = source_loss + coral_lambda * coral_loss
 
                 loss.backward()
@@ -186,7 +196,6 @@ class DeepCORAL(BaseLearningAlgorithm):
             raise ValueError("DeepCORAL requires source data.")
 
         mask = source.partitions == "train"
-
         if not np.any(mask):
             raise ValueError("No source training samples found.")
 
@@ -215,11 +224,6 @@ class DeepCORAL(BaseLearningAlgorithm):
             )
 
         return np.concatenate(X_parts)
-
-    @staticmethod
-    def _reset_parameters(module):
-        if hasattr(module, "reset_parameters"):
-            module.reset_parameters()
 
     def _check_fitted(self):
         if self.model is None:

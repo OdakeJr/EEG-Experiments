@@ -75,6 +75,7 @@ class DANN(BaseLearningAlgorithm):
         learning_rate = training_params.get("learning_rate", 1e-3)
         weight_decay = training_params.get("weight_decay", 0.0)
         dann_lambda = training_params.get("dann_lambda", 1.0)
+        dann_gamma = training_params.get("dann_gamma", 10.0)
         domain_hidden_dim = training_params.get("domain_hidden_dim", 64)
         self.device = training_params.get("device", "cpu")
         seed = training_params.get("seed", 42)
@@ -84,7 +85,6 @@ class DANN(BaseLearningAlgorithm):
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
-        #model.apply(self._reset_parameters)
         model = model.to(self.device)
 
         if not hasattr(model, "extract_features"):
@@ -105,20 +105,20 @@ class DANN(BaseLearningAlgorithm):
             torch.as_tensor(X_target, dtype=torch.float32)
         )
 
-        generator = torch.Generator()
-        generator.manual_seed(seed)
+        source_generator = torch.Generator().manual_seed(seed)
+        target_generator = torch.Generator().manual_seed(seed + 1)
 
         source_loader = DataLoader(
             source_dataset,
             batch_size=batch_size,
             shuffle=True,
-            generator=generator,
+            generator=source_generator,
         )
         target_loader = DataLoader(
             target_dataset,
             batch_size=batch_size,
             shuffle=True,
-            generator=generator,
+            generator=target_generator,
         )
 
         model.eval()
@@ -134,7 +134,7 @@ class DANN(BaseLearningAlgorithm):
             feature_dim, domain_hidden_dim
         ).to(self.device)
 
-        gradient_reversal = _GradientReversal(dann_lambda)
+        gradient_reversal = _GradientReversal(0.0)
 
         optimizer = torch.optim.Adam(
             list(model.parameters()) + list(domain_discriminator.parameters()),
@@ -148,6 +148,9 @@ class DANN(BaseLearningAlgorithm):
         model.train()
         domain_discriminator.train()
 
+        total_steps = epochs * len(source_loader)
+        step = 0
+
         for _ in range(epochs):
             for (X_source_batch, y_source_batch), (X_target_batch,) in zip(
                 source_loader, cycle(target_loader)
@@ -158,13 +161,29 @@ class DANN(BaseLearningAlgorithm):
 
                 optimizer.zero_grad()
 
-                source_logits = model(X_source_batch)
+                progress = step / max(total_steps - 1, 1)
+                gradient_reversal.strength = dann_lambda * (
+                    2.0 / (1.0 + np.exp(-dann_gamma * progress)) - 1.0
+                )
+
+                if (
+                    hasattr(model, "extract_feature_map")
+                    and hasattr(model, "classify_feature_map")
+                ):
+                    source_map = model.extract_feature_map(X_source_batch)
+                    target_map = model.extract_feature_map(X_target_batch)
+
+                    source_logits = model.classify_feature_map(source_map)
+                    source_features = source_map.flatten(1)
+                    target_features = target_map.flatten(1)
+                else:
+                    source_logits = model(X_source_batch)
+                    source_features = model.extract_features(X_source_batch)
+                    target_features = model.extract_features(X_target_batch)
+
                 classification_loss = classification_criterion(
                     source_logits, y_source_batch
                 )
-
-                source_features = model.extract_features(X_source_batch)
-                target_features = model.extract_features(X_target_batch)
 
                 source_domain_logits = domain_discriminator(
                     gradient_reversal(source_features)
@@ -174,10 +193,14 @@ class DANN(BaseLearningAlgorithm):
                 )
 
                 source_domain_labels = torch.zeros(
-                    len(X_source_batch), dtype=torch.long, device=self.device
+                    len(X_source_batch),
+                    dtype=torch.long,
+                    device=self.device,
                 )
                 target_domain_labels = torch.ones(
-                    len(X_target_batch), dtype=torch.long, device=self.device
+                    len(X_target_batch),
+                    dtype=torch.long,
+                    device=self.device,
                 )
 
                 source_domain_loss = domain_criterion(
@@ -192,6 +215,7 @@ class DANN(BaseLearningAlgorithm):
 
                 loss.backward()
                 optimizer.step()
+                step += 1
 
         self.model = model
         self.domain_discriminator = domain_discriminator
@@ -238,7 +262,6 @@ class DANN(BaseLearningAlgorithm):
             raise ValueError("DANN requires source data.")
 
         mask = source.partitions == "train"
-
         if not np.any(mask):
             raise ValueError("No source training samples found.")
 
@@ -267,11 +290,6 @@ class DANN(BaseLearningAlgorithm):
             )
 
         return np.concatenate(X_parts)
-
-    @staticmethod
-    def _reset_parameters(module):
-        if hasattr(module, "reset_parameters"):
-            module.reset_parameters()
 
     def _check_fitted(self):
         if self.model is None:
