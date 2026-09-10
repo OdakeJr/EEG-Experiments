@@ -1,26 +1,17 @@
+# ml/feature_selection/signal_to_feature/csp.py
+
 import numpy as np
 from scipy.linalg import eigh
 
-from ml.feature_selection.base import FeatureTransformer
+from ml.feature_selection.signal_to_feature.base import SignalToFeatureTransformer
 
 
-class CSPTransformer(FeatureTransformer):
-    input_representation = "signal"
-    output_representation = "features"
-
-    def __init__(
-        self,
-        n_components=4,
-        reg=1e-6,
-        log=True,
-        pre_scaler=None,
-        post_scaler=None,
-    ):
+class CSPTransformer(SignalToFeatureTransformer):
+    def __init__(self, n_components=4, reg=1e-6, log=True, pre_scaler=None, post_scaler=None):
         if pre_scaler is not None:
             raise ValueError("CSP does not support pre_scaling of signal input.")
 
         super().__init__(pre_scaler=None, post_scaler=post_scaler)
-
         self.n_components = n_components
         self.reg = reg
         self.log = log
@@ -29,84 +20,53 @@ class CSPTransformer(FeatureTransformer):
 
     def _as_bands(self, X):
         X = np.asarray(X)
-
         if X.ndim == 3:
             return X[:, None, :, :]
-
         if X.ndim == 4:
             return X
-
-        raise ValueError(
-            f"CSP expects [N,C,T] or [N,B,C,T], got {X.shape}."
-        )
+        raise ValueError(f"CSP expects [N,C,T] or [N,B,C,T], got {X.shape}.")
 
     def _mean_covariance(self, X):
-        covariances = []
-
+        covs = []
         for trial in X:
             cov = trial @ trial.T
-            trace = np.trace(cov)
-
-            if trace > 0:
-                cov /= trace
-
-            covariances.append(cov)
-
-        return np.mean(covariances, axis=0)
+            cov /= max(np.trace(cov), 1e-12)
+            covs.append(cov)
+        return np.mean(covs, axis=0)
 
     def _select_filters(self, eigenvectors, eigenvalues):
         order = np.argsort(eigenvalues)
-        low = order[: self.n_components // 2]
-        high = order[-(self.n_components - len(low)) :]
+        n_low = self.n_components // 2
+        idx = np.concatenate([order[-(self.n_components - n_low):], order[:n_low]])
+        return eigenvectors[:, idx].T
 
-        indices = np.concatenate([high, low])
-        return eigenvectors[:, indices].T
-
-    def _fit_binary(self, X_positive, X_negative):
-        C_pos = self._mean_covariance(X_positive)
-        C_neg = self._mean_covariance(X_negative)
-
-        n_channels = C_pos.shape[0]
-        identity = np.eye(n_channels)
-
-        C_pos += self.reg * identity
-        C_neg += self.reg * identity
+    def _fit_binary(self, positive, negative):
+        C_pos = self._mean_covariance(positive)
+        C_neg = self._mean_covariance(negative)
+        I = np.eye(C_pos.shape[0])
 
         eigenvalues, eigenvectors = eigh(
-            C_pos,
-            C_pos + C_neg,
+            C_pos + self.reg * I,
+            C_pos + C_neg + 2 * self.reg * I,
         )
-
-        return self._select_filters(
-            eigenvectors,
-            eigenvalues,
-        )
+        return self._select_filters(eigenvectors, eigenvalues)
 
     def _fit(self, X, y=None, domains=None):
         if y is None:
             raise ValueError("CSP requires class labels.")
 
-        X = self._as_bands(X)
-        y = np.asarray(y)
-
+        X, y = self._as_bands(X), np.asarray(y)
         self.classes_ = np.unique(y)
         self.filters_ = []
 
         for band in range(X.shape[1]):
-            band_filters = []
-
+            filters = []
             for cls in self.classes_:
-                positive = X[y == cls, band]
-                negative = X[y != cls, band]
-
-                if len(positive) == 0 or len(negative) == 0:
+                positive, negative = X[y == cls, band], X[y != cls, band]
+                if not len(positive) or not len(negative):
                     raise ValueError(f"Cannot fit CSP for class '{cls}'.")
-
-                band_filters.append(
-                    self._fit_binary(positive, negative)
-                )
-
-            self.filters_.append(band_filters)
+                filters.append(self._fit_binary(positive, negative))
+            self.filters_.append(filters)
 
         return self
 
@@ -117,17 +77,11 @@ class CSPTransformer(FeatureTransformer):
         X = self._as_bands(X)
         features = []
 
-        for band, band_filters in enumerate(self.filters_):
-            signal = X[:, band]
-
-            for filters in band_filters:
-                projected = np.einsum("kc,nct->nkt", filters, signal)
+        for band, filters in enumerate(self.filters_):
+            for W in filters:
+                projected = np.einsum("kc,nct->nkt", W, X[:, band])
                 variance = np.var(projected, axis=2)
-
-                variance /= np.maximum(
-                    variance.sum(axis=1, keepdims=True),
-                    1e-12,
-                )
+                variance /= np.maximum(variance.sum(axis=1, keepdims=True), 1e-12)
 
                 if self.log:
                     variance = np.log(np.maximum(variance, 1e-12))

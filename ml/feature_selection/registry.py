@@ -6,7 +6,7 @@ from ml.feature_selection.feature_to_feature.classical import (
     MutualInformationSelector,
 )
 from ml.feature_selection.feature_to_feature.random_fs import RandomSelector
-from ml.feature_selection.signal_to_feature.csp import CSPTransformer
+from ml.feature_selection.signal_to_feature.combined import SignalFeatureTransformer
 from ml.feature_selection.signal_to_signal.identity import IdentitySignalTransformer
 from ml.feature_selection.signal_to_signal.standardize import StandardizeSignalTransformer
 
@@ -16,7 +16,7 @@ FEATURE_TRANSFORMERS = {
     "anova": ANOVASelector,
     "mutual_information": MutualInformationSelector,
     "random": RandomSelector,
-    "csp": CSPTransformer,
+    "signal_features": SignalFeatureTransformer,
     "identity_signal": IdentitySignalTransformer,
     "standardize_signal": StandardizeSignalTransformer,
 }
