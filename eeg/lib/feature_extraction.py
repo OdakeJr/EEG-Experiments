@@ -272,7 +272,7 @@ def extract_relative_bandpower(
     channels = _get_channel_names(trial, channel_names)
     freqs, psd = _psd(trial, sfreq)
     total_mask = (freqs >= total_band[0]) & (freqs <= total_band[1])
-    total = np.trapezoid(psd[:, total_mask], freqs[total_mask], axis=1) + 1e-12
+    total = np.trapz(psd[:, total_mask], freqs[total_mask], axis=1) + 1e-12
     vals, names = [], []
 
     for low, high in bands:
