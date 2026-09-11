@@ -258,7 +258,7 @@ def extract_bandpower(trial, channel_names=None, prefix="bp_", sfreq=128.0, band
 
     for low, high in bands:
         mask = (freqs >= low) & (freqs <= high)
-        power = np.trapezoid(psd[:, mask], freqs[mask], axis=1)
+        power = np.trapz(psd[:, mask], freqs[mask], axis=1)
         vals.extend(power)
         names.extend(f"{prefix}{low}_{high}_{ch}" for ch in channels)
 
@@ -277,7 +277,7 @@ def extract_relative_bandpower(
 
     for low, high in bands:
         mask = (freqs >= low) & (freqs <= high)
-        power = np.trapezoid(psd[:, mask], freqs[mask], axis=1) / total
+        power = np.trapz(psd[:, mask], freqs[mask], axis=1) / total
         vals.extend(power)
         names.extend(f"{prefix}{low}_{high}_{ch}" for ch in channels)
 
