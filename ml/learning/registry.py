@@ -15,6 +15,7 @@ from ml.learning.domain_generalization.mmd import MMD
 from ml.learning.domain_adaptation_unlabeled.deep_coral import DeepCORAL
 from ml.learning.domain_adaptation_unlabeled.dann import DANN
 from ml.learning.domain_adaptation_unlabeled.mcd import MCD
+from ml.learning.domain_adaptation_unlabeled.deep_mmd import DeepMMD
 from ml.learning.domain_adaptation_unlabeled.importance_weighting import (
     ImportanceWeighting,
 )
@@ -96,6 +97,12 @@ from ml.learning.source_free.source_free_labeled.l2_sp import L2SP
 # MCD:
 #   Saito et al. (CVPR 2018)
 #   "Maximum Classifier Discrepancy for Unsupervised Domain Adaptation"
+#
+# Deep MMD:
+#   Gretton et al. (JMLR 2012)
+#   "A Kernel Two-Sample Test"
+#   MMD is used here to align source and unlabeled target
+#   feature distributions.
 #
 # Importance Weighting / KLIEP:
 #   Sugiyama et al. (NeurIPS 2007)
@@ -191,6 +198,7 @@ LEARNING_ALGORITHMS = {
     "deep_coral": DeepCORAL,
     "dann": DANN,
     "mcd": MCD,
+    "deep_mmd": DeepMMD,
     "importance_weighting": ImportanceWeighting,
     "dev_structural_weighting_v1": StructuralWeightingV1,
 

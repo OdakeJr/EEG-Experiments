@@ -28,7 +28,7 @@
 # ============================================================
 
 EXECUTION_PARAMS = {
-    "max_workers": 2,
+    "max_workers": 1,
 }
 
 
@@ -149,6 +149,11 @@ TRAINING_PARAMS = [
         "model_params": EEGNET_PARAMS,
         "training_params": {**_NEURAL_BASE_PARAMS},
     },
+
+    # --------------------------------------------------------
+    # DANN
+    # --------------------------------------------------------
+
     {
         "name": "eegnet_dann_0_1",
         "learning": "dann__progressive_0_1",
@@ -185,6 +190,11 @@ TRAINING_PARAMS = [
             "domain_hidden_dim": 64,
         },
     },
+
+    # --------------------------------------------------------
+    # Deep CORAL
+    # --------------------------------------------------------
+
     {
         "name": "eegnet_coral_0_1",
         "learning": "deep_coral__single_forward_0_1",
@@ -215,6 +225,82 @@ TRAINING_PARAMS = [
             "coral_lambda": 10.0,
         },
     },
+
+    # --------------------------------------------------------
+    # Deep MMD
+    # --------------------------------------------------------
+
+    {
+        "name": "eegnet_mmd_0_1",
+        "learning": "deep_mmd__lambda_0_1",
+        "model": "eegnet",
+        "model_params": EEGNET_PARAMS,
+        "training_params": {
+            **_NEURAL_BASE_PARAMS,
+            "mmd_lambda": 0.1,
+            "gamma": None,
+        },
+    },
+    {
+        "name": "eegnet_mmd_1_0",
+        "learning": "deep_mmd__lambda_1_0",
+        "model": "eegnet",
+        "model_params": EEGNET_PARAMS,
+        "training_params": {
+            **_NEURAL_BASE_PARAMS,
+            "mmd_lambda": 1.0,
+            "gamma": None,
+        },
+    },
+    {
+        "name": "eegnet_mmd_10_0",
+        "learning": "deep_mmd__lambda_10_0",
+        "model": "eegnet",
+        "model_params": EEGNET_PARAMS,
+        "training_params": {
+            **_NEURAL_BASE_PARAMS,
+            "mmd_lambda": 10.0,
+            "gamma": None,
+        },
+    },
+
+    # --------------------------------------------------------
+    # MCD
+    # --------------------------------------------------------
+
+    {
+        "name": "eegnet_mcd_0_1",
+        "learning": "mcd__lambda_0_1_g4",
+        "model": "eegnet",
+        "model_params": EEGNET_PARAMS,
+        "training_params": {
+            **_NEURAL_BASE_PARAMS,
+            "mcd_lambda": 0.1,
+            "generator_steps": 4,
+        },
+    },
+    {
+        "name": "eegnet_mcd_0_5",
+        "learning": "mcd__lambda_0_5_g4",
+        "model": "eegnet",
+        "model_params": EEGNET_PARAMS,
+        "training_params": {
+            **_NEURAL_BASE_PARAMS,
+            "mcd_lambda": 0.5,
+            "generator_steps": 4,
+        },
+    },
+    {
+        "name": "eegnet_mcd_1_0",
+        "learning": "mcd__lambda_1_0_g4",
+        "model": "eegnet",
+        "model_params": EEGNET_PARAMS,
+        "training_params": {
+            **_NEURAL_BASE_PARAMS,
+            "mcd_lambda": 1.0,
+            "generator_steps": 4,
+        },
+    },
 ]
 
 
@@ -239,6 +325,8 @@ BENCHMARK_TABLES_PARAMS = {
             "regime": "ERM",
             "method": "EEGNet ERM",
         },
+
+        # DANN
         {
             "learning_method": "dann__progressive_0_1",
             "model_name": "eegnet",
@@ -257,6 +345,8 @@ BENCHMARK_TABLES_PARAMS = {
             "regime": "UDA",
             "method": "DANN λ=1.0",
         },
+
+        # Deep CORAL
         {
             "learning_method": "deep_coral__single_forward_0_1",
             "model_name": "eegnet",
@@ -274,6 +364,46 @@ BENCHMARK_TABLES_PARAMS = {
             "model_name": "eegnet",
             "regime": "UDA",
             "method": "Deep CORAL λ=10",
+        },
+
+        # Deep MMD
+        {
+            "learning_method": "deep_mmd__lambda_0_1",
+            "model_name": "eegnet",
+            "regime": "UDA",
+            "method": "Deep MMD λ=0.1",
+        },
+        {
+            "learning_method": "deep_mmd__lambda_1_0",
+            "model_name": "eegnet",
+            "regime": "UDA",
+            "method": "Deep MMD λ=1.0",
+        },
+        {
+            "learning_method": "deep_mmd__lambda_10_0",
+            "model_name": "eegnet",
+            "regime": "UDA",
+            "method": "Deep MMD λ=10",
+        },
+
+        # MCD
+        {
+            "learning_method": "mcd__lambda_0_1_g4",
+            "model_name": "eegnet",
+            "regime": "UDA",
+            "method": "MCD λ=0.1",
+        },
+        {
+            "learning_method": "mcd__lambda_0_5_g4",
+            "model_name": "eegnet",
+            "regime": "UDA",
+            "method": "MCD λ=0.5",
+        },
+        {
+            "learning_method": "mcd__lambda_1_0_g4",
+            "model_name": "eegnet",
+            "regime": "UDA",
+            "method": "MCD λ=1.0",
         },
     ],
     "tables": [
