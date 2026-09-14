@@ -1,7 +1,7 @@
-# main/feature_grid/params/cross_subject/preprocessing_fe.py
+# main/feature_grid/params/cross_session/preprocessing_fe.py
 
 # ============================================================
-# Cross-subject preprocessing-feature grid
+# Cross-session preprocessing-feature grid
 # ============================================================
 
 # One worker because neural models use MPS.
@@ -98,7 +98,7 @@ PREPROCESSING_PARAMS = [
         "dataset": "bci2a",
         "root_gdf": "datasets/bci2a/gdf",
         "root_mat": "datasets/bci2a/mat",
-        "name": f"bci2a_cross_subject_pre_{band_name}_{feature_name}",
+        "name": f"bci2a_cross_session_pre_{band_name}_{feature_name}",
         "loader": {
             "channels": CHANNELS,
             "classes": COMMON_CLASSES,
@@ -130,11 +130,11 @@ PREPROCESSING_PARAMS = [
 # Scenario
 # ============================================================
 
-SCENARIO = "cross_subject"
+SCENARIO = "cross_session"
 
-# Leave one subject out:
-# all remaining subjects are source, held-out subject is target.
-# target_fraction=0.0 gives strict LOSO with no target calibration.
+# BCI IV 2a has two sessions per subject:
+# train on one session and evaluate on the held-out session.
+# target_fraction=0.0 keeps the experiment strictly cross-session.
 
 SCENARIO_PARAMS = {
     "source_counts": ["all"],
@@ -142,13 +142,12 @@ SCENARIO_PARAMS = {
     "seed": 0,
 }
 
-
 # ============================================================
 # Feature transformation
 # ============================================================
 
 # No real FS here: remove only constant features and standardize.
-# Transformer is fitted on source-subject training data only.
+# Transformer is fitted on the source/training session only.
 
 FEATURE_SELECTION_PARAMS = [
     {
@@ -319,10 +318,10 @@ BENCHMARK_TABLES_PARAMS = {
     ],
     "tables": [
         {
-            "name": "cross_subject_preprocessing_fe",
-            "scenario": "cross_subject",
+            "name": "cross_session_preprocessing_fe",
+            "scenario": "cross_session",
             "setting_column": "Dataset",
-            "output_name": "cross_subject_preprocessing_fe_table.csv",
+            "output_name": "cross_session_preprocessing_fe_table.csv",
             "include_discrepancy": False,
             "filters": {
                 "target_fraction": 0.0,

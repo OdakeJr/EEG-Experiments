@@ -1,10 +1,10 @@
-# main/feature_grid/params/cross_subject/preprocessing_fe.py
+# main/feature_grid/params/cross_session/signal_fe.py
 
 # ============================================================
-# Cross-subject preprocessing-feature grid
+# Cross-session signal-to-feature grid
 # ============================================================
 
-# One worker because neural models use MPS.
+# MPS training should not be parallelized across multiple processes.
 EXECUTION_PARAMS = {"max_workers": 1}
 
 
@@ -29,55 +29,6 @@ CHANNELS = [
 
 
 # ============================================================
-# Feature grid
-# ============================================================
-
-FEATURE_CONFIGS = {
-    # Statistical
-    # "mean": {},          # P3 - low priority for band-passed EEG
-    # "std": {},           # P3 - redundant with variance/logvar
-    # "var": {},           # P3 - redundant with logvar
-    "logvar": {},          # ACTIVE - strong compact EEG baseline
-    # "skew": {},          # P1 - complementary distribution shape
-    # "kurtosis": {},      # P1 - complementary distribution shape
-    # "min": {},           # P3 - amplitude-sensitive
-    # "max": {},           # P3 - amplitude-sensitive
-    # "rms": {},           # P2 - strongly related to variance
-    # "ptp": {},           # P2 - amplitude range
-
-    # Temporal
-    "line_length": {},     # ACTIVE - simple temporal complexity/activity
-    # "hjorth_activity": {},   # P3 - essentially variance
-    # "hjorth_mobility": {},   # P1 - useful complementary temporal feature
-    # "hjorth_complexity": {}, # P1 - useful complementary temporal feature
-    # "zero_crossing": {},     # P2 - simple frequency/complexity proxy
-    # "ar": {},                # P1 - richer temporal dynamics
-
-    # Spectral
-    # "bandpower": {"sfreq": 250.0},  # P2 - absolute power
-    "relative_bandpower": {"sfreq": 250.0, "total_band": (1, 38)},  # ACTIVE
-    # "psd_stats": {"sfreq": 250.0, "band": (1, 38)},               # P1
-    # "spectral_entropy": {"sfreq": 250.0, "band": (1, 38)},        # P1
-    # "differential_entropy": {},  # P3 - closely related to logvar
-
-    # Nonlinear
-    # "sample_entropy": {},      # P2 - informative but expensive
-    "permutation_entropy": {},  # ACTIVE - robust nonlinear complexity
-    # "higuchi_fd": {},          # P1 - complementary nonlinear measure
-    # "petrosian_fd": {},        # P3 - simpler fractal measure
-
-    # Covariance
-    # "cov": {},                 # P2 - raw covariance, high dimensional
-    "logcov": {},                # ACTIVE - strong covariance representation
-    # "eig": {},                 # P1 - compact covariance structure
-
-    # Time-frequency
-    "wavelet_energy": {},        # ACTIVE - time-frequency representation
-    # "wavelet_entropy": {},     # P1 - natural next wavelet feature
-}
-
-
-# ============================================================
 # Frequency preprocessing
 # ============================================================
 
@@ -93,12 +44,16 @@ BAND_CONFIGS = {
 # Preprocessing
 # ============================================================
 
+# Keep the processed EEG signal. CSP / RCSP / Riemannian are
+# fitted later using source-session training data only.
+
 PREPROCESSING_PARAMS = [
     {
         "dataset": "bci2a",
         "root_gdf": "datasets/bci2a/gdf",
         "root_mat": "datasets/bci2a/mat",
-        "name": f"bci2a_cross_subject_pre_{band_name}_{feature_name}",
+        "name": f"bci2a_cross_session_signal_{band_name}",
+        "representation": "signal",
         "loader": {
             "channels": CHANNELS,
             "classes": COMMON_CLASSES,
@@ -116,13 +71,9 @@ PREPROCESSING_PARAMS = [
                 "enabled": False,
             },
         },
-        "features": {
-            feature_name: feature_params,
-        },
         "show_progress": False,
     }
     for band_name, bands in BAND_CONFIGS.items()
-    for feature_name, feature_params in FEATURE_CONFIGS.items()
 ]
 
 
@@ -130,11 +81,11 @@ PREPROCESSING_PARAMS = [
 # Scenario
 # ============================================================
 
-SCENARIO = "cross_subject"
+SCENARIO = "cross_session"
 
-# Leave one subject out:
-# all remaining subjects are source, held-out subject is target.
-# target_fraction=0.0 gives strict LOSO with no target calibration.
+# Leave one session out:
+# all remaining sessions are source, held-out session is target.
+# No target-session data are used for calibration/training.
 
 SCENARIO_PARAMS = {
     "source_counts": ["all"],
@@ -144,17 +95,54 @@ SCENARIO_PARAMS = {
 
 
 # ============================================================
-# Feature transformation
+# Signal-to-feature transformation
 # ============================================================
 
-# No real FS here: remove only constant features and standardize.
-# Transformer is fitted on source-subject training data only.
+CSP_COMPONENTS = [4, 6, 8]
 
 FEATURE_SELECTION_PARAMS = [
+    *[
+        {
+            "method": "signal_features",
+            "config_label": f"csp_{n}_standard",
+            "params": {
+                "features": {
+                    "csp": {
+                        "n_components": n,
+                        "reg": 1e-6,
+                    },
+                },
+                "post_scaler": "standard",
+            },
+        }
+        for n in CSP_COMPONENTS
+    ],
+    *[
+        {
+            "method": "signal_features",
+            "config_label": f"rcsp_{n}_a01_standard",
+            "params": {
+                "features": {
+                    "rcsp": {
+                        "n_components": n,
+                        "reg": 1e-6,
+                        "alpha": 0.1,
+                    },
+                },
+                "post_scaler": "standard",
+            },
+        }
+        for n in CSP_COMPONENTS
+    ],
     {
-        "method": "variance",
-        "config_label": "all_standard",
+        "method": "signal_features",
+        "config_label": "riemann_standard",
         "params": {
+            "features": {
+                "riemann": {
+                    "reg": 1e-6,
+                },
+            },
             "post_scaler": "standard",
         },
     },
@@ -319,10 +307,10 @@ BENCHMARK_TABLES_PARAMS = {
     ],
     "tables": [
         {
-            "name": "cross_subject_preprocessing_fe",
-            "scenario": "cross_subject",
+            "name": "cross_session_signal_fe",
+            "scenario": "cross_session",
             "setting_column": "Dataset",
-            "output_name": "cross_subject_preprocessing_fe_table.csv",
+            "output_name": "cross_session_signal_fe_table.csv",
             "include_discrepancy": False,
             "filters": {
                 "target_fraction": 0.0,

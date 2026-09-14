@@ -75,7 +75,6 @@ FEATURE_CONFIGS = {
     # "wavelet_entropy": {},     # P1 - natural next wavelet feature
 }
 
-
 # ============================================================
 # Frequency preprocessing
 # ============================================================
@@ -200,12 +199,12 @@ MLP_LARGE_PARAMS = {
 }
 
 _NEURAL_BASE_PARAMS = {
-    "epochs": 300,
-    "batch_size": 64,
+    "epochs": 500,
+    "batch_size": 32,
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
     "optimizer": "adam",
-    "device": "cpu",
+    "device": "mps",
     "seed": 0,
 }
 
@@ -238,21 +237,21 @@ TRAINING_PARAMS = [
     },
     {
         "name": "mlp_small",
-        "learning": "neural_erm",
+        "learning": "neural_erm__mlp_small",
         "model": "mlp",
         "model_params": MLP_SMALL_PARAMS,
         "training_params": {**_NEURAL_BASE_PARAMS},
     },
     {
         "name": "mlp_medium",
-        "learning": "neural_erm",
+        "learning": "neural_erm__mlp_medium",
         "model": "mlp",
         "model_params": MLP_MEDIUM_PARAMS,
         "training_params": {**_NEURAL_BASE_PARAMS},
     },
     {
         "name": "mlp_large",
-        "learning": "neural_erm",
+        "learning": "neural_erm__mlp_large",
         "model": "mlp",
         "model_params": MLP_LARGE_PARAMS,
         "training_params": {**_NEURAL_BASE_PARAMS},
@@ -274,19 +273,19 @@ MODEL_EVALUATION_PARAMS = {}
 BENCHMARK_TABLES_PARAMS = {
     "method_display": [
         {
-            "learning_method": "sklearn_erm__logistic_regression",
+            "learning_method": "sklearn_erm",
             "model_name": "logistic_regression",
             "regime": "Classical",
             "method": "Logistic Regression",
         },
         {
-            "learning_method": "sklearn_erm__svm",
+            "learning_method": "sklearn_erm",
             "model_name": "svm",
             "regime": "Classical",
             "method": "SVM",
         },
         {
-            "learning_method": "sklearn_erm__random_forest",
+            "learning_method": "sklearn_erm",
             "model_name": "random_forest",
             "regime": "Classical",
             "method": "Random Forest",
