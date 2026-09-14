@@ -1,12 +1,12 @@
-# ml/feature_selection/signal_to_feature/rcsp.py
+# ml/representation/feature_extraction/rcsp.py
 
 import numpy as np
 from scipy.linalg import eigh
 
-from ml.feature_selection.signal_to_feature.csp import CSPTransformer
+from ml.representation.feature_extraction.csp import CSPFeatureExtractor
 
 
-class RCSPTransformer(CSPTransformer):
+class RCSPFeatureExtractor(CSPFeatureExtractor):
     def __init__(
         self,
         n_components=4,
@@ -38,5 +38,4 @@ class RCSPTransformer(CSPTransformer):
             C_pos + self.reg * I,
             C_pos + C_neg + 2 * self.reg * I,
         )
-
         return self._select_filters(eigenvectors, eigenvalues)

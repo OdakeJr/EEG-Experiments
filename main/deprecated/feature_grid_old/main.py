@@ -25,7 +25,7 @@ os.chdir(PROJECT_ROOT)
 
 from pipeline.process_data import run_preprocessing
 from pipeline.scenarios import run_scenario
-from pipeline.feature_selection import run_feature_selection
+from pipeline.representation import run_feature_selection
 from pipeline.training import run_training
 from pipeline.evaluation.model_results import run_model_evaluation
 from pipeline.analysis.benchmark_tables import run_benchmark_tables

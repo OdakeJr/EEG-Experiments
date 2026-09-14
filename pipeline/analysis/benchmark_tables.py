@@ -1,3 +1,5 @@
+# pipeline/analysis/benchmark_tables.py
+
 import ast
 import re
 from pathlib import Path
@@ -50,6 +52,7 @@ def run_benchmark_tables(model_results_artifact, domain_results_artifact=None, p
         "model_results_path": str(model_path),
         "domain_results_path": None if domain_path is None else str(domain_path),
     }
+
     signature = make_signature(effective_params)
     output_dir = _output_dir(params, signature)
     manifest_path = output_dir / "manifest.json"
@@ -60,9 +63,12 @@ def run_benchmark_tables(model_results_artifact, domain_results_artifact=None, p
 
     if all(exists(path) for path in table_paths.values()) and is_done(manifest_path, effective_params):
         return AnalysisArtifact(
-            name="benchmark_tables", output_dir=str(output_dir),
+            name="benchmark_tables",
+            output_dir=str(output_dir),
             tables={name: str(path) for name, path in table_paths.items()},
-            figures={}, manifest_path=str(manifest_path), signature=signature,
+            figures={},
+            manifest_path=str(manifest_path),
+            signature=signature,
         )
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -86,9 +92,12 @@ def run_benchmark_tables(model_results_artifact, domain_results_artifact=None, p
     save_manifest(manifest, manifest_path)
 
     return AnalysisArtifact(
-        name="benchmark_tables", output_dir=str(output_dir),
-        tables=written_tables, figures={},
-        manifest_path=str(manifest_path), signature=signature,
+        name="benchmark_tables",
+        output_dir=str(output_dir),
+        tables=written_tables,
+        figures={},
+        manifest_path=str(manifest_path),
+        signature=signature,
     )
 
 
@@ -135,7 +144,7 @@ def _prepare_model_summary(results, display_lookup):
     required = [
         "split_id", "scenario", "group", "n_source_domains",
         "n_target_super_domains", "target_fraction", "source_domains",
-        "target_domains", "feature_selection_signature", "learning_method",
+        "target_domains", "representation_signature", "learning_method",
         "model_name", "model_signature", "evaluation_group", "partition",
         "accuracy", "balanced_accuracy", "macro_f1", "auc",
     ]
@@ -144,20 +153,25 @@ def _prepare_model_summary(results, display_lookup):
     keys = [
         "split_id", "scenario", "group", "n_source_domains",
         "n_target_super_domains", "target_fraction", "source_domains",
-        "target_domains", "feature_selection_signature", "learning_method",
+        "target_domains", "representation_signature", "learning_method",
         "model_name", "model_signature",
     ]
 
-    for column in [
-        "preprocessing_config_label",
-        "feature_selection_config_label",
+    optional_keys = [
         "preprocessing_signature",
-    ]:
-        if column in results.columns:
-            keys.append(column)
+        "preprocessing_config_label",
+        "input_representation",
+        "output_representation",
+        "model_input_representation",
+        "representation_method",
+        "representation_config_label",
+        "signal_transform_config_label",
+        "feature_extraction_config_label",
+        "feature_selection_config_label",
+        "training_seed",
+    ]
 
-    if "training_seed" in results.columns:
-        keys.append("training_seed")
+    keys += [column for column in optional_keys if column in results.columns]
 
     source_train = results[
         (results["evaluation_group"] == "source") &
@@ -171,7 +185,8 @@ def _prepare_model_summary(results, display_lookup):
     ].copy()
 
     train = _collapse_partition_metrics(
-        pd.concat([source_train, intra_train], ignore_index=True), keys,
+        pd.concat([source_train, intra_train], ignore_index=True),
+        keys,
         {
             "accuracy": "source_accuracy",
             "balanced_accuracy": "source_ba",
@@ -213,6 +228,7 @@ def _prepare_model_summary(results, display_lookup):
         return pd.DataFrame()
 
     summary = pd.concat(base, ignore_index=True).drop_duplicates(subset=keys).reset_index(drop=True)
+
     for dataframe in [train, calibration, test]:
         summary = summary.merge(dataframe, on=keys, how="left")
 
@@ -222,14 +238,22 @@ def _prepare_model_summary(results, display_lookup):
     summary["Held-out Dataset"] = summary["target_domains"].apply(_dataset_from_domains)
     summary["source_super_domain_count"] = summary["source_domains"].apply(_dataset_count_from_domains)
 
-    if "preprocessing_config_label" in summary:
-        summary["Preprocessing"] = summary["preprocessing_config_label"]
-    if "feature_selection_config_label" in summary:
-        summary["Feature Selection"] = summary["feature_selection_config_label"]
+    label_columns = {
+        "preprocessing_config_label": "Preprocessing",
+        "representation_config_label": "Representation",
+        "signal_transform_config_label": "Signal Transform",
+        "feature_extraction_config_label": "Feature Extraction",
+        "feature_selection_config_label": "Feature Selection",
+    }
+
+    for source, target in label_columns.items():
+        if source in summary.columns:
+            summary[target] = summary[source].fillna("none")
 
     labels = summary.apply(
         lambda row: _display_labels(row, display_lookup),
-        axis=1, result_type="expand",
+        axis=1,
+        result_type="expand",
     )
     summary["Regime"], summary["Method"] = labels["Regime"], labels["Method"]
 
@@ -264,10 +288,7 @@ def _prepare_discrepancy(results, metric):
     if results is None:
         return pd.DataFrame(columns=["split_id", "discrepancy"])
 
-    _require_columns(
-        results,
-        ["split_id", "comparison", "representation", "metric", "value"],
-    )
+    _require_columns(results, ["split_id", "comparison", "representation", "metric", "value"])
 
     selected = results[
         (results["comparison"] == "source_to_target_elementary") &
@@ -307,7 +328,13 @@ def _build_table(model_summary, discrepancy, config):
     if config.get("group_by_configs", True):
         group_columns += [
             column
-            for column in ["Preprocessing", "Feature Selection"]
+            for column in [
+                "Preprocessing",
+                "Representation",
+                "Signal Transform",
+                "Feature Extraction",
+                "Feature Selection",
+            ]
             if column in df.columns
         ]
 
@@ -385,10 +412,7 @@ def _filter_column(dataframe, column, value):
 
     if pd.api.types.is_numeric_dtype(dataframe[column]) and isinstance(value, (int, float)):
         return dataframe[
-            np.isclose(
-                pd.to_numeric(dataframe[column], errors="coerce"),
-                value,
-            )
+            np.isclose(pd.to_numeric(dataframe[column], errors="coerce"), value)
         ]
 
     return dataframe[dataframe[column] == value]
@@ -399,14 +423,22 @@ def _empty_table(setting_column):
         "Source Accuracy", "Source BA", "Source Macro-F1", "Source AUC",
         "Target-Calibration Accuracy", "Target-Calibration BA",
         "Target-Calibration Macro-F1", "Target-Calibration AUC",
-        "Calibration Gap",
-        "Target-Test Accuracy", "Target-Test BA", "Gap",
-        "Macro-F1", "AUC", "Discrepancy",
+        "Calibration Gap", "Target-Test Accuracy", "Target-Test BA",
+        "Gap", "Macro-F1", "AUC", "Discrepancy",
     ]
 
     columns = [
-        setting_column, "Preprocessing", "Feature Selection", "Regime", "Method",
-        "Runs", "Calibration Runs", "Test Runs",
+        setting_column,
+        "Preprocessing",
+        "Representation",
+        "Signal Transform",
+        "Feature Extraction",
+        "Feature Selection",
+        "Regime",
+        "Method",
+        "Runs",
+        "Calibration Runs",
+        "Test Runs",
     ]
 
     columns += [
@@ -439,11 +471,7 @@ def _parse_domain_list(value):
 
     for separator in [";", ","]:
         if separator in text:
-            return [
-                item.strip()
-                for item in text.split(separator)
-                if item.strip()
-            ]
+            return [item.strip() for item in text.split(separator) if item.strip()]
 
     return [text]
 
@@ -463,13 +491,7 @@ def _dataset_count_from_domains(value):
 
 
 def _require_columns(dataframe, columns):
-    missing = [
-        column
-        for column in columns
-        if column not in dataframe.columns
-    ]
+    missing = [column for column in columns if column not in dataframe.columns]
 
     if missing:
-        raise ValueError(
-            "Missing required columns: " + ", ".join(missing)
-        )
+        raise ValueError("Missing required columns: " + ", ".join(missing))

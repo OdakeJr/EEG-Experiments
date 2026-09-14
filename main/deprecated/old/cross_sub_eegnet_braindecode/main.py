@@ -37,7 +37,7 @@ os.chdir(
 # Parameters
 # ============================================================
 
-from main.old.development_tests_intra.params import (
+from main.old.development_tests_cross_sub_eegnet_braindecode.params import (
     PREPROCESSING_PARAMS,
     SCENARIO,
     SCENARIO_PARAMS,
@@ -60,7 +60,7 @@ from pipeline.scenarios import (
     run_scenario,
 )
 
-from pipeline.feature_selection import (
+from pipeline.representation import (
     run_feature_selection,
 )
 

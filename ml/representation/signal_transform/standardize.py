@@ -1,9 +1,11 @@
+# ml/representation/signal_transform/standardize.py
+
 import numpy as np
 
-from ml.feature_selection.base import FeatureTransformer
+from ml.representation.base import RepresentationTransformer
 
 
-class StandardizeSignalTransformer(FeatureTransformer):
+class StandardizeSignalTransformer(RepresentationTransformer):
     input_representation = "signal"
     output_representation = "signal"
 
@@ -23,10 +25,8 @@ class StandardizeSignalTransformer(FeatureTransformer):
         X = np.asarray(X, dtype=np.float32) * self.scale
 
         if self.mode == "channel":
-            axes = (0, -1)
-            self.mean_ = X.mean(axis=axes, keepdims=True)
-            self.std_ = X.std(axis=axes, keepdims=True)
-            self.std_ = np.maximum(self.std_, self.eps)
+            self.mean_ = X.mean(axis=(0, -1), keepdims=True)
+            self.std_ = np.maximum(X.std(axis=(0, -1), keepdims=True), self.eps)
 
         return self
 

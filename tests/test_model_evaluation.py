@@ -388,7 +388,7 @@ import pandas as pd
 
 import pipeline.process_data as process_data
 import pipeline.scenarios as scenarios
-import pipeline.feature_selection as feature_selection
+import pipeline.representation as representation
 import pipeline.training as training
 import pipeline.evaluation.model_results as model_evaluation
 
@@ -413,7 +413,7 @@ scenarios.OUTPUT_ROOT = (
     TEST_ROOT / "model_evaluation" / "scenarios"
 )
 
-feature_selection.OUTPUT_ROOT = (
+representation.OUTPUT_ROOT = (
     TEST_ROOT / "model_evaluation" / "feature_selection"
 )
 
@@ -581,7 +581,7 @@ def test_model_evaluation_pipeline():
     # ----------------------------------------------
 
     fs_artifact = (
-        feature_selection.run_feature_selection(
+        representation.run_feature_selection(
             split,
             view,
             FS_PARAMS,

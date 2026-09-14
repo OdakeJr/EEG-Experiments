@@ -4,7 +4,7 @@ import numpy as np
 
 import pipeline.process_data as process_data
 import pipeline.scenarios as scenarios
-import pipeline.feature_selection as feature_selection
+import pipeline.representation as representation
 import pipeline.training as training
 
 from utils.storage import (
@@ -28,7 +28,7 @@ scenarios.OUTPUT_ROOT = (
     TEST_ROOT / "scenarios" / "splits"
 )
 
-feature_selection.OUTPUT_ROOT = (
+representation.OUTPUT_ROOT = (
     TEST_ROOT / "feature_selection"
 )
 
@@ -145,7 +145,7 @@ def test_training_pipeline():
     # ----------------------------------------------
 
     fs_artifact = (
-        feature_selection.run_feature_selection(
+        representation.run_feature_selection(
             split,
             view,
             FS_PARAMS,

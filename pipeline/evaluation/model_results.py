@@ -19,10 +19,6 @@ from utils.storage import exists, load_manifest, load_pickle, save_data, save_ma
 OUTPUT_ROOT = Path("outputs/model_results")
 
 
-# ============================================================
-# Helpers
-# ============================================================
-
 def _json_copy(value):
     return json.loads(json.dumps(value, default=str))
 
@@ -75,62 +71,37 @@ def _manifest_output(artifact):
         return {}
 
 
-# ============================================================
-# Trace helpers
-# ============================================================
+def _get_representation_trace(*artifacts):
+    fields = (
+        "input_representation",
+        "output_representation",
+        "model_input_representation",
+        "representation_method",
+        "representation_params",
+        "representation_config_label",
+        "signal_transform_method",
+        "signal_transform_params",
+        "signal_transform_config_label",
+        "feature_extraction_method",
+        "feature_extraction_params",
+        "feature_extraction_config_label",
+        "feature_selection_method",
+        "feature_selection_params",
+        "feature_selection_config_label",
+        "preprocessing_signature",
+        "preprocessing_config_label",
+    )
 
-def _get_feature_selection_trace(artifact):
-    output = _manifest_output(artifact)
-    return {
-        "feature_selection_method": _coalesce(
-            getattr(artifact, "feature_selection_method", None),
-            output.get("feature_selection_method"),
-        ),
-        "feature_selection_params": _json_copy(_coalesce(
-            getattr(artifact, "feature_selection_params", None),
-            output.get("feature_selection_params"),
-        )),
-        "feature_selection_config_label": _coalesce(
-            getattr(artifact, "feature_selection_config_label", None),
-            output.get("feature_selection_config_label"),
-        ),
-    }
+    trace = {field: None for field in fields}
 
+    for artifact in artifacts:
+        output = _manifest_output(artifact)
 
-def _get_model_trace(artifact):
-    output = _manifest_output(artifact)
-    return {
-        **_get_feature_selection_trace(artifact),
-        "preprocessing_signature": _coalesce(
-            getattr(artifact, "preprocessing_signature", None),
-            output.get("preprocessing_signature"),
-        ),
-        "preprocessing_config_label": _coalesce(
-            getattr(artifact, "preprocessing_config_label", None),
-            output.get("preprocessing_config_label"),
-        ),
-    }
+        for field in fields:
+            trace[field] = _coalesce(trace[field], getattr(artifact, field, None), output.get(field))
 
+    return {k: _json_copy(v) for k, v in trace.items()}
 
-def _get_preprocessing_trace(view, model_artifact=None):
-    output = _manifest_output(view)
-    return {
-        "preprocessing_signature": _coalesce(
-            getattr(model_artifact, "preprocessing_signature", None),
-            getattr(view, "preprocessing_signature", None),
-            output.get("preprocessing_signature"),
-        ),
-        "preprocessing_config_label": _coalesce(
-            getattr(model_artifact, "preprocessing_config_label", None),
-            getattr(view, "preprocessing_config_label", None),
-            output.get("preprocessing_config_label"),
-        ),
-    }
-
-
-# ============================================================
-# Metrics
-# ============================================================
 
 def _get_classes(learner):
     if getattr(learner, "classes_", None) is not None:
@@ -148,6 +119,7 @@ def _compute_auc(y, probabilities, classes):
 
     try:
         unique = np.unique(y)
+
         if len(unique) < 2 or classes is None:
             return None
 
@@ -158,16 +130,15 @@ def _compute_auc(y, probabilities, classes):
         if not set(classes).issubset(set(unique)):
             return None
 
-        return roc_auc_score(
-            y, probabilities, labels=classes,
-            multi_class="ovr", average="macro",
-        )
+        return roc_auc_score(y, probabilities, labels=classes, multi_class="ovr", average="macro")
+
     except ValueError:
         return None
 
 
 def _count_parameters(learner):
     model = getattr(learner, "model", None)
+
     if model is None or not hasattr(model, "parameters"):
         return None
 
@@ -184,10 +155,6 @@ def _get_training_seed(manifest):
     return params.get("model_params", {}).get("random_state")
 
 
-# ============================================================
-# Evaluation
-# ============================================================
-
 def _iter_evaluation_sets(data):
     groups = {
         "source": data.source,
@@ -201,11 +168,15 @@ def _iter_evaluation_sets(data):
 
         for partition in np.unique(group.partitions):
             mask = group.partitions == partition
+
             if not np.any(mask):
                 continue
 
             yield (
-                group_name, str(partition), group.X[mask], group.y[mask],
+                group_name,
+                str(partition),
+                group.X[mask],
+                group.y[mask],
                 group.elementary_domains[mask],
                 None if group.super_domains is None else group.super_domains[mask],
             )
@@ -233,10 +204,6 @@ def _evaluate_partition(learner, transformer, X, y, domains, super_domains):
     }
 
 
-# ============================================================
-# Paths
-# ============================================================
-
 def _slug(value):
     return re.sub(r"[^a-zA-Z0-9]+", "-", str(value)).strip("-").lower()
 
@@ -250,21 +217,13 @@ def _output_dir(model_artifacts, signature):
         for artifact in artifacts
         for model in artifact["artifacts"]
     })
-    methods = "-".join(_slug(x) for x in methods)
 
-    return OUTPUT_ROOT / scenarios / f"{methods}__{signature[:12]}"
+    return OUTPUT_ROOT / scenarios / f"{'-'.join(_slug(x) for x in methods)}__{signature[:12]}"
 
-
-# ============================================================
-# Public function
-# ============================================================
 
 def run_model_evaluation(model_artifacts, params=None):
     params = dict(params or {})
-    device = _resolve_device(params.get("device", "auto"))
-    params["device"] = device
-
-    #print(f"[Evaluation] Device | {device}", flush=True)
+    params["device"] = _resolve_device(params.get("device", "auto"))
 
     model_signatures = sorted(
         model.signature
@@ -299,45 +258,17 @@ def run_model_evaluation(model_artifacts, params=None):
                 group_name = artifact["group"]
                 view = artifact["view"]
                 split = artifact["split"]
-                fs_artifact = artifact["fs_artifact"]
-                fs_trace = _get_feature_selection_trace(fs_artifact)
+                representation_artifact = artifact["representation_artifact"]
 
                 data = split.materialize(view)
-                transformer = load_pickle(fs_artifact.transformer_path)
+                transformer = load_pickle(representation_artifact.transformer_path)
 
                 for model_artifact in artifact["artifacts"]:
-                    learner = load_pickle(
-                        model_artifact.model_path,
-                        map_location=device,
-                    )
-                    learner = _set_learner_device(learner, device)
+                    learner = load_pickle(model_artifact.model_path, map_location=params["device"])
+                    learner = _set_learner_device(learner, params["device"])
 
                     model_manifest = load_manifest(model_artifact.manifest_path)
-                    model_trace = _get_model_trace(model_artifact)
-                    preprocessing_trace = _get_preprocessing_trace(
-                        view, model_artifact
-                    )
-
-                    fs_method = _coalesce(
-                        model_trace["feature_selection_method"],
-                        fs_trace["feature_selection_method"],
-                    )
-                    fs_params = _coalesce(
-                        model_trace["feature_selection_params"],
-                        fs_trace["feature_selection_params"],
-                    )
-                    fs_label = _coalesce(
-                        model_trace["feature_selection_config_label"],
-                        fs_trace["feature_selection_config_label"],
-                    )
-                    preprocessing_signature = _coalesce(
-                        model_trace["preprocessing_signature"],
-                        preprocessing_trace["preprocessing_signature"],
-                    )
-                    preprocessing_label = _coalesce(
-                        model_trace["preprocessing_config_label"],
-                        preprocessing_trace["preprocessing_config_label"],
-                    )
+                    trace = _get_representation_trace(representation_artifact, model_artifact)
 
                     training_time = model_manifest.get("execution_time")
                     training_seed = _get_training_seed(model_manifest)
@@ -353,69 +284,59 @@ def run_model_evaluation(model_artifacts, params=None):
                             split_id=split.id,
                             scenario=scenario,
                             group=group_name,
-
                             n_source_domains=len(split.source_elementary_domains),
-                            n_target_super_domains=len(
-                                split.target_super_domain_elementary_domains
-                            ),
+                            n_target_super_domains=len(split.target_super_domain_elementary_domains),
                             target_fraction=split.target_fraction,
                             split_seed=split.seed,
-
-                            source_domains=";".join(
-                                map(str, split.source_elementary_domains)
-                            ),
-                            target_super_domains=";".join(
-                                map(str, split.target_super_domain_elementary_domains)
-                            ),
-                            target_domains=";".join(
-                                map(str, split.target_elementary_domains)
-                            ),
-
-                            feature_selection_signature=fs_artifact.signature,
+                            source_domains=";".join(map(str, split.source_elementary_domains)),
+                            target_super_domains=";".join(map(str, split.target_super_domain_elementary_domains)),
+                            target_domains=";".join(map(str, split.target_elementary_domains)),
+                            representation_signature=representation_artifact.signature,
                             learning_method=model_artifact.learning_method,
                             model_name=model_artifact.model_name,
                             model_signature=model_artifact.signature,
                             training_seed=training_seed,
-
                             evaluation_group=evaluation_group,
                             partition=partition,
                             n_samples=len(y),
-
                             accuracy=metrics["accuracy"],
                             balanced_accuracy=metrics["balanced_accuracy"],
                             macro_f1=metrics["macro_f1"],
                             auc=metrics["auc"],
-
                             training_time=training_time,
                             inference_time=metrics["inference_time"],
-                            inference_time_per_sample=metrics[
-                                "inference_time_per_sample"
-                            ],
+                            inference_time_per_sample=metrics["inference_time_per_sample"],
                             model_size_bytes=model_size,
                             n_parameters=n_parameters,
                         )
 
                         row = result.to_dict()
                         row.update({
-                            "feature_selection_method": fs_method,
-                            "feature_selection_params": _json_string(fs_params),
-                            "feature_selection_config_label": fs_label,
-                            "preprocessing_signature": preprocessing_signature,
-                            "preprocessing_config_label": preprocessing_label,
+                            "input_representation": trace["input_representation"],
+                            "output_representation": trace["output_representation"],
+                            "model_input_representation": trace["model_input_representation"],
+                            "representation_method": trace["representation_method"],
+                            "representation_params": _json_string(trace["representation_params"]),
+                            "representation_config_label": trace["representation_config_label"],
+                            "signal_transform_method": trace["signal_transform_method"],
+                            "signal_transform_params": _json_string(trace["signal_transform_params"]),
+                            "signal_transform_config_label": trace["signal_transform_config_label"],
+                            "feature_extraction_method": trace["feature_extraction_method"],
+                            "feature_extraction_params": _json_string(trace["feature_extraction_params"]),
+                            "feature_extraction_config_label": trace["feature_extraction_config_label"],
+                            "feature_selection_method": trace["feature_selection_method"],
+                            "feature_selection_params": _json_string(trace["feature_selection_params"]),
+                            "feature_selection_config_label": trace["feature_selection_config_label"],
+                            "preprocessing_signature": trace["preprocessing_signature"],
+                            "preprocessing_config_label": trace["preprocessing_config_label"],
                         })
                         rows.append(row)
 
         dataframe = pd.DataFrame(rows)
         save_data(dataframe, results_path)
 
-        manifest = make_manifest(
-            "done", effective_params,
-            execution_time=time.time() - start,
-        )
-        manifest["output"] = {
-            "path": str(results_path),
-            "n_rows": len(dataframe),
-        }
+        manifest = make_manifest("done", effective_params, execution_time=time.time() - start)
+        manifest["output"] = {"path": str(results_path), "n_rows": len(dataframe)}
         save_manifest(manifest, manifest_path)
 
     except Exception as error:

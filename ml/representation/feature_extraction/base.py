@@ -1,8 +1,8 @@
-# ml/feature_selection/signal_to_feature/base.py
+# ml/representation/feature_extraction/base.py
 
-from ml.feature_selection.base import FeatureTransformer
+from ml.representation.base import RepresentationTransformer
 
 
-class SignalToFeatureTransformer(FeatureTransformer):
+class FeatureExtractor(RepresentationTransformer):
     input_representation = "signal"
     output_representation = "features"

@@ -1,4 +1,4 @@
-# ml/feature_selection/base.py
+# ml/representation/base.py
 
 from sklearn.preprocessing import MinMaxScaler, Normalizer, RobustScaler, StandardScaler
 
@@ -11,7 +11,7 @@ SCALERS = {
 }
 
 
-class FeatureTransformer:
+class RepresentationTransformer:
     input_representation = "features"
     output_representation = "features"
 
@@ -26,8 +26,7 @@ class FeatureTransformer:
         if isinstance(config, str):
             method, params = config, {}
         else:
-            method = config["method"]
-            params = config.get("params", {})
+            method, params = config["method"], config.get("params", {})
 
         if method not in SCALERS:
             raise ValueError(f"Unknown scaler: {method}")
@@ -36,9 +35,7 @@ class FeatureTransformer:
 
     def _check_scaler_input(self, X, scaler_name):
         if X.ndim != 2:
-            raise ValueError(
-                f"{scaler_name} requires 2D feature input, got shape {X.shape}."
-            )
+            raise ValueError(f"{scaler_name} requires 2D feature input, got {X.shape}.")
 
     def fit(self, X, y=None, domains=None):
         if self.pre_scaler is not None:

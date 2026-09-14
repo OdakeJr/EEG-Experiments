@@ -1,5 +1,3 @@
-# main/standard/main.py
-
 import argparse
 import importlib.util
 import os
@@ -9,6 +7,10 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 
+# ============================================================
+# Paths
+# ============================================================
+
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -16,13 +18,22 @@ sys.path.insert(0, str(EXPERIMENT_DIR))
 sys.path.append(str(PROJECT_ROOT))
 os.chdir(PROJECT_ROOT)
 
-from pipeline.analysis.benchmark_tables import run_benchmark_tables
-from pipeline.evaluation.model_results import run_model_evaluation
-from pipeline.process_data import run_preprocessing
-from pipeline.representation import run_representation
-from pipeline.scenarios import run_scenario
-from pipeline.training import run_training
 
+# ============================================================
+# Pipeline
+# ============================================================
+
+from pipeline.process_data import run_preprocessing
+from pipeline.scenarios import run_scenario
+from pipeline.representation import run_feature_selection
+from pipeline.training import run_training
+from pipeline.evaluation.model_results import run_model_evaluation
+from pipeline.analysis.benchmark_tables import run_benchmark_tables
+
+
+# ============================================================
+# Parameters
+# ============================================================
 
 def _load_params(path):
     path = Path(path)
@@ -36,6 +47,10 @@ def _load_params(path):
 
     return module, path.relative_to(PROJECT_ROOT)
 
+
+# ============================================================
+# Execution helpers
+# ============================================================
 
 def _log(message):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
@@ -104,20 +119,20 @@ def _run_tasks(function, tasks, max_workers):
     return results
 
 
-def _representation_task(task):
+def _feature_selection_task(task):
     group, view, split, params = task
-    artifact = run_representation(split, view, params, group=group)
+    fs = run_feature_selection(split, view, params, group=group)
 
     return {
         "group": group,
         "view": view,
         "split": split,
-        "representation_artifact": artifact,
+        "fs_artifact": fs,
     }
 
 
 def _training_task(task):
-    item_idx, model_idx, group, view, split, representation_artifact, params = task
+    item_idx, model_idx, group, view, split, fs_artifact, params = task
     name = params.get("name", params.get("learning", "unknown"))
     pid = os.getpid()
 
@@ -125,7 +140,7 @@ def _training_task(task):
     start = time.perf_counter()
 
     try:
-        model = run_training(split, view, representation_artifact, params, group=group)
+        model = run_training(split, view, fs_artifact, params, group=group)
     except Exception as exc:
         _log(
             f"[Training task] FAILED | pid={pid} | item={item_idx + 1} | "
@@ -140,6 +155,10 @@ def _training_task(task):
 
     return item_idx, model_idx, model
 
+
+# ============================================================
+# Stages
+# ============================================================
 
 def preprocessing_stage(params):
     return [
@@ -161,7 +180,7 @@ def scenario_stage(preprocessing, scenario, params):
     ]
 
 
-def representation_stage(scenarios, params, max_workers=1):
+def feature_selection_stage(scenarios, params, max_workers=1):
     tasks = [
         (item["group"], item["view"], split, config)
         for item in scenarios
@@ -169,16 +188,16 @@ def representation_stage(scenarios, params, max_workers=1):
         for config in params
     ]
 
-    return _run_tasks(_representation_task, tasks, max_workers)
+    return _run_tasks(_feature_selection_task, tasks, max_workers)
 
 
-def training_stage(representations, params, max_workers=1):
+def training_stage(features, params, max_workers=1):
     artifacts = [
         {
             **item,
             "artifacts": [None] * len(params),
         }
-        for item in representations
+        for item in features
     ]
 
     tasks = [
@@ -188,10 +207,10 @@ def training_stage(representations, params, max_workers=1):
             item["group"],
             item["view"],
             item["split"],
-            item["representation_artifact"],
+            item["fs_artifact"],
             config,
         )
-        for item_idx, item in enumerate(representations)
+        for item_idx, item in enumerate(features)
         for model_idx, config in enumerate(params)
     ]
 
@@ -209,6 +228,10 @@ def analysis_stage(model_results, params):
     return run_benchmark_tables(model_results, None, params)
 
 
+# ============================================================
+# Main
+# ============================================================
+
 def main(params_path):
     params, params_path = _load_params(params_path)
 
@@ -222,48 +245,33 @@ def main(params_path):
     _log(f"[Pipeline] Params | {params_path}")
 
     preprocessing = _run_stage(
-        "Preprocessing",
-        preprocessing_stage,
+        "Preprocessing", preprocessing_stage,
         params.PREPROCESSING_PARAMS,
     )
 
     scenarios = _run_stage(
-        "Scenarios",
-        scenario_stage,
-        preprocessing,
-        params.SCENARIO,
-        params.SCENARIO_PARAMS,
+        "Scenarios", scenario_stage,
+        preprocessing, params.SCENARIO, params.SCENARIO_PARAMS,
     )
 
-    representations = _run_stage(
-        "Representation",
-        representation_stage,
-        scenarios,
-        params.REPRESENTATION_PARAMS,
-        max_workers,
+    features = _run_stage(
+        "Feature selection", feature_selection_stage,
+        scenarios, params.FEATURE_SELECTION_PARAMS, max_workers,
     )
 
     models = _run_stage(
-        "Training",
-        training_stage,
-        representations,
-        params.TRAINING_PARAMS,
-        max_workers,
+        "Training", training_stage,
+        features, params.TRAINING_PARAMS, max_workers,
     )
 
     model_results = _run_stage(
-        "Evaluation",
-        evaluation_stage,
-        models,
-        params.SCENARIO,
-        params.MODEL_EVALUATION_PARAMS,
+        "Evaluation", evaluation_stage,
+        models, params.SCENARIO, params.MODEL_EVALUATION_PARAMS,
     )
 
     results = _run_stage(
-        "Analysis",
-        analysis_stage,
-        model_results,
-        params.BENCHMARK_TABLES_PARAMS,
+        "Analysis", analysis_stage,
+        model_results, params.BENCHMARK_TABLES_PARAMS,
     )
 
     _log(f"[Pipeline] Finished | total={_format_time(time.perf_counter() - start)}")

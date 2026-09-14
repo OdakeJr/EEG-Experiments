@@ -1,7 +1,9 @@
-from ml.feature_selection.base import FeatureTransformer
+# ml/representation/signal_transform/identity.py
+
+from ml.representation.base import RepresentationTransformer
 
 
-class IdentitySignalTransformer(FeatureTransformer):
+class IdentitySignalTransformer(RepresentationTransformer):
     input_representation = "signal"
     output_representation = "signal"
 

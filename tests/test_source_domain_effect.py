@@ -8,7 +8,7 @@ import pytest
 import pipeline.process_data as process_data
 import pipeline.combine_data as combine_data
 import pipeline.scenarios as scenarios
-import pipeline.feature_selection as feature_selection
+import pipeline.representation as representation
 import pipeline.training as training
 
 import pipeline.evaluation.model_results as model_results
@@ -507,7 +507,7 @@ def _build_model_artifacts(
             "view"
         ]
 
-        fs_artifact = feature_selection.run_feature_selection(
+        fs_artifact = representation.run_feature_selection(
             split,
             view,
             FS_PARAMS,
@@ -1047,7 +1047,7 @@ def test_source_domain_effect_with_natural_source_growth():
         / "scenarios"
     )
 
-    feature_selection.OUTPUT_ROOT = (
+    representation.OUTPUT_ROOT = (
         TEST_ROOT
         / "feature_selection"
     )

@@ -26,7 +26,7 @@ from main.old.extensive_tests.params import (
 from pipeline.process_data import run_preprocessing
 from pipeline.combine_data import combine_datasets
 from pipeline.scenarios import run_scenario
-from pipeline.feature_selection import run_feature_selection
+from pipeline.representation import run_feature_selection
 from pipeline.training import run_training
 from pipeline.evaluation.model_results import run_model_evaluation
 from pipeline.evaluation.domain_results import run_domain_evaluation

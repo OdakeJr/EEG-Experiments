@@ -1,13 +1,20 @@
-# ml/feature_selection/signal_to_feature/riemann.py
+# ml/representation/feature_extraction/riemann.py
 
 import numpy as np
 
-from ml.feature_selection.signal_to_feature.base import SignalToFeatureTransformer
+from ml.representation.feature_extraction.base import FeatureExtractor
 
 
-class RiemannianTransformer(SignalToFeatureTransformer):
-    def __init__(self, reg=1e-6, normalize_cov=True, max_iter=50, tol=1e-9,
-                 pre_scaler=None, post_scaler=None):
+class RiemannianFeatureExtractor(FeatureExtractor):
+    def __init__(
+        self,
+        reg=1e-6,
+        normalize_cov=True,
+        max_iter=50,
+        tol=1e-9,
+        pre_scaler=None,
+        post_scaler=None,
+    ):
         if pre_scaler is not None:
             raise ValueError("Riemannian features do not support pre_scaling of signal input.")
 
@@ -52,7 +59,6 @@ class RiemannianTransformer(SignalToFeatureTransformer):
         for _ in range(self.max_iter):
             sqrt_G = self._matrix_function(G, np.sqrt)
             invsqrt_G = self._matrix_function(G, lambda x: 1 / np.sqrt(x))
-
             logs = [
                 self._matrix_function(invsqrt_G @ C @ invsqrt_G, np.log)
                 for C in covs
@@ -68,8 +74,7 @@ class RiemannianTransformer(SignalToFeatureTransformer):
         return G
 
     def _vectorize(self, matrices):
-        n_channels = matrices.shape[1]
-        idx = np.triu_indices(n_channels)
+        idx = np.triu_indices(matrices.shape[1])
         weights = np.where(idx[0] == idx[1], 1.0, np.sqrt(2.0))
         return matrices[:, idx[0], idx[1]] * weights
 
@@ -85,18 +90,17 @@ class RiemannianTransformer(SignalToFeatureTransformer):
 
     def _transform(self, X, domains=None):
         if self.references_ is None:
-            raise RuntimeError("Riemannian transformer must be fitted before transform().")
+            raise RuntimeError("Riemannian extractor must be fitted before transform().")
 
         X = self._as_bands(X)
-        features = []
 
         if X.shape[1] != len(self.references_):
             raise ValueError("Number of frequency bands differs from fitted data.")
 
+        features = []
         for band, reference in enumerate(self.references_):
             covs = self._covariance(X[:, band])
             invsqrt = self._matrix_function(reference, lambda x: 1 / np.sqrt(x))
-
             tangent = np.asarray([
                 self._matrix_function(invsqrt @ C @ invsqrt, np.log)
                 for C in covs

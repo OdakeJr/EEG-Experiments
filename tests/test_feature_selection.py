@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pipeline.process_data as process_data
 import pipeline.scenarios as scenarios
-import pipeline.feature_selection as feature_selection
+import pipeline.representation as representation
 
 from utils.storage import (
     load_manifest,
@@ -106,7 +106,7 @@ def test_feature_selection():
         "tests/output/scenarios/splits"
     )
 
-    feature_selection.OUTPUT_ROOT = Path(
+    representation.OUTPUT_ROOT = Path(
         "tests/output/feature_selection"
     )
 
@@ -149,7 +149,7 @@ def test_feature_selection():
     for fs_params in FS_PARAMS:
 
         artifact = (
-            feature_selection.run_feature_selection(
+            representation.run_feature_selection(
                 split,
                 view,
                 fs_params,
@@ -224,7 +224,7 @@ def test_feature_selection():
         )
 
         second_artifact = (
-            feature_selection.run_feature_selection(
+            representation.run_feature_selection(
                 split,
                 view,
                 fs_params,

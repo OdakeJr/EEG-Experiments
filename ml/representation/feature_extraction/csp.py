@@ -1,12 +1,12 @@
-# ml/feature_selection/signal_to_feature/csp.py
+# ml/representation/feature_extraction/csp.py
 
 import numpy as np
 from scipy.linalg import eigh
 
-from ml.feature_selection.signal_to_feature.base import SignalToFeatureTransformer
+from ml.representation.feature_extraction.base import FeatureExtractor
 
 
-class CSPTransformer(SignalToFeatureTransformer):
+class CSPFeatureExtractor(FeatureExtractor):
     def __init__(self, n_components=4, reg=1e-6, log=True, pre_scaler=None, post_scaler=None):
         if pre_scaler is not None:
             raise ValueError("CSP does not support pre_scaling of signal input.")

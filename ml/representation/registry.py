@@ -1,32 +1,41 @@
-# ml/feature_selection/registry.py
+# ml/representation/registry.py
 
-from ml.feature_selection.feature_to_feature.classical import (
-    VarianceSelector,
+from ml.representation.feature_extraction.combined import CombinedFeatureExtractor
+from ml.representation.feature_extraction.csp import CSPFeatureExtractor
+from ml.representation.feature_extraction.handcrafted import HandcraftedFeatureExtractor
+from ml.representation.feature_extraction.rcsp import RCSPFeatureExtractor
+from ml.representation.feature_extraction.riemann import RiemannianFeatureExtractor
+from ml.representation.feature_selection.classical import (
     ANOVASelector,
     MutualInformationSelector,
+    VarianceSelector,
 )
-from ml.feature_selection.feature_to_feature.random_fs import RandomSelector
-from ml.feature_selection.signal_to_feature.combined import SignalFeatureTransformer
-from ml.feature_selection.signal_to_signal.identity import IdentitySignalTransformer
-from ml.feature_selection.signal_to_signal.standardize import StandardizeSignalTransformer
+from ml.representation.feature_selection.random import RandomSelector
+from ml.representation.signal_transform.identity import IdentitySignalTransformer
+from ml.representation.signal_transform.standardize import StandardizeSignalTransformer
 
 
-FEATURE_TRANSFORMERS = {
+REPRESENTATION_TRANSFORMERS = {
+    "identity_signal": IdentitySignalTransformer,
+    "standardize_signal": StandardizeSignalTransformer,
+    "handcrafted": HandcraftedFeatureExtractor,
+    "csp": CSPFeatureExtractor,
+    "rcsp": RCSPFeatureExtractor,
+    "riemann": RiemannianFeatureExtractor,
+    "riemannian": RiemannianFeatureExtractor,
+    "combined": CombinedFeatureExtractor,
     "variance": VarianceSelector,
     "anova": ANOVASelector,
     "mutual_information": MutualInformationSelector,
     "random": RandomSelector,
-    "signal_features": SignalFeatureTransformer,
-    "identity_signal": IdentitySignalTransformer,
-    "standardize_signal": StandardizeSignalTransformer,
 }
 
 
-def get_feature_transformer(name, params=None):
-    if name not in FEATURE_TRANSFORMERS:
+def get_representation_transformer(name, params=None):
+    if name not in REPRESENTATION_TRANSFORMERS:
         raise ValueError(
-            f"Unknown feature transformer '{name}'. "
-            f"Available: {sorted(FEATURE_TRANSFORMERS)}"
+            f"Unknown representation transformer '{name}'. "
+            f"Available: {sorted(REPRESENTATION_TRANSFORMERS)}"
         )
 
-    return FEATURE_TRANSFORMERS[name](**(params or {}))
+    return REPRESENTATION_TRANSFORMERS[name](**(params or {}))
