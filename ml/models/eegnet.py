@@ -55,5 +55,9 @@ class EEGNet(nn.Module):
     def classify_feature_map(self, X):
         return self.model.final_layer(X)
 
+    @property
+    def classifier(self):
+        return self.model.final_layer
+
     def forward(self, X):
         return self.model(self._prepare_input(X))
