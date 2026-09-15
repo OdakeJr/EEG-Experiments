@@ -1,5 +1,13 @@
 # ml/representation/feature_extraction/combined.py
 
+#==========================================
+#==========================================
+#==========================================
+# DEPRECATED !!!
+#==========================================
+#==========================================
+#==========================================
+
 import numpy as np
 
 from ml.representation.feature_extraction.base import FeatureExtractor

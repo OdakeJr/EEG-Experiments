@@ -8,10 +8,8 @@ from typing import Any
 class RepresentationArtifact:
     split_id: str
     method: str
-
     transformer_path: str
     manifest_path: str
-
     signature: str
 
     input_representation: str | None = None
@@ -26,7 +24,7 @@ class RepresentationArtifact:
     signal_transform_config_label: str | None = None
 
     feature_extraction_method: str | None = None
-    feature_extraction_params: dict[str, Any] | None = None
+    feature_extraction_params: dict[str, Any] | list[dict[str, Any]] | None = None
     feature_extraction_config_label: str | None = None
 
     feature_selection_method: str | None = None
