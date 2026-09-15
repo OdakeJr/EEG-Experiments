@@ -98,7 +98,11 @@ def _get_representation_trace(*artifacts):
         output = _manifest_output(artifact)
 
         for field in fields:
-            trace[field] = _coalesce(trace[field], getattr(artifact, field, None), output.get(field))
+            trace[field] = _coalesce(
+                trace[field],
+                getattr(artifact, field, None),
+                output.get(field),
+            )
 
     return {k: _json_copy(v) for k, v in trace.items()}
 
@@ -130,7 +134,13 @@ def _compute_auc(y, probabilities, classes):
         if not set(classes).issubset(set(unique)):
             return None
 
-        return roc_auc_score(y, probabilities, labels=classes, multi_class="ovr", average="macro")
+        return roc_auc_score(
+            y,
+            probabilities,
+            labels=classes,
+            multi_class="ovr",
+            average="macro",
+        )
 
     except ValueError:
         return None
@@ -248,6 +258,13 @@ def run_model_evaluation(model_artifacts, params=None):
             n_rows=manifest["output"]["n_rows"],
         )
 
+    total_models = sum(
+        len(artifact["artifacts"])
+        for artifacts in model_artifacts.values()
+        for artifact in artifacts
+    )
+    completed_models = 0
+
     start = time.time()
     save_manifest(make_manifest("running", effective_params), manifest_path)
     rows = []
@@ -264,11 +281,17 @@ def run_model_evaluation(model_artifacts, params=None):
                 transformer = load_pickle(representation_artifact.transformer_path)
 
                 for model_artifact in artifact["artifacts"]:
-                    learner = load_pickle(model_artifact.model_path, map_location=params["device"])
+                    learner = load_pickle(
+                        model_artifact.model_path,
+                        map_location=params["device"],
+                    )
                     learner = _set_learner_device(learner, params["device"])
 
                     model_manifest = load_manifest(model_artifact.manifest_path)
-                    trace = _get_representation_trace(representation_artifact, model_artifact)
+                    trace = _get_representation_trace(
+                        representation_artifact,
+                        model_artifact,
+                    )
 
                     training_time = model_manifest.get("execution_time")
                     training_seed = _get_training_seed(model_manifest)
@@ -277,7 +300,12 @@ def run_model_evaluation(model_artifacts, params=None):
 
                     for evaluation_group, partition, X, y, domains, super_domains in _iter_evaluation_sets(data):
                         metrics = _evaluate_partition(
-                            learner, transformer, X, y, domains, super_domains
+                            learner,
+                            transformer,
+                            X,
+                            y,
+                            domains,
+                            super_domains,
                         )
 
                         result = ModelResult(
@@ -289,7 +317,9 @@ def run_model_evaluation(model_artifacts, params=None):
                             target_fraction=split.target_fraction,
                             split_seed=split.seed,
                             source_domains=";".join(map(str, split.source_elementary_domains)),
-                            target_super_domains=";".join(map(str, split.target_super_domain_elementary_domains)),
+                            target_super_domains=";".join(
+                                map(str, split.target_super_domain_elementary_domains)
+                            ),
                             target_domains=";".join(map(str, split.target_elementary_domains)),
                             representation_signature=representation_artifact.signature,
                             learning_method=model_artifact.learning_method,
@@ -332,14 +362,31 @@ def run_model_evaluation(model_artifacts, params=None):
                         })
                         rows.append(row)
 
+                    completed_models += 1
+                    print(
+                        f"\r[Evaluation] {completed_models}/{total_models} models",
+                        end="",
+                        flush=True,
+                    )
+
+        print()
+
         dataframe = pd.DataFrame(rows)
         save_data(dataframe, results_path)
 
-        manifest = make_manifest("done", effective_params, execution_time=time.time() - start)
-        manifest["output"] = {"path": str(results_path), "n_rows": len(dataframe)}
+        manifest = make_manifest(
+            "done",
+            effective_params,
+            execution_time=time.time() - start,
+        )
+        manifest["output"] = {
+            "path": str(results_path),
+            "n_rows": len(dataframe),
+        }
         save_manifest(manifest, manifest_path)
 
     except Exception as error:
+        print()
         save_manifest(
             make_manifest(
                 "failed",
