@@ -84,11 +84,10 @@ TEMPORAL_FEATURES = {
 }
 
 SPECTRAL_FEATURES = {
-    "bandpower": {"sfreq": 250.0},
-    # "relative_bandpower": {"sfreq": 250.0, "total_band": (1, 38)},
-    # "psd_stats": {"sfreq": 250.0, "band": (1, 38)},
-    "spectral_entropy": {"sfreq": 250.0, "band": (1, 38)},
-    # "differential_entropy": {},
+    "bandpower": {"sfreq": SFREQ},
+    # "relative_bandpower": {"sfreq": SFREQ, "total_band": SPECTRAL_BAND},
+    # "psd_stats": {"sfreq": SFREQ, "band": SPECTRAL_BAND},
+    "spectral_entropy": {"sfreq": SFREQ, "band": SPECTRAL_BAND},
 }
 
 NONLINEAR_FEATURES = {
