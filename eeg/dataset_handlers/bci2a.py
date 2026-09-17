@@ -1,3 +1,5 @@
+# eeg/dataset_handlers/bci2a.py
+
 from copy import deepcopy
 from pathlib import Path
 import warnings
@@ -6,46 +8,25 @@ import mne
 import numpy as np
 from scipy.io import loadmat
 
-from eeg.lib.preparation import prepare_eeg_dataframe
-from eeg.lib.filtering import bands
 from eeg.lib.feature_extraction import DEFAULT_FEATURE_CONFIG
+from eeg.lib.filtering import bands
+from eeg.lib.preparation import prepare_eeg_dataframe
 
 
 # ============================================================
-# Dataset constants
+# Dataset definitions
 # ============================================================
 
 DATASET_NAME = "bci_iv_2a"
 ORIGINAL_SAMPLING_RATE = 250.0
 
-
-# ============================================================
-# BCI Competition IV 2a definitions
-# ============================================================
-
 BCI_CHANNEL_MAP = {
-    "EEG-Fz": "Fz",
-    "EEG-0": "FC3",
-    "EEG-1": "FC1",
-    "EEG-2": "FCz",
-    "EEG-3": "FC2",
-    "EEG-4": "FC4",
-    "EEG-5": "C5",
-    "EEG-C3": "C3",
-    "EEG-6": "C1",
-    "EEG-Cz": "Cz",
-    "EEG-7": "C2",
-    "EEG-C4": "C4",
-    "EEG-8": "C6",
-    "EEG-9": "CP3",
-    "EEG-10": "CP1",
-    "EEG-11": "CPz",
-    "EEG-12": "CP2",
-    "EEG-13": "CP4",
-    "EEG-14": "P1",
-    "EEG-Pz": "Pz",
-    "EEG-15": "P2",
-    "EEG-16": "POz",
+    "EEG-Fz": "Fz", "EEG-0": "FC3", "EEG-1": "FC1", "EEG-2": "FCz",
+    "EEG-3": "FC2", "EEG-4": "FC4", "EEG-5": "C5", "EEG-C3": "C3",
+    "EEG-6": "C1", "EEG-Cz": "Cz", "EEG-7": "C2", "EEG-C4": "C4",
+    "EEG-8": "C6", "EEG-9": "CP3", "EEG-10": "CP1", "EEG-11": "CPz",
+    "EEG-12": "CP2", "EEG-13": "CP4", "EEG-14": "P1", "EEG-Pz": "Pz",
+    "EEG-15": "P2", "EEG-16": "POz",
 }
 
 BCI_CHANNEL_ORDER = [
@@ -63,17 +44,9 @@ BCI_LABEL_MAP = {
     4: "tongue_imagery",
 }
 
-
-# ============================================================
-# Default loader configuration
-# ============================================================
-
 DEFAULT_LOAD_CONFIG = {
     "subjects": list(range(1, 10)),
-    "sessions": [
-        ("session_01", "T"),
-        ("session_02", "E"),
-    ],
+    "sessions": [("session_01", "T"), ("session_02", "E")],
     "mi_codes": ["769", "770", "771", "772", "783"],
     "tmin": 0.5,
     "tmax": 3.5,
@@ -96,41 +69,23 @@ def _merge_config(user_config=None):
 
 
 # ============================================================
-# Channel handling
+# Validation
 # ============================================================
 
 def _prepare_bci_channels(raw, channels=None):
-    missing = [
-        channel for channel in BCI_CHANNEL_MAP
-        if channel not in raw.ch_names
-    ]
-
+    missing = [ch for ch in BCI_CHANNEL_MAP if ch not in raw.ch_names]
     if missing:
-        raise ValueError(
-            f"Expected BCI EEG channels were not found: {missing}."
-        )
+        raise ValueError(f"Expected BCI EEG channels were not found: {missing}.")
 
     raw.rename_channels(BCI_CHANNEL_MAP)
-
-    selected = (
-        BCI_CHANNEL_ORDER.copy()
-        if channels is None
-        else list(channels)
-    )
+    selected = BCI_CHANNEL_ORDER.copy() if channels is None else list(channels)
 
     if not selected:
         raise ValueError("The channel list cannot be empty.")
-
     if len(selected) != len(set(selected)):
-        raise ValueError(
-            "The channel selection contains duplicate names."
-        )
+        raise ValueError("The channel selection contains duplicate names.")
 
-    missing = [
-        channel for channel in selected
-        if channel not in BCI_CHANNEL_ORDER
-    ]
-
+    missing = [ch for ch in selected if ch not in BCI_CHANNEL_ORDER]
     if missing:
         raise ValueError(
             f"Requested channels are not available in BCI IV 2a: {missing}."
@@ -138,22 +93,15 @@ def _prepare_bci_channels(raw, channels=None):
 
     raw.pick(selected)
     raw.reorder_channels(selected)
-
     return raw
 
-
-# ============================================================
-# Class handling
-# ============================================================
 
 def _validate_classes(classes):
     if classes is None:
         return None
 
     classes = list(classes)
-    valid = set(BCI_LABEL_MAP.values())
-    unknown = [label for label in classes if label not in valid]
-
+    unknown = [label for label in classes if label not in BCI_LABEL_MAP.values()]
     if unknown:
         raise ValueError(
             f"Requested classes are not available in BCI IV 2a: {unknown}."
@@ -168,29 +116,21 @@ def _validate_classes(classes):
 
 def load_bci_iv_2a_data(root_gdf, root_mat, config=None):
     config = _merge_config(config)
+    root_gdf, root_mat = Path(root_gdf), Path(root_mat)
 
-    root_gdf = Path(root_gdf)
-    root_mat = Path(root_mat)
+    if not root_gdf.exists():
+        raise FileNotFoundError(f"BCI GDF directory not found: {root_gdf}")
+    if not root_mat.exists():
+        raise FileNotFoundError(f"BCI MAT directory not found: {root_mat}")
 
     subjects = config["subjects"]
     sessions = config["sessions"]
     mi_codes = config["mi_codes"]
-    tmin = config["tmin"]
-    tmax = config["tmax"]
+    tmin, tmax = config["tmin"], config["tmax"]
     baseline = config["baseline"]
     classes = _validate_classes(config["classes"])
     channels = config["channels"]
     verbose = config["verbose"]
-
-    if not root_gdf.exists():
-        raise FileNotFoundError(
-            f"BCI GDF directory not found: {root_gdf}"
-        )
-
-    if not root_mat.exists():
-        raise FileNotFoundError(
-            f"BCI MAT directory not found: {root_mat}"
-        )
 
     all_data = {}
 
@@ -205,10 +145,6 @@ def load_bci_iv_2a_data(root_gdf, root_mat, config=None):
             if not gdf_path.exists() or not mat_path.exists():
                 continue
 
-            # --------------------------------------------------
-            # Load recording
-            # --------------------------------------------------
-
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore",
@@ -216,95 +152,48 @@ def load_bci_iv_2a_data(root_gdf, root_mat, config=None):
                     category=RuntimeWarning,
                 )
                 raw = mne.io.read_raw_gdf(
-                    gdf_path,
-                    preload=True,
-                    verbose=verbose,
+                    gdf_path, preload=True, verbose=verbose
                 )
 
             raw = _prepare_bci_channels(raw, channels)
 
-            # --------------------------------------------------
-            # Motor-imagery events
-            # --------------------------------------------------
-
-            events, event_id = mne.events_from_annotations(
-                raw,
-                verbose=verbose,
-            )
-
+            events, event_id = mne.events_from_annotations(raw, verbose=verbose)
             mi_event_id = {
-                name: code
-                for name, code in event_id.items()
-                if name in mi_codes
+                name: code for name, code in event_id.items() if name in mi_codes
             }
 
             if not mi_event_id:
                 continue
 
-            mi_values = list(mi_event_id.values())
-            mi_events = events[np.isin(events[:, 2], mi_values)]
-
-            # --------------------------------------------------
-            # Ground-truth labels
-            # --------------------------------------------------
+            mi_events = events[
+                np.isin(events[:, 2], list(mi_event_id.values()))
+            ]
 
             mat_data = loadmat(mat_path)
-
             if "classlabel" not in mat_data:
-                raise KeyError(
-                    f"'classlabel' not found in {mat_path}"
-                )
+                raise KeyError(f"'classlabel' not found in {mat_path}")
 
-            numeric_labels = (
-                mat_data["classlabel"]
-                .squeeze()
-                .astype(int)
-            )
-
-            unknown = sorted(
-                set(numeric_labels) - set(BCI_LABEL_MAP)
-            )
+            numeric_labels = mat_data["classlabel"].squeeze().astype(int)
+            unknown = sorted(set(numeric_labels) - set(BCI_LABEL_MAP))
 
             if unknown:
-                raise ValueError(
-                    f"Unexpected BCI class labels: {unknown}"
-                )
-
+                raise ValueError(f"Unexpected BCI class labels: {unknown}")
             if len(mi_events) != len(numeric_labels):
                 raise ValueError(
                     f"Event/label mismatch in {subject_id}{suffix}: "
-                    f"{len(mi_events)} MI events vs "
-                    f"{len(numeric_labels)} labels."
+                    f"{len(mi_events)} MI events vs {len(numeric_labels)} labels."
                 )
 
-            # --------------------------------------------------
-            # Epochs
-            # --------------------------------------------------
-
             epochs = mne.Epochs(
-                raw,
-                mi_events,
-                event_id=mi_event_id,
-                tmin=tmin,
-                tmax=tmax,
-                baseline=baseline,
-                preload=True,
-                verbose=verbose,
+                raw, mi_events, event_id=mi_event_id,
+                tmin=tmin, tmax=tmax, baseline=baseline,
+                preload=True, verbose=verbose,
             )
 
-            X = epochs.get_data().astype(
-                np.float32,
-                copy=False,
-            )
-
-            # MNE may drop epochs. Keep labels exactly aligned.
+            X = epochs.get_data().astype(np.float32, copy=False)
             numeric_labels = numeric_labels[epochs.selection]
-
             y = np.asarray(
-                [
-                    BCI_LABEL_MAP[label]
-                    for label in numeric_labels
-                ],
+                [BCI_LABEL_MAP[label] for label in numeric_labels],
                 dtype=str,
             )
 
@@ -314,21 +203,12 @@ def load_bci_iv_2a_data(root_gdf, root_mat, config=None):
                     f"{len(X)} epochs vs {len(y)} labels."
                 )
 
-            # --------------------------------------------------
-            # Class selection
-            # --------------------------------------------------
-
             if classes is not None:
                 mask = np.isin(y, classes)
-                X = X[mask]
-                y = y[mask]
+                X, y = X[mask], y[mask]
 
             if len(X) == 0:
                 continue
-
-            # --------------------------------------------------
-            # Standardized session
-            # --------------------------------------------------
 
             subject_data[session_name] = {
                 "X": X,
@@ -353,26 +233,16 @@ def prepare_bci2a(params):
 
     if root_gdf is None:
         raise ValueError("'root_gdf' must be specified.")
-
     if root_mat is None:
         raise ValueError("'root_mat' must be specified.")
 
     representation = params.get("representation", "features")
     loader_config = deepcopy(params.get("loader", {}))
-
-    subjects = loader_config.get(
-        "subjects",
-        DEFAULT_LOAD_CONFIG["subjects"],
-    )
+    subjects = loader_config.get("subjects", DEFAULT_LOAD_CONFIG["subjects"])
 
     filter_config = deepcopy(params.get("filter", {}))
     filter_config["original_fs"] = ORIGINAL_SAMPLING_RATE
-
-    band_labels = (
-        filter_config
-        .get("bandpass", {})
-        .get("bands", bands)
-    )
+    band_labels = filter_config.get("bandpass", {}).get("bands", bands)
 
     feature_config = deepcopy(
         params.get("features", DEFAULT_FEATURE_CONFIG)
@@ -383,10 +253,7 @@ def prepare_bci2a(params):
 
     return prepare_eeg_dataframe(
         loader=load_bci_iv_2a_data,
-        loader_kwargs={
-            "root_gdf": root_gdf,
-            "root_mat": root_mat,
-        },
+        loader_kwargs={"root_gdf": root_gdf, "root_mat": root_mat},
         loader_config=loader_config,
         filter_config=filter_config,
         feature_config=feature_config,
