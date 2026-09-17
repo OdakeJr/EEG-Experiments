@@ -1,8 +1,9 @@
-# ml/models/eegnet.py
+# ml/models/eeg_tcnet.py
 
 import torch.nn as nn
 
-class EEGNet(nn.Module):
+
+class EEGTCNet(nn.Module):
     input_representation = "signal"
 
     def __init__(self, input_shape, output_dim, **params):
@@ -14,17 +15,17 @@ class EEGNet(nn.Module):
             _, n_chans, n_times = input_shape
         else:
             raise ValueError(
-                f"EEGNet expects [C,T] or [1,C,T], got {input_shape}."
+                f"EEGTCNet expects [C,T] or [1,C,T], got {input_shape}."
             )
 
         try:
-            from braindecode.models import EEGNet as BraindecodeEEGNet
+            from braindecode.models import EEGTCNet as BraindecodeEEGTCNet
         except ImportError as e:
             raise ImportError(
-                "EEGNet requires a Braindecode version with EEGNet support."
+                "EEGTCNet requires a Braindecode version with EEGTCNet support."
             ) from e
 
-        self.model = BraindecodeEEGNet(
+        self.model = BraindecodeEEGTCNet(
             n_chans=n_chans,
             n_times=n_times,
             n_outputs=output_dim,
@@ -35,20 +36,18 @@ class EEGNet(nn.Module):
         if X.ndim == 4:
             if X.shape[1] != 1:
                 raise ValueError(
-                    f"EEGNet requires one signal band, got {tuple(X.shape)}."
+                    f"EEGTCNet requires one signal band, got {tuple(X.shape)}."
                 )
             X = X[:, 0]
         return X
 
     def extract_feature_map(self, X):
         X = self._prepare_input(X)
-
-        for name, layer in self.model.named_children():
-            if name == "final_layer":
-                break
-            X = layer(X)
-
-        return X
+        X = self.model.arrange_dim_input(X)
+        X = self.model.eegnet_tc(X)
+        X = self.model.arrange_dim_eegnet(X)
+        X = self.model.tcn_block(X)
+        return X[:, -1, :]
 
     def extract_features(self, X):
         return self.extract_feature_map(X).flatten(1)

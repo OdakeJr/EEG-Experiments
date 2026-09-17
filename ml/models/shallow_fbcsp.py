@@ -1,8 +1,9 @@
-# ml/models/eegnet.py
+# ml/models/shallow_fbcsp.py
 
 import torch.nn as nn
 
-class EEGNet(nn.Module):
+
+class ShallowFBCSPNet(nn.Module):
     input_representation = "signal"
 
     def __init__(self, input_shape, output_dim, **params):
@@ -14,17 +15,18 @@ class EEGNet(nn.Module):
             _, n_chans, n_times = input_shape
         else:
             raise ValueError(
-                f"EEGNet expects [C,T] or [1,C,T], got {input_shape}."
+                f"ShallowFBCSPNet expects [C,T] or [1,C,T], got {input_shape}."
             )
 
         try:
-            from braindecode.models import EEGNet as BraindecodeEEGNet
+            from braindecode.models import ShallowFBCSPNet as BraindecodeShallowFBCSPNet
         except ImportError as e:
             raise ImportError(
-                "EEGNet requires a Braindecode version with EEGNet support."
+                "ShallowFBCSPNet requires a Braindecode version with "
+                "ShallowFBCSPNet support."
             ) from e
 
-        self.model = BraindecodeEEGNet(
+        self.model = BraindecodeShallowFBCSPNet(
             n_chans=n_chans,
             n_times=n_times,
             n_outputs=output_dim,
@@ -35,7 +37,8 @@ class EEGNet(nn.Module):
         if X.ndim == 4:
             if X.shape[1] != 1:
                 raise ValueError(
-                    f"EEGNet requires one signal band, got {tuple(X.shape)}."
+                    f"ShallowFBCSPNet requires one signal band, "
+                    f"got {tuple(X.shape)}."
                 )
             X = X[:, 0]
         return X

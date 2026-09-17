@@ -1,14 +1,24 @@
 # EEG Experiments
 
-Research code for EEG machine learning experiments.
+Research code for EEG machine-learning experiments, with focus on EEG representations and generalization across subjects and sessions.
 
 ## Setup
 
-Create and activate a virtual environment:
+Create and activate a Conda environment:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+conda create -n eeg311 python=3.11 -y
+conda activate eeg311
+```
 
+Upgrade pip:
+
+```bash
+python -m pip install --upgrade pip
+```
+
+Install the project requirements:
+
+```bash
+python -m pip install -r requirements.txt
+```

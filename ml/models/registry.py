@@ -1,10 +1,10 @@
-from ml.models.classical import (
-    logistic_regression,
-    random_forest,
-    svm,
-)
+# ml/models/registry.py
+
+from ml.models.classical import logistic_regression, random_forest, svm
 from ml.models.mlp import MLP
 from ml.models.eegnet import EEGNet
+from ml.models.shallow_fbcsp import ShallowFBCSPNet
+from ml.models.eeg_tcnet import EEGTCNet
 
 
 MODELS = {
@@ -13,6 +13,8 @@ MODELS = {
     "svm": svm,
     "mlp": MLP,
     "eegnet": EEGNet,
+    "shallow_fbcsp": ShallowFBCSPNet,
+    "eeg_tcnet": EEGTCNet,
 }
 
 
@@ -23,9 +25,5 @@ def get_model(name, params=None, **context):
             f"Available: {sorted(MODELS)}"
         )
 
-    resolved_params = {
-        **(params or {}),
-        **context,
-    }
-
+    resolved_params = {**(params or {}), **context}
     return MODELS[name](**resolved_params)
