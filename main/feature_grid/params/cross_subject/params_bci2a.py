@@ -1,6 +1,9 @@
-# main/feature_grid/params/intra_subject/params.py
+# main/feature_grid/params/cross_subject/params_bci2a.py
 
 EXECUTION_PARAMS = {"max_workers": 2}
+
+SFREQ = 250.0
+SPECTRAL_BAND = (1, 38)
 
 COMMON_CLASSES = [
     "left_hand_imagery",
@@ -19,11 +22,11 @@ CHANNELS = [
 
 BAND_CONFIGS = {
     "broad_1_38": [(1, 38)],
-    # "delta_1_4": [(1, 4)],
+    "delta_1_4": [(1, 4)],
     "theta_4_8": [(4, 8)],
-    # "alpha_8_12": [(8, 12)],
-    # "beta_12_30": [(12, 30)],
-    # "gamma_30_38": [(30, 38)],
+    "alpha_8_12": [(8, 12)],
+    "beta_12_30": [(12, 30)],
+    "gamma_30_38": [(30, 38)],
 }
 
 PREPROCESSING_PARAMS = [
@@ -31,7 +34,7 @@ PREPROCESSING_PARAMS = [
         "dataset": "bci2a",
         "root_gdf": "datasets/bci2a/gdf",
         "root_mat": "datasets/bci2a/mat",
-        "name": f"bci2a_intra_{band_name}",
+        "name": f"bci2a_cross_subject_{band_name}",
         "representation": "signal",
         "loader": {
             "channels": CHANNELS,
@@ -53,10 +56,11 @@ PREPROCESSING_PARAMS = [
     for band_name, bands in BAND_CONFIGS.items()
 ]
 
-SCENARIO = "intra_subject"
+SCENARIO = "cross_subject"
 
 SCENARIO_PARAMS = {
-    "train_fraction": 0.8,
+    "source_counts": ["all"],
+    "target_fractions": [0.0],
     "seed": 0,
 }
 
@@ -70,8 +74,8 @@ STATISTICAL_FEATURES = {
     # "std": {},
     # "var": {},
     "logvar": {},
-    # "skew": {},
-    # "kurtosis": {},
+    "skew": {},
+    "kurtosis": {},
     # "min": {},
     # "max": {},
     # "rms": {},
@@ -81,30 +85,36 @@ STATISTICAL_FEATURES = {
 TEMPORAL_FEATURES = {
     "line_length": {},
     # "hjorth_activity": {},
-    # "hjorth_mobility": {},
-    # "hjorth_complexity": {},
+    "hjorth_mobility": {},
+    "hjorth_complexity": {},
     # "zero_crossing": {},
     # "ar": {},
 }
 
 SPECTRAL_FEATURES = {
-    "bandpower": {"sfreq": 250.0},
-    # "relative_bandpower": {"sfreq": 250.0, "total_band": (1, 38)},
-    # "psd_stats": {"sfreq": 250.0, "band": (1, 38)},
-    # "spectral_entropy": {"sfreq": 250.0, "band": (1, 38)},
+    "bandpower": {"sfreq": SFREQ},
+    # "relative_bandpower": {"sfreq": SFREQ, "total_band": SPECTRAL_BAND},
+    # "psd_stats": {"sfreq": SFREQ, "band": SPECTRAL_BAND},
+    "spectral_entropy": {"sfreq": SFREQ, "band": SPECTRAL_BAND},
     # "differential_entropy": {},
 }
 
 NONLINEAR_FEATURES = {
-    # "sample_entropy": {},
-    # "permutation_entropy": {},
-    # "higuchi_fd": {},
+    "sample_entropy": {},
+    "permutation_entropy": {},
+    "higuchi_fd": {},
     # "petrosian_fd": {},
 }
 
 WAVELET_FEATURES = {
-    # "wavelet_energy": {},
-    # "wavelet_entropy": {},
+    "wavelet_energy": {},
+    "wavelet_entropy": {},
+}
+
+COVARIANCE_FEATURES = {
+    # "cov": {},
+    "logcov": {},
+    # "eig": {},
 }
 
 ALL_HANDCRAFTED_FEATURES = {
@@ -112,10 +122,8 @@ ALL_HANDCRAFTED_FEATURES = {
     **TEMPORAL_FEATURES,
     **SPECTRAL_FEATURES,
     **NONLINEAR_FEATURES,
-    "cov": {},
-    # "logcov": {},
-    # "eig": {},
     **WAVELET_FEATURES,
+    **COVARIANCE_FEATURES,
 }
 
 FEATURE_EXTRACTION_PARAMS = [
@@ -124,41 +132,31 @@ FEATURE_EXTRACTION_PARAMS = [
         "method": "handcrafted",
         "params": STATISTICAL_FEATURES,
     },
-    # {
-    #     "name": "temporal",
-    #     "method": "handcrafted",
-    #     "params": TEMPORAL_FEATURES,
-    # },
-    # {
-    #     "name": "spectral",
-    #     "method": "handcrafted",
-    #     "params": SPECTRAL_FEATURES,
-    # },
-    # {
-    #     "name": "nonlinear",
-    #     "method": "handcrafted",
-    #     "params": NONLINEAR_FEATURES,
-    # },
-    # {
-    #     "name": "wavelet",
-    #     "method": "handcrafted",
-    #     "params": WAVELET_FEATURES,
-    # },
-    # {
-    #     "name": "cov",
-    #     "method": "handcrafted",
-    #     "params": {"cov": {}},
-    # },
-    # {
-    #     "name": "logcov",
-    #     "method": "handcrafted",
-    #     "params": {"logcov": {}},
-    # },
-    # {
-    #     "name": "eig",
-    #     "method": "handcrafted",
-    #     "params": {"eig": {}},
-    # },
+    {
+        "name": "temporal",
+        "method": "handcrafted",
+        "params": TEMPORAL_FEATURES,
+    },
+    {
+        "name": "spectral",
+        "method": "handcrafted",
+        "params": SPECTRAL_FEATURES,
+    },
+    {
+        "name": "nonlinear",
+        "method": "handcrafted",
+        "params": NONLINEAR_FEATURES,
+    },
+    {
+        "name": "wavelet",
+        "method": "handcrafted",
+        "params": WAVELET_FEATURES,
+    },
+    {
+        "name": "covariance",
+        "method": "handcrafted",
+        "params": COVARIANCE_FEATURES,
+    },
     # {
     #     "name": "csp_4",
     #     "method": "csp",
@@ -189,11 +187,11 @@ FEATURE_EXTRACTION_PARAMS = [
     #     "method": "rcsp",
     #     "params": {"n_components": 8, "alpha": 0.1, "reg": 1e-6},
     # },
-    # {
-    #     "name": "riemann",
-    #     "method": "riemann",
-    #     "params": {"reg": 1e-6},
-    # },
+    {
+        "name": "riemann",
+        "method": "riemann",
+        "params": {"reg": 1e-6},
+    },
     {
         "name": "all_fused",
         "extractors": [
@@ -209,10 +207,10 @@ FEATURE_EXTRACTION_PARAMS = [
             #     "method": "rcsp",
             #     "params": {"n_components": 6, "alpha": 0.1, "reg": 1e-6},
             # },
-            # {
-            #     "method": "riemann",
-            #     "params": {"reg": 1e-6},
-            # },
+            {
+                "method": "riemann",
+                "params": {"reg": 1e-6},
+            },
         ],
     },
 ]
@@ -304,8 +302,33 @@ EEGNET_PARAMS = {
     "pool_mode": "mean",
 }
 
+SHALLOW_FBCSP_PARAMS = {
+    "n_filters_time": 40,
+    "filter_time_length": 25,
+    "n_filters_spat": 40,
+    "pool_time_length": 75,
+    "pool_time_stride": 15,
+    "final_conv_length": "auto",
+    "pool_mode": "mean",
+    "batch_norm": True,
+    "drop_prob": 0.5,
+}
+
+EEG_TCNET_PARAMS = {
+    "depth_multiplier": 2,
+    "filter_1": 8,
+    "kern_length": 64,
+    "depth": 2,
+    "kernel_size": 4,
+    "filters": 12,
+    "max_norm_const": 0.25,
+    "drop_prob_eeg": 0.2,
+    "drop_prob_tcn": 0.3,
+    "tcn_batch_norm": True,
+}
+
 NEURAL_PARAMS = {
-    "epochs": 1,  # 300 final
+    "epochs": 300,
     "batch_size": 64,
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
@@ -327,20 +350,20 @@ TRAINING_PARAMS = [
         "model_params": LOGISTIC_REGRESSION_PARAMS,
         "training_params": {},
     },
-    # {
-    #     "name": "svm",
-    #     "learning": "sklearn_erm",
-    #     "model": "svm",
-    #     "model_params": SVM_PARAMS,
-    #     "training_params": {},
-    # },
-    # {
-    #     "name": "random_forest",
-    #     "learning": "sklearn_erm",
-    #     "model": "random_forest",
-    #     "model_params": RANDOM_FOREST_PARAMS,
-    #     "training_params": {},
-    # },
+    {
+        "name": "svm",
+        "learning": "sklearn_erm",
+        "model": "svm",
+        "model_params": SVM_PARAMS,
+        "training_params": {},
+    },
+    {
+        "name": "random_forest",
+        "learning": "sklearn_erm",
+        "model": "random_forest",
+        "model_params": RANDOM_FOREST_PARAMS,
+        "training_params": {},
+    },
     {
         "name": "mlp_small",
         "learning": "neural_erm__mlp_small",
@@ -348,25 +371,39 @@ TRAINING_PARAMS = [
         "model_params": MLP_SMALL_PARAMS,
         "training_params": NEURAL_PARAMS,
     },
-    # {
-    #     "name": "mlp_medium",
-    #     "learning": "neural_erm__mlp_medium",
-    #     "model": "mlp",
-    #     "model_params": MLP_MEDIUM_PARAMS,
-    #     "training_params": NEURAL_PARAMS,
-    # },
-    # {
-    #     "name": "mlp_large",
-    #     "learning": "neural_erm__mlp_large",
-    #     "model": "mlp",
-    #     "model_params": MLP_LARGE_PARAMS,
-    #     "training_params": NEURAL_PARAMS,
-    # },
+    {
+        "name": "mlp_medium",
+        "learning": "neural_erm__mlp_medium",
+        "model": "mlp",
+        "model_params": MLP_MEDIUM_PARAMS,
+        "training_params": NEURAL_PARAMS,
+    },
+    {
+        "name": "mlp_large",
+        "learning": "neural_erm__mlp_large",
+        "model": "mlp",
+        "model_params": MLP_LARGE_PARAMS,
+        "training_params": NEURAL_PARAMS,
+    },
     {
         "name": "eegnet",
         "learning": "neural_erm__eegnet",
         "model": "eegnet",
         "model_params": EEGNET_PARAMS,
+        "training_params": NEURAL_PARAMS,
+    },
+    {
+        "name": "shallow_fbcsp",
+        "learning": "neural_erm__shallow_fbcsp",
+        "model": "shallow_fbcsp",
+        "model_params": SHALLOW_FBCSP_PARAMS,
+        "training_params": NEURAL_PARAMS,
+    },
+    {
+        "name": "eeg_tcnet",
+        "learning": "neural_erm__eeg_tcnet",
+        "model": "eeg_tcnet",
+        "model_params": EEG_TCNET_PARAMS,
         "training_params": NEURAL_PARAMS,
     },
 ]
@@ -427,15 +464,27 @@ BENCHMARK_TABLES_PARAMS = {
             "regime": "Deep",
             "method": "EEGNet",
         },
+        {
+            "learning_method": "neural_erm__shallow_fbcsp",
+            "model_name": "shallow_fbcsp",
+            "regime": "Deep",
+            "method": "ShallowFBCSPNet",
+        },
+        {
+            "learning_method": "neural_erm__eeg_tcnet",
+            "model_name": "eeg_tcnet",
+            "regime": "Deep",
+            "method": "EEG-TCNet",
+        },
     ],
     "tables": [
         {
-            "name": "intra_subject_paper1",
-            "scenario": "intra_subject",
+            "name": "cross_subject_paper1",
+            "scenario": "cross_subject",
             "setting_column": "Dataset",
-            "output_name": "intra_subject_paper1_table.csv",
+            "output_name": "cross_subject_paper1_table.csv",
             "include_discrepancy": False,
-            "filters": {"target_fraction": 0.8},
+            "filters": {"target_fraction": 0.0},
         },
     ],
 }
