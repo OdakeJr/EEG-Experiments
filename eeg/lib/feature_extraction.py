@@ -139,12 +139,46 @@ def extract_logvar(trial, channel_names=None, prefix="logvar_"):
 
 
 def extract_skewness(trial, channel_names=None, prefix="skew_"):
-    vals = scipy.stats.skew(trial, axis=1, bias=False)
+    x = np.asarray(trial, dtype=np.float64)
+
+    if not np.isfinite(x).all():
+        raise ValueError("Non-finite signal values found before skewness extraction.")
+
+    valid = np.ptp(x, axis=1) > 0.0
+    vals = np.zeros(x.shape[0], dtype=float)
+
+    if np.any(valid):
+        z = x[valid]
+        z = (z - z.mean(axis=1, keepdims=True)) / z.std(axis=1, keepdims=True)
+        vals[valid] = scipy.stats.skew(z, axis=1, bias=False)
+
+    if np.any(~valid):
+        channels = _get_channel_names(trial, channel_names)
+        bad = [channels[i] for i in np.flatnonzero(~valid)]
+        print(f"[Skew] {len(bad)}/{x.shape[0]} constant channels: {bad}")
+
     return _channel_feature(trial, vals, channel_names, prefix)
 
 
 def extract_kurtosis(trial, channel_names=None, prefix="kurt_"):
-    vals = scipy.stats.kurtosis(trial, axis=1, bias=False)
+    x = np.asarray(trial, dtype=np.float64)
+
+    if not np.isfinite(x).all():
+        raise ValueError("Non-finite signal values found before kurtosis extraction.")
+
+    valid = np.ptp(x, axis=1) > 0.0
+    vals = np.zeros(x.shape[0], dtype=float)
+
+    if np.any(valid):
+        z = x[valid]
+        z = (z - z.mean(axis=1, keepdims=True)) / z.std(axis=1, keepdims=True)
+        vals[valid] = scipy.stats.kurtosis(z, axis=1, bias=False)
+
+    if np.any(~valid):
+        channels = _get_channel_names(trial, channel_names)
+        bad = [channels[i] for i in np.flatnonzero(~valid)]
+        print(f"[Kurtosis] {len(bad)}/{x.shape[0]} constant channels: {bad}")
+
     return _channel_feature(trial, vals, channel_names, prefix)
 
 

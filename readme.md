@@ -22,3 +22,10 @@ Install the project requirements:
 ```bash
 python -m pip install -r requirements.txt
 ```
+
+Run grid experiments:
+
+```bash
+chmod +x run_feature_grid.sh
+./run_feature_grid.sh
+```

@@ -1,0 +1,669 @@
+[2026-09-17 19:59:11] [Pipeline] Starting | pid=83829 | scenario=intra_subject | workers=1
+[2026-09-17 19:59:11] [Pipeline] Params | main/feature_grid/params/intra_subject/params_bci2a.py
+[2026-09-17 19:59:11] [Preprocessing] Starting...
+[2026-09-17 19:59:11] [Preprocessing] Done | elapsed=0s
+[2026-09-17 19:59:11] [Scenarios] Starting...
+[2026-09-17 19:59:11] [Scenarios] Done | elapsed=0s
+[2026-09-17 19:59:11] [Representation] Starting...
+[2026-09-17 19:59:11] [Representation] Tasks=108 | workers=1
+[2026-09-17 19:59:11] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:12] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:12] [Representation] Progress 1/108 | remaining=107 | elapsed=1s | eta≈2.6m
+[2026-09-17 19:59:12] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:13] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=1s
+[2026-09-17 19:59:13] [Representation] Progress 2/108 | remaining=106 | elapsed=2s | eta≈1.8m
+[2026-09-17 19:59:13] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:13] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:13] [Representation] Progress 3/108 | remaining=105 | elapsed=3s | eta≈1.7m
+[2026-09-17 19:59:13] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:14] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:14] [Representation] Progress 4/108 | remaining=104 | elapsed=3s | eta≈1.4m
+[2026-09-17 19:59:14] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:15] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:15] [Representation] Progress 5/108 | remaining=103 | elapsed=4s | eta≈1.5m
+[2026-09-17 19:59:15] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:15] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=1s
+[2026-09-17 19:59:15] [Representation] Progress 6/108 | remaining=102 | elapsed=5s | eta≈1.4m
+[2026-09-17 19:59:15] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:17] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:17] [Representation] Progress 7/108 | remaining=101 | elapsed=6s | eta≈1.5m
+[2026-09-17 19:59:17] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:17] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:17] [Representation] Progress 8/108 | remaining=100 | elapsed=6s | eta≈1.3m
+[2026-09-17 19:59:17] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:19] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=2s
+[2026-09-17 19:59:19] [Representation] Progress 9/108 | remaining=99 | elapsed=8s | eta≈1.5m
+[2026-09-17 19:59:19] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:19] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=1s
+[2026-09-17 19:59:19] [Representation] Progress 10/108 | remaining=98 | elapsed=9s | eta≈1.4m
+[2026-09-17 19:59:19] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:20] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:20] [Representation] Progress 11/108 | remaining=97 | elapsed=10s | eta≈1.4m
+[2026-09-17 19:59:20] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:21] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:21] [Representation] Progress 12/108 | remaining=96 | elapsed=10s | eta≈1.4m
+[2026-09-17 19:59:21] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:22] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:22] [Representation] Progress 13/108 | remaining=95 | elapsed=11s | eta≈1.4m
+[2026-09-17 19:59:22] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:22] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=1s
+[2026-09-17 19:59:22] [Representation] Progress 14/108 | remaining=94 | elapsed=12s | eta≈1.3m
+[2026-09-17 19:59:22] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:23] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:23] [Representation] Progress 15/108 | remaining=93 | elapsed=13s | eta≈1.3m
+[2026-09-17 19:59:23] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:23] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:23] [Representation] Progress 16/108 | remaining=92 | elapsed=13s | eta≈1.2m
+[2026-09-17 19:59:23] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:24] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:24] [Representation] Progress 17/108 | remaining=91 | elapsed=14s | eta≈1.2m
+[2026-09-17 19:59:24] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:25] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:25] [Representation] Progress 18/108 | remaining=90 | elapsed=14s | eta≈1.2m
+[2026-09-17 19:59:25] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:25] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:25] [Representation] Progress 19/108 | remaining=89 | elapsed=15s | eta≈1.1m
+[2026-09-17 19:59:25] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:25] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:25] [Representation] Progress 20/108 | remaining=88 | elapsed=15s | eta≈1.1m
+[2026-09-17 19:59:25] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:26] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:26] [Representation] Progress 21/108 | remaining=87 | elapsed=16s | eta≈1.1m
+[2026-09-17 19:59:26] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:27] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:27] [Representation] Progress 22/108 | remaining=86 | elapsed=16s | eta≈1.0m
+[2026-09-17 19:59:27] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:27] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:27] [Representation] Progress 23/108 | remaining=85 | elapsed=17s | eta≈1.0m
+[2026-09-17 19:59:27] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:27] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:27] [Representation] Progress 24/108 | remaining=84 | elapsed=17s | eta≈59s
+[2026-09-17 19:59:27] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:28] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:28] [Representation] Progress 25/108 | remaining=83 | elapsed=18s | eta≈59s
+[2026-09-17 19:59:28] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:29] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:29] [Representation] Progress 26/108 | remaining=82 | elapsed=18s | eta≈57s
+[2026-09-17 19:59:29] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:29] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:29] [Representation] Progress 27/108 | remaining=81 | elapsed=19s | eta≈56s
+[2026-09-17 19:59:29] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:29] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:29] [Representation] Progress 28/108 | remaining=80 | elapsed=19s | eta≈54s
+[2026-09-17 19:59:29] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:30] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:30] [Representation] Progress 29/108 | remaining=79 | elapsed=20s | eta≈54s
+[2026-09-17 19:59:30] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:31] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:31] [Representation] Progress 30/108 | remaining=78 | elapsed=20s | eta≈52s
+[2026-09-17 19:59:31] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:31] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:31] [Representation] Progress 31/108 | remaining=77 | elapsed=21s | eta≈51s
+[2026-09-17 19:59:31] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:31] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:31] [Representation] Progress 32/108 | remaining=76 | elapsed=21s | eta≈49s
+[2026-09-17 19:59:31] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard
+[2026-09-17 19:59:32] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_broad_1_38 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:32] [Representation] Progress 33/108 | remaining=75 | elapsed=22s | eta≈49s
+[2026-09-17 19:59:32] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard
+[2026-09-17 19:59:33] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_broad_1_38 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:33] [Representation] Progress 34/108 | remaining=74 | elapsed=22s | eta≈48s
+[2026-09-17 19:59:33] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard
+[2026-09-17 19:59:33] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_broad_1_38 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:33] [Representation] Progress 35/108 | remaining=73 | elapsed=23s | eta≈47s
+[2026-09-17 19:59:33] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_broad_1_38 | representation=standardized_signal
+[2026-09-17 19:59:33] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:33] [Representation] Progress 36/108 | remaining=72 | elapsed=23s | eta≈46s
+[2026-09-17 19:59:33] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:34] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:34] [Representation] Progress 37/108 | remaining=71 | elapsed=24s | eta≈46s
+[2026-09-17 19:59:34] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:35] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:35] [Representation] Progress 38/108 | remaining=70 | elapsed=24s | eta≈44s
+[2026-09-17 19:59:35] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:35] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:35] [Representation] Progress 39/108 | remaining=69 | elapsed=25s | eta≈44s
+[2026-09-17 19:59:35] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:35] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:35] [Representation] Progress 40/108 | remaining=68 | elapsed=25s | eta≈42s
+[2026-09-17 19:59:35] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:36] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:36] [Representation] Progress 41/108 | remaining=67 | elapsed=26s | eta≈42s
+[2026-09-17 19:59:36] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:37] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:37] [Representation] Progress 42/108 | remaining=66 | elapsed=26s | eta≈41s
+[2026-09-17 19:59:37] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:37] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:37] [Representation] Progress 43/108 | remaining=65 | elapsed=27s | eta≈40s
+[2026-09-17 19:59:37] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:37] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:37] [Representation] Progress 44/108 | remaining=64 | elapsed=27s | eta≈39s
+[2026-09-17 19:59:37] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:38] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:38] [Representation] Progress 45/108 | remaining=63 | elapsed=28s | eta≈39s
+[2026-09-17 19:59:38] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:39] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=1s
+[2026-09-17 19:59:39] [Representation] Progress 46/108 | remaining=62 | elapsed=29s | eta≈39s
+[2026-09-17 19:59:39] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:40] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:40] [Representation] Progress 47/108 | remaining=61 | elapsed=29s | eta≈38s
+[2026-09-17 19:59:40] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:40] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:40] [Representation] Progress 48/108 | remaining=60 | elapsed=30s | eta≈37s
+[2026-09-17 19:59:40] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:41] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:41] [Representation] Progress 49/108 | remaining=59 | elapsed=31s | eta≈37s
+[2026-09-17 19:59:41] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:41] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:41] [Representation] Progress 50/108 | remaining=58 | elapsed=31s | eta≈36s
+[2026-09-17 19:59:41] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:42] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:42] [Representation] Progress 51/108 | remaining=57 | elapsed=32s | eta≈35s
+[2026-09-17 19:59:42] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:42] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:42] [Representation] Progress 52/108 | remaining=56 | elapsed=32s | eta≈34s
+[2026-09-17 19:59:42] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:43] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:43] [Representation] Progress 53/108 | remaining=55 | elapsed=33s | eta≈34s
+[2026-09-17 19:59:43] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:44] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:44] [Representation] Progress 54/108 | remaining=54 | elapsed=33s | eta≈33s
+[2026-09-17 19:59:44] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:44] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:44] [Representation] Progress 55/108 | remaining=53 | elapsed=34s | eta≈32s
+[2026-09-17 19:59:44] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:44] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:44] [Representation] Progress 56/108 | remaining=52 | elapsed=34s | eta≈31s
+[2026-09-17 19:59:44] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:45] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:45] [Representation] Progress 57/108 | remaining=51 | elapsed=35s | eta≈31s
+[2026-09-17 19:59:45] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:46] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:46] [Representation] Progress 58/108 | remaining=50 | elapsed=35s | eta≈30s
+[2026-09-17 19:59:46] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:46] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:46] [Representation] Progress 59/108 | remaining=49 | elapsed=36s | eta≈30s
+[2026-09-17 19:59:46] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:47] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:47] [Representation] Progress 60/108 | remaining=48 | elapsed=36s | eta≈29s
+[2026-09-17 19:59:47] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:48] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:48] [Representation] Progress 61/108 | remaining=47 | elapsed=37s | eta≈29s
+[2026-09-17 19:59:48] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:48] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:48] [Representation] Progress 62/108 | remaining=46 | elapsed=37s | eta≈28s
+[2026-09-17 19:59:48] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:49] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:49] [Representation] Progress 63/108 | remaining=45 | elapsed=38s | eta≈27s
+[2026-09-17 19:59:49] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:49] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:49] [Representation] Progress 64/108 | remaining=44 | elapsed=38s | eta≈26s
+[2026-09-17 19:59:49] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:50] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:50] [Representation] Progress 65/108 | remaining=43 | elapsed=39s | eta≈26s
+[2026-09-17 19:59:50] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:50] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:50] [Representation] Progress 66/108 | remaining=42 | elapsed=39s | eta≈25s
+[2026-09-17 19:59:50] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:51] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:51] [Representation] Progress 67/108 | remaining=41 | elapsed=40s | eta≈25s
+[2026-09-17 19:59:51] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:51] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:51] [Representation] Progress 68/108 | remaining=40 | elapsed=40s | eta≈24s
+[2026-09-17 19:59:51] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard
+[2026-09-17 19:59:52] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_delta_1_4 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:52] [Representation] Progress 69/108 | remaining=39 | elapsed=41s | eta≈23s
+[2026-09-17 19:59:52] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard
+[2026-09-17 19:59:52] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_delta_1_4 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:52] [Representation] Progress 70/108 | remaining=38 | elapsed=41s | eta≈23s
+[2026-09-17 19:59:52] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard
+[2026-09-17 19:59:53] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_delta_1_4 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:53] [Representation] Progress 71/108 | remaining=37 | elapsed=42s | eta≈22s
+[2026-09-17 19:59:53] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_delta_1_4 | representation=standardized_signal
+[2026-09-17 19:59:53] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_delta_1_4 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:53] [Representation] Progress 72/108 | remaining=36 | elapsed=42s | eta≈21s
+[2026-09-17 19:59:53] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 19:59:54] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:54] [Representation] Progress 73/108 | remaining=35 | elapsed=43s | eta≈21s
+[2026-09-17 19:59:54] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 19:59:54] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:54] [Representation] Progress 74/108 | remaining=34 | elapsed=44s | eta≈20s
+[2026-09-17 19:59:54] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 19:59:55] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:55] [Representation] Progress 75/108 | remaining=33 | elapsed=44s | eta≈19s
+[2026-09-17 19:59:55] [Representation task] Starting | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 19:59:55] [Representation task] Done | pid=83829 | split=intra_subject_c957bc40c91f | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:55] [Representation] Progress 76/108 | remaining=32 | elapsed=44s | eta≈19s
+[2026-09-17 19:59:55] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 19:59:56] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:56] [Representation] Progress 77/108 | remaining=31 | elapsed=45s | eta≈18s
+[2026-09-17 19:59:56] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 19:59:56] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:56] [Representation] Progress 78/108 | remaining=30 | elapsed=46s | eta≈18s
+[2026-09-17 19:59:56] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 19:59:57] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:57] [Representation] Progress 79/108 | remaining=29 | elapsed=46s | eta≈17s
+[2026-09-17 19:59:57] [Representation task] Starting | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 19:59:57] [Representation task] Done | pid=83829 | split=intra_subject_144d1fd38c02 | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:57] [Representation] Progress 80/108 | remaining=28 | elapsed=46s | eta≈16s
+[2026-09-17 19:59:57] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 19:59:58] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 19:59:58] [Representation] Progress 81/108 | remaining=27 | elapsed=47s | eta≈16s
+[2026-09-17 19:59:58] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 19:59:58] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 19:59:58] [Representation] Progress 82/108 | remaining=26 | elapsed=48s | eta≈15s
+[2026-09-17 19:59:58] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 19:59:59] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 19:59:59] [Representation] Progress 83/108 | remaining=25 | elapsed=48s | eta≈15s
+[2026-09-17 19:59:59] [Representation task] Starting | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 19:59:59] [Representation task] Done | pid=83829 | split=intra_subject_7deae5356a6a | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 19:59:59] [Representation] Progress 84/108 | remaining=24 | elapsed=48s | eta≈14s
+[2026-09-17 19:59:59] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 20:00:00] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 20:00:00] [Representation] Progress 85/108 | remaining=23 | elapsed=49s | eta≈13s
+[2026-09-17 20:00:00] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 20:00:00] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 20:00:00] [Representation] Progress 86/108 | remaining=22 | elapsed=50s | eta≈13s
+[2026-09-17 20:00:00] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 20:00:01] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 20:00:01] [Representation] Progress 87/108 | remaining=21 | elapsed=50s | eta≈12s
+[2026-09-17 20:00:01] [Representation task] Starting | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 20:00:01] [Representation task] Done | pid=83829 | split=intra_subject_892abeea82e5 | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 20:00:01] [Representation] Progress 88/108 | remaining=20 | elapsed=51s | eta≈12s
+[2026-09-17 20:00:01] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 20:00:02] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 20:00:02] [Representation] Progress 89/108 | remaining=19 | elapsed=52s | eta≈11s
+[2026-09-17 20:00:02] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 20:00:03] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 20:00:03] [Representation] Progress 90/108 | remaining=18 | elapsed=52s | eta≈10s
+[2026-09-17 20:00:03] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 20:00:03] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 20:00:03] [Representation] Progress 91/108 | remaining=17 | elapsed=53s | eta≈10s
+[2026-09-17 20:00:03] [Representation task] Starting | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 20:00:03] [Representation task] Done | pid=83829 | split=intra_subject_3702a100e6d1 | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 20:00:03] [Representation] Progress 92/108 | remaining=16 | elapsed=53s | eta≈9s
+[2026-09-17 20:00:03] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 20:00:04] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 20:00:04] [Representation] Progress 93/108 | remaining=15 | elapsed=54s | eta≈9s
+[2026-09-17 20:00:04] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 20:00:05] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 20:00:05] [Representation] Progress 94/108 | remaining=14 | elapsed=54s | eta≈8s
+[2026-09-17 20:00:05] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 20:00:06] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 20:00:06] [Representation] Progress 95/108 | remaining=13 | elapsed=55s | eta≈8s
+[2026-09-17 20:00:06] [Representation task] Starting | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 20:00:06] [Representation task] Done | pid=83829 | split=intra_subject_d3ec8f8134fa | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 20:00:06] [Representation] Progress 96/108 | remaining=12 | elapsed=55s | eta≈7s
+[2026-09-17 20:00:06] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 20:00:07] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 20:00:07] [Representation] Progress 97/108 | remaining=11 | elapsed=56s | eta≈6s
+[2026-09-17 20:00:07] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 20:00:07] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 20:00:07] [Representation] Progress 98/108 | remaining=10 | elapsed=57s | eta≈6s
+[2026-09-17 20:00:07] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 20:00:08] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 20:00:08] [Representation] Progress 99/108 | remaining=9 | elapsed=57s | eta≈5s
+[2026-09-17 20:00:08] [Representation task] Starting | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 20:00:08] [Representation task] Done | pid=83829 | split=intra_subject_4331055f55c1 | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 20:00:08] [Representation] Progress 100/108 | remaining=8 | elapsed=58s | eta≈5s
+[2026-09-17 20:00:08] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 20:00:09] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 20:00:09] [Representation] Progress 101/108 | remaining=7 | elapsed=58s | eta≈4s
+[2026-09-17 20:00:09] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 20:00:09] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 20:00:09] [Representation] Progress 102/108 | remaining=6 | elapsed=59s | eta≈3s
+[2026-09-17 20:00:09] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 20:00:10] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 20:00:10] [Representation] Progress 103/108 | remaining=5 | elapsed=59s | eta≈3s
+[2026-09-17 20:00:10] [Representation task] Starting | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 20:00:10] [Representation task] Done | pid=83829 | split=intra_subject_5202b207c83d | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 20:00:10] [Representation] Progress 104/108 | remaining=4 | elapsed=60s | eta≈2s
+[2026-09-17 20:00:10] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard
+[2026-09-17 20:00:11] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_theta_4_8 | representation=statistical__all_standard | elapsed=1s
+[2026-09-17 20:00:11] [Representation] Progress 105/108 | remaining=3 | elapsed=1.0m | eta≈2s
+[2026-09-17 20:00:11] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard
+[2026-09-17 20:00:11] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_theta_4_8 | representation=temporal__all_standard | elapsed=0s
+[2026-09-17 20:00:11] [Representation] Progress 106/108 | remaining=2 | elapsed=1.0m | eta≈1s
+[2026-09-17 20:00:11] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard
+[2026-09-17 20:00:12] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_theta_4_8 | representation=csp_6__all_standard | elapsed=1s
+[2026-09-17 20:00:12] [Representation] Progress 107/108 | remaining=1 | elapsed=1.0m | eta≈1s
+[2026-09-17 20:00:12] [Representation task] Starting | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_theta_4_8 | representation=standardized_signal
+[2026-09-17 20:00:12] [Representation task] Done | pid=83829 | split=intra_subject_2a071fee955d | group=bci2a_intra_theta_4_8 | representation=standardized_signal | elapsed=0s
+[2026-09-17 20:00:12] [Representation] Progress 108/108 | remaining=0 | elapsed=1.0m | eta≈0s
+[2026-09-17 20:00:12] [Representation] Done | elapsed=1.0m
+[2026-09-17 20:00:12] [Training] Starting...
+[2026-09-17 20:00:12] [Training] Tasks=108 | workers=1
+[2026-09-17 20:00:12] [Training task] Starting | pid=83829 | item=1 | split=intra_subject_c957bc40c91f | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:13] [Training task] Done | pid=83829 | item=1 | split=intra_subject_c957bc40c91f | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:13] [Training] Progress 1/108 | remaining=107 | elapsed=1s | eta≈1.6m
+[2026-09-17 20:00:13] [Training task] Starting | pid=83829 | item=2 | split=intra_subject_c957bc40c91f | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:13] [Training task] Done | pid=83829 | item=2 | split=intra_subject_c957bc40c91f | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:13] [Training] Progress 2/108 | remaining=106 | elapsed=1s | eta≈1.1m
+[2026-09-17 20:00:13] [Training task] Starting | pid=83829 | item=3 | split=intra_subject_c957bc40c91f | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:14] [Training task] Done | pid=83829 | item=3 | split=intra_subject_c957bc40c91f | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:14] [Training] Progress 3/108 | remaining=105 | elapsed=2s | eta≈54s
+[2026-09-17 20:00:14] [Training task] Starting | pid=83829 | item=4 | split=intra_subject_c957bc40c91f | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:19] [Training task] Done | pid=83829 | item=4 | split=intra_subject_c957bc40c91f | representation=standardized_signal | model=eegnet | elapsed=5s
+[2026-09-17 20:00:19] [Training] Progress 4/108 | remaining=104 | elapsed=7s | eta≈2.9m
+[2026-09-17 20:00:19] [Training task] Starting | pid=83829 | item=5 | split=intra_subject_144d1fd38c02 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:20] [Training task] Done | pid=83829 | item=5 | split=intra_subject_144d1fd38c02 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:20] [Training] Progress 5/108 | remaining=103 | elapsed=8s | eta≈2.6m
+[2026-09-17 20:00:20] [Training task] Starting | pid=83829 | item=6 | split=intra_subject_144d1fd38c02 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:20] [Training task] Done | pid=83829 | item=6 | split=intra_subject_144d1fd38c02 | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:20] [Training] Progress 6/108 | remaining=102 | elapsed=8s | eta≈2.3m
+[2026-09-17 20:00:20] [Training task] Starting | pid=83829 | item=7 | split=intra_subject_144d1fd38c02 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:21] [Training task] Done | pid=83829 | item=7 | split=intra_subject_144d1fd38c02 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:21] [Training] Progress 7/108 | remaining=101 | elapsed=8s | eta≈2.0m
+[2026-09-17 20:00:21] [Training task] Starting | pid=83829 | item=8 | split=intra_subject_144d1fd38c02 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:22] [Training task] Done | pid=83829 | item=8 | split=intra_subject_144d1fd38c02 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:00:22] [Training] Progress 8/108 | remaining=100 | elapsed=10s | eta≈2.1m
+[2026-09-17 20:00:22] [Training task] Starting | pid=83829 | item=9 | split=intra_subject_7deae5356a6a | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:23] [Training task] Done | pid=83829 | item=9 | split=intra_subject_7deae5356a6a | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:23] [Training] Progress 9/108 | remaining=99 | elapsed=11s | eta≈2.1m
+[2026-09-17 20:00:23] [Training task] Starting | pid=83829 | item=10 | split=intra_subject_7deae5356a6a | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:24] [Training task] Done | pid=83829 | item=10 | split=intra_subject_7deae5356a6a | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:24] [Training] Progress 10/108 | remaining=98 | elapsed=12s | eta≈1.9m
+[2026-09-17 20:00:24] [Training task] Starting | pid=83829 | item=11 | split=intra_subject_7deae5356a6a | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:24] [Training task] Done | pid=83829 | item=11 | split=intra_subject_7deae5356a6a | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:24] [Training] Progress 11/108 | remaining=97 | elapsed=12s | eta≈1.8m
+[2026-09-17 20:00:24] [Training task] Starting | pid=83829 | item=12 | split=intra_subject_7deae5356a6a | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:26] [Training task] Done | pid=83829 | item=12 | split=intra_subject_7deae5356a6a | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:00:26] [Training] Progress 12/108 | remaining=96 | elapsed=14s | eta≈1.9m
+[2026-09-17 20:00:26] [Training task] Starting | pid=83829 | item=13 | split=intra_subject_892abeea82e5 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:27] [Training task] Done | pid=83829 | item=13 | split=intra_subject_892abeea82e5 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:27] [Training] Progress 13/108 | remaining=95 | elapsed=15s | eta≈1.9m
+[2026-09-17 20:00:27] [Training task] Starting | pid=83829 | item=14 | split=intra_subject_892abeea82e5 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:28] [Training task] Done | pid=83829 | item=14 | split=intra_subject_892abeea82e5 | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:28] [Training] Progress 14/108 | remaining=94 | elapsed=16s | eta≈1.8m
+[2026-09-17 20:00:28] [Training task] Starting | pid=83829 | item=15 | split=intra_subject_892abeea82e5 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:28] [Training task] Done | pid=83829 | item=15 | split=intra_subject_892abeea82e5 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:28] [Training] Progress 15/108 | remaining=93 | elapsed=16s | eta≈1.7m
+[2026-09-17 20:00:28] [Training task] Starting | pid=83829 | item=16 | split=intra_subject_892abeea82e5 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:30] [Training task] Done | pid=83829 | item=16 | split=intra_subject_892abeea82e5 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:00:30] [Training] Progress 16/108 | remaining=92 | elapsed=18s | eta≈1.7m
+[2026-09-17 20:00:30] [Training task] Starting | pid=83829 | item=17 | split=intra_subject_3702a100e6d1 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:31] [Training task] Done | pid=83829 | item=17 | split=intra_subject_3702a100e6d1 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:31] [Training] Progress 17/108 | remaining=91 | elapsed=19s | eta≈1.7m
+[2026-09-17 20:00:31] [Training task] Starting | pid=83829 | item=18 | split=intra_subject_3702a100e6d1 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:31] [Training task] Done | pid=83829 | item=18 | split=intra_subject_3702a100e6d1 | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:31] [Training] Progress 18/108 | remaining=90 | elapsed=19s | eta≈1.6m
+[2026-09-17 20:00:31] [Training task] Starting | pid=83829 | item=19 | split=intra_subject_3702a100e6d1 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:31] [Training task] Done | pid=83829 | item=19 | split=intra_subject_3702a100e6d1 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:31] [Training] Progress 19/108 | remaining=89 | elapsed=19s | eta≈1.5m
+[2026-09-17 20:00:31] [Training task] Starting | pid=83829 | item=20 | split=intra_subject_3702a100e6d1 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:33] [Training task] Done | pid=83829 | item=20 | split=intra_subject_3702a100e6d1 | representation=standardized_signal | model=eegnet | elapsed=1s
+[2026-09-17 20:00:33] [Training] Progress 20/108 | remaining=88 | elapsed=21s | eta≈1.5m
+[2026-09-17 20:00:33] [Training task] Starting | pid=83829 | item=21 | split=intra_subject_d3ec8f8134fa | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:34] [Training task] Done | pid=83829 | item=21 | split=intra_subject_d3ec8f8134fa | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:34] [Training] Progress 21/108 | remaining=87 | elapsed=22s | eta≈1.5m
+[2026-09-17 20:00:34] [Training task] Starting | pid=83829 | item=22 | split=intra_subject_d3ec8f8134fa | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:34] [Training task] Done | pid=83829 | item=22 | split=intra_subject_d3ec8f8134fa | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:34] [Training] Progress 22/108 | remaining=86 | elapsed=22s | eta≈1.5m
+[2026-09-17 20:00:34] [Training task] Starting | pid=83829 | item=23 | split=intra_subject_d3ec8f8134fa | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:35] [Training task] Done | pid=83829 | item=23 | split=intra_subject_d3ec8f8134fa | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:35] [Training] Progress 23/108 | remaining=85 | elapsed=23s | eta≈1.4m
+[2026-09-17 20:00:35] [Training task] Starting | pid=83829 | item=24 | split=intra_subject_d3ec8f8134fa | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:36] [Training task] Done | pid=83829 | item=24 | split=intra_subject_d3ec8f8134fa | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:00:36] [Training] Progress 24/108 | remaining=84 | elapsed=24s | eta≈1.4m
+[2026-09-17 20:00:36] [Training task] Starting | pid=83829 | item=25 | split=intra_subject_4331055f55c1 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:37] [Training task] Done | pid=83829 | item=25 | split=intra_subject_4331055f55c1 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:37] [Training] Progress 25/108 | remaining=83 | elapsed=25s | eta≈1.4m
+[2026-09-17 20:00:37] [Training task] Starting | pid=83829 | item=26 | split=intra_subject_4331055f55c1 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:38] [Training task] Done | pid=83829 | item=26 | split=intra_subject_4331055f55c1 | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:38] [Training] Progress 26/108 | remaining=82 | elapsed=26s | eta≈1.4m
+[2026-09-17 20:00:38] [Training task] Starting | pid=83829 | item=27 | split=intra_subject_4331055f55c1 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:39] [Training task] Done | pid=83829 | item=27 | split=intra_subject_4331055f55c1 | representation=csp_6__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:39] [Training] Progress 27/108 | remaining=81 | elapsed=27s | eta≈1.3m
+[2026-09-17 20:00:39] [Training task] Starting | pid=83829 | item=28 | split=intra_subject_4331055f55c1 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:41] [Training task] Done | pid=83829 | item=28 | split=intra_subject_4331055f55c1 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:00:41] [Training] Progress 28/108 | remaining=80 | elapsed=29s | eta≈1.4m
+[2026-09-17 20:00:41] [Training task] Starting | pid=83829 | item=29 | split=intra_subject_5202b207c83d | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:42] [Training task] Done | pid=83829 | item=29 | split=intra_subject_5202b207c83d | representation=statistical__all_standard | model=logistic_regression | elapsed=2s
+[2026-09-17 20:00:42] [Training] Progress 29/108 | remaining=79 | elapsed=30s | eta≈1.4m
+[2026-09-17 20:00:42] [Training task] Starting | pid=83829 | item=30 | split=intra_subject_5202b207c83d | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:43] [Training task] Done | pid=83829 | item=30 | split=intra_subject_5202b207c83d | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:43] [Training] Progress 30/108 | remaining=78 | elapsed=31s | eta≈1.3m
+[2026-09-17 20:00:43] [Training task] Starting | pid=83829 | item=31 | split=intra_subject_5202b207c83d | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:43] [Training task] Done | pid=83829 | item=31 | split=intra_subject_5202b207c83d | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:43] [Training] Progress 31/108 | remaining=77 | elapsed=31s | eta≈1.3m
+[2026-09-17 20:00:43] [Training task] Starting | pid=83829 | item=32 | split=intra_subject_5202b207c83d | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:45] [Training task] Done | pid=83829 | item=32 | split=intra_subject_5202b207c83d | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:00:45] [Training] Progress 32/108 | remaining=76 | elapsed=33s | eta≈1.3m
+[2026-09-17 20:00:45] [Training task] Starting | pid=83829 | item=33 | split=intra_subject_2a071fee955d | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:47] [Training task] Done | pid=83829 | item=33 | split=intra_subject_2a071fee955d | representation=statistical__all_standard | model=logistic_regression | elapsed=2s
+[2026-09-17 20:00:47] [Training] Progress 33/108 | remaining=75 | elapsed=35s | eta≈1.3m
+[2026-09-17 20:00:47] [Training task] Starting | pid=83829 | item=34 | split=intra_subject_2a071fee955d | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:48] [Training task] Done | pid=83829 | item=34 | split=intra_subject_2a071fee955d | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:48] [Training] Progress 34/108 | remaining=74 | elapsed=36s | eta≈1.3m
+[2026-09-17 20:00:48] [Training task] Starting | pid=83829 | item=35 | split=intra_subject_2a071fee955d | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:48] [Training task] Done | pid=83829 | item=35 | split=intra_subject_2a071fee955d | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:48] [Training] Progress 35/108 | remaining=73 | elapsed=36s | eta≈1.3m
+[2026-09-17 20:00:48] [Training task] Starting | pid=83829 | item=36 | split=intra_subject_2a071fee955d | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:50] [Training task] Done | pid=83829 | item=36 | split=intra_subject_2a071fee955d | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:00:50] [Training] Progress 36/108 | remaining=72 | elapsed=38s | eta≈1.3m
+[2026-09-17 20:00:50] [Training task] Starting | pid=83829 | item=37 | split=intra_subject_c957bc40c91f | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:51] [Training task] Done | pid=83829 | item=37 | split=intra_subject_c957bc40c91f | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:51] [Training] Progress 37/108 | remaining=71 | elapsed=39s | eta≈1.2m
+[2026-09-17 20:00:51] [Training task] Starting | pid=83829 | item=38 | split=intra_subject_c957bc40c91f | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:51] [Training task] Done | pid=83829 | item=38 | split=intra_subject_c957bc40c91f | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:51] [Training] Progress 38/108 | remaining=70 | elapsed=39s | eta≈1.2m
+[2026-09-17 20:00:51] [Training task] Starting | pid=83829 | item=39 | split=intra_subject_c957bc40c91f | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:52] [Training task] Done | pid=83829 | item=39 | split=intra_subject_c957bc40c91f | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:52] [Training] Progress 39/108 | remaining=69 | elapsed=40s | eta≈1.2m
+[2026-09-17 20:00:52] [Training task] Starting | pid=83829 | item=40 | split=intra_subject_c957bc40c91f | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:53] [Training task] Done | pid=83829 | item=40 | split=intra_subject_c957bc40c91f | representation=standardized_signal | model=eegnet | elapsed=1s
+[2026-09-17 20:00:53] [Training] Progress 40/108 | remaining=68 | elapsed=41s | eta≈1.2m
+[2026-09-17 20:00:53] [Training task] Starting | pid=83829 | item=41 | split=intra_subject_144d1fd38c02 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:54] [Training task] Done | pid=83829 | item=41 | split=intra_subject_144d1fd38c02 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:54] [Training] Progress 41/108 | remaining=67 | elapsed=42s | eta≈1.1m
+[2026-09-17 20:00:54] [Training task] Starting | pid=83829 | item=42 | split=intra_subject_144d1fd38c02 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:54] [Training task] Done | pid=83829 | item=42 | split=intra_subject_144d1fd38c02 | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:54] [Training] Progress 42/108 | remaining=66 | elapsed=42s | eta≈1.1m
+[2026-09-17 20:00:54] [Training task] Starting | pid=83829 | item=43 | split=intra_subject_144d1fd38c02 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:55] [Training task] Done | pid=83829 | item=43 | split=intra_subject_144d1fd38c02 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:55] [Training] Progress 43/108 | remaining=65 | elapsed=43s | eta≈1.1m
+[2026-09-17 20:00:55] [Training task] Starting | pid=83829 | item=44 | split=intra_subject_144d1fd38c02 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:00:57] [Training task] Done | pid=83829 | item=44 | split=intra_subject_144d1fd38c02 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:00:57] [Training] Progress 44/108 | remaining=64 | elapsed=45s | eta≈1.1m
+[2026-09-17 20:00:57] [Training task] Starting | pid=83829 | item=45 | split=intra_subject_7deae5356a6a | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:00:58] [Training task] Done | pid=83829 | item=45 | split=intra_subject_7deae5356a6a | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:58] [Training] Progress 45/108 | remaining=63 | elapsed=46s | eta≈1.1m
+[2026-09-17 20:00:58] [Training task] Starting | pid=83829 | item=46 | split=intra_subject_7deae5356a6a | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:00:58] [Training task] Done | pid=83829 | item=46 | split=intra_subject_7deae5356a6a | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:00:58] [Training] Progress 46/108 | remaining=62 | elapsed=46s | eta≈1.0m
+[2026-09-17 20:00:58] [Training task] Starting | pid=83829 | item=47 | split=intra_subject_7deae5356a6a | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:00:59] [Training task] Done | pid=83829 | item=47 | split=intra_subject_7deae5356a6a | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:00:59] [Training] Progress 47/108 | remaining=61 | elapsed=47s | eta≈1.0m
+[2026-09-17 20:00:59] [Training task] Starting | pid=83829 | item=48 | split=intra_subject_7deae5356a6a | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:00] [Training task] Done | pid=83829 | item=48 | split=intra_subject_7deae5356a6a | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:00] [Training] Progress 48/108 | remaining=60 | elapsed=48s | eta≈1.0m
+[2026-09-17 20:01:00] [Training task] Starting | pid=83829 | item=49 | split=intra_subject_892abeea82e5 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:02] [Training task] Done | pid=83829 | item=49 | split=intra_subject_892abeea82e5 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:02] [Training] Progress 49/108 | remaining=59 | elapsed=50s | eta≈60s
+[2026-09-17 20:01:02] [Training task] Starting | pid=83829 | item=50 | split=intra_subject_892abeea82e5 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:02] [Training task] Done | pid=83829 | item=50 | split=intra_subject_892abeea82e5 | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:02] [Training] Progress 50/108 | remaining=58 | elapsed=50s | eta≈58s
+[2026-09-17 20:01:02] [Training task] Starting | pid=83829 | item=51 | split=intra_subject_892abeea82e5 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:03] [Training task] Done | pid=83829 | item=51 | split=intra_subject_892abeea82e5 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:03] [Training] Progress 51/108 | remaining=57 | elapsed=51s | eta≈57s
+[2026-09-17 20:01:03] [Training task] Starting | pid=83829 | item=52 | split=intra_subject_892abeea82e5 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:04] [Training task] Done | pid=83829 | item=52 | split=intra_subject_892abeea82e5 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:04] [Training] Progress 52/108 | remaining=56 | elapsed=52s | eta≈56s
+[2026-09-17 20:01:04] [Training task] Starting | pid=83829 | item=53 | split=intra_subject_3702a100e6d1 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:05] [Training task] Done | pid=83829 | item=53 | split=intra_subject_3702a100e6d1 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:05] [Training] Progress 53/108 | remaining=55 | elapsed=53s | eta≈55s
+[2026-09-17 20:01:05] [Training task] Starting | pid=83829 | item=54 | split=intra_subject_3702a100e6d1 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:06] [Training task] Done | pid=83829 | item=54 | split=intra_subject_3702a100e6d1 | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:06] [Training] Progress 54/108 | remaining=54 | elapsed=54s | eta≈54s
+[2026-09-17 20:01:06] [Training task] Starting | pid=83829 | item=55 | split=intra_subject_3702a100e6d1 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:07] [Training task] Done | pid=83829 | item=55 | split=intra_subject_3702a100e6d1 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:07] [Training] Progress 55/108 | remaining=53 | elapsed=55s | eta≈53s
+[2026-09-17 20:01:07] [Training task] Starting | pid=83829 | item=56 | split=intra_subject_3702a100e6d1 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:08] [Training task] Done | pid=83829 | item=56 | split=intra_subject_3702a100e6d1 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:08] [Training] Progress 56/108 | remaining=52 | elapsed=56s | eta≈52s
+[2026-09-17 20:01:08] [Training task] Starting | pid=83829 | item=57 | split=intra_subject_d3ec8f8134fa | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:09] [Training task] Done | pid=83829 | item=57 | split=intra_subject_d3ec8f8134fa | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:09] [Training] Progress 57/108 | remaining=51 | elapsed=57s | eta≈51s
+[2026-09-17 20:01:09] [Training task] Starting | pid=83829 | item=58 | split=intra_subject_d3ec8f8134fa | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:10] [Training task] Done | pid=83829 | item=58 | split=intra_subject_d3ec8f8134fa | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:10] [Training] Progress 58/108 | remaining=50 | elapsed=58s | eta≈50s
+[2026-09-17 20:01:10] [Training task] Starting | pid=83829 | item=59 | split=intra_subject_d3ec8f8134fa | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:10] [Training task] Done | pid=83829 | item=59 | split=intra_subject_d3ec8f8134fa | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:10] [Training] Progress 59/108 | remaining=49 | elapsed=58s | eta≈48s
+[2026-09-17 20:01:10] [Training task] Starting | pid=83829 | item=60 | split=intra_subject_d3ec8f8134fa | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:12] [Training task] Done | pid=83829 | item=60 | split=intra_subject_d3ec8f8134fa | representation=standardized_signal | model=eegnet | elapsed=1s
+[2026-09-17 20:01:12] [Training] Progress 60/108 | remaining=48 | elapsed=60s | eta≈48s
+[2026-09-17 20:01:12] [Training task] Starting | pid=83829 | item=61 | split=intra_subject_4331055f55c1 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:13] [Training task] Done | pid=83829 | item=61 | split=intra_subject_4331055f55c1 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:13] [Training] Progress 61/108 | remaining=47 | elapsed=1.0m | eta≈47s
+[2026-09-17 20:01:13] [Training task] Starting | pid=83829 | item=62 | split=intra_subject_4331055f55c1 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:13] [Training task] Done | pid=83829 | item=62 | split=intra_subject_4331055f55c1 | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:13] [Training] Progress 62/108 | remaining=46 | elapsed=1.0m | eta≈45s
+[2026-09-17 20:01:13] [Training task] Starting | pid=83829 | item=63 | split=intra_subject_4331055f55c1 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:14] [Training task] Done | pid=83829 | item=63 | split=intra_subject_4331055f55c1 | representation=csp_6__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:14] [Training] Progress 63/108 | remaining=45 | elapsed=1.0m | eta≈44s
+[2026-09-17 20:01:14] [Training task] Starting | pid=83829 | item=64 | split=intra_subject_4331055f55c1 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:16] [Training task] Done | pid=83829 | item=64 | split=intra_subject_4331055f55c1 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:16] [Training] Progress 64/108 | remaining=44 | elapsed=1.1m | eta≈44s
+[2026-09-17 20:01:16] [Training task] Starting | pid=83829 | item=65 | split=intra_subject_5202b207c83d | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:18] [Training task] Done | pid=83829 | item=65 | split=intra_subject_5202b207c83d | representation=statistical__all_standard | model=logistic_regression | elapsed=2s
+[2026-09-17 20:01:18] [Training] Progress 65/108 | remaining=43 | elapsed=1.1m | eta≈44s
+[2026-09-17 20:01:18] [Training task] Starting | pid=83829 | item=66 | split=intra_subject_5202b207c83d | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:20] [Training task] Done | pid=83829 | item=66 | split=intra_subject_5202b207c83d | representation=temporal__all_standard | model=logistic_regression | elapsed=2s
+[2026-09-17 20:01:20] [Training] Progress 66/108 | remaining=42 | elapsed=1.1m | eta≈43s
+[2026-09-17 20:01:20] [Training task] Starting | pid=83829 | item=67 | split=intra_subject_5202b207c83d | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:21] [Training task] Done | pid=83829 | item=67 | split=intra_subject_5202b207c83d | representation=csp_6__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:21] [Training] Progress 67/108 | remaining=41 | elapsed=1.1m | eta≈42s
+[2026-09-17 20:01:21] [Training task] Starting | pid=83829 | item=68 | split=intra_subject_5202b207c83d | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:23] [Training task] Done | pid=83829 | item=68 | split=intra_subject_5202b207c83d | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:23] [Training] Progress 68/108 | remaining=40 | elapsed=1.2m | eta≈42s
+[2026-09-17 20:01:23] [Training task] Starting | pid=83829 | item=69 | split=intra_subject_2a071fee955d | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:26] [Training task] Done | pid=83829 | item=69 | split=intra_subject_2a071fee955d | representation=statistical__all_standard | model=logistic_regression | elapsed=3s
+[2026-09-17 20:01:26] [Training] Progress 69/108 | remaining=39 | elapsed=1.2m | eta≈42s
+[2026-09-17 20:01:26] [Training task] Starting | pid=83829 | item=70 | split=intra_subject_2a071fee955d | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:27] [Training task] Done | pid=83829 | item=70 | split=intra_subject_2a071fee955d | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:27] [Training] Progress 70/108 | remaining=38 | elapsed=1.2m | eta≈40s
+[2026-09-17 20:01:27] [Training task] Starting | pid=83829 | item=71 | split=intra_subject_2a071fee955d | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:27] [Training task] Done | pid=83829 | item=71 | split=intra_subject_2a071fee955d | representation=csp_6__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:27] [Training] Progress 71/108 | remaining=37 | elapsed=1.3m | eta≈39s
+[2026-09-17 20:01:27] [Training task] Starting | pid=83829 | item=72 | split=intra_subject_2a071fee955d | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:30] [Training task] Done | pid=83829 | item=72 | split=intra_subject_2a071fee955d | representation=standardized_signal | model=eegnet | elapsed=3s
+[2026-09-17 20:01:30] [Training] Progress 72/108 | remaining=36 | elapsed=1.3m | eta≈39s
+[2026-09-17 20:01:30] [Training task] Starting | pid=83829 | item=73 | split=intra_subject_c957bc40c91f | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:31] [Training task] Done | pid=83829 | item=73 | split=intra_subject_c957bc40c91f | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:31] [Training] Progress 73/108 | remaining=35 | elapsed=1.3m | eta≈38s
+[2026-09-17 20:01:31] [Training task] Starting | pid=83829 | item=74 | split=intra_subject_c957bc40c91f | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:32] [Training task] Done | pid=83829 | item=74 | split=intra_subject_c957bc40c91f | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:32] [Training] Progress 74/108 | remaining=34 | elapsed=1.3m | eta≈37s
+[2026-09-17 20:01:32] [Training task] Starting | pid=83829 | item=75 | split=intra_subject_c957bc40c91f | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:32] [Training task] Done | pid=83829 | item=75 | split=intra_subject_c957bc40c91f | representation=csp_6__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:32] [Training] Progress 75/108 | remaining=33 | elapsed=1.3m | eta≈35s
+[2026-09-17 20:01:32] [Training task] Starting | pid=83829 | item=76 | split=intra_subject_c957bc40c91f | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:34] [Training task] Done | pid=83829 | item=76 | split=intra_subject_c957bc40c91f | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:34] [Training] Progress 76/108 | remaining=32 | elapsed=1.4m | eta≈34s
+[2026-09-17 20:01:34] [Training task] Starting | pid=83829 | item=77 | split=intra_subject_144d1fd38c02 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:35] [Training task] Done | pid=83829 | item=77 | split=intra_subject_144d1fd38c02 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:35] [Training] Progress 77/108 | remaining=31 | elapsed=1.4m | eta≈33s
+[2026-09-17 20:01:35] [Training task] Starting | pid=83829 | item=78 | split=intra_subject_144d1fd38c02 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:36] [Training task] Done | pid=83829 | item=78 | split=intra_subject_144d1fd38c02 | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:36] [Training] Progress 78/108 | remaining=30 | elapsed=1.4m | eta≈32s
+[2026-09-17 20:01:36] [Training task] Starting | pid=83829 | item=79 | split=intra_subject_144d1fd38c02 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:37] [Training task] Done | pid=83829 | item=79 | split=intra_subject_144d1fd38c02 | representation=csp_6__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:37] [Training] Progress 79/108 | remaining=29 | elapsed=1.4m | eta≈31s
+[2026-09-17 20:01:37] [Training task] Starting | pid=83829 | item=80 | split=intra_subject_144d1fd38c02 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:39] [Training task] Done | pid=83829 | item=80 | split=intra_subject_144d1fd38c02 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:39] [Training] Progress 80/108 | remaining=28 | elapsed=1.5m | eta≈30s
+[2026-09-17 20:01:39] [Training task] Starting | pid=83829 | item=81 | split=intra_subject_7deae5356a6a | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:41] [Training task] Done | pid=83829 | item=81 | split=intra_subject_7deae5356a6a | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:41] [Training] Progress 81/108 | remaining=27 | elapsed=1.5m | eta≈29s
+[2026-09-17 20:01:41] [Training task] Starting | pid=83829 | item=82 | split=intra_subject_7deae5356a6a | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:41] [Training task] Done | pid=83829 | item=82 | split=intra_subject_7deae5356a6a | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:41] [Training] Progress 82/108 | remaining=26 | elapsed=1.5m | eta≈28s
+[2026-09-17 20:01:41] [Training task] Starting | pid=83829 | item=83 | split=intra_subject_7deae5356a6a | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:42] [Training task] Done | pid=83829 | item=83 | split=intra_subject_7deae5356a6a | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:42] [Training] Progress 83/108 | remaining=25 | elapsed=1.5m | eta≈27s
+[2026-09-17 20:01:42] [Training task] Starting | pid=83829 | item=84 | split=intra_subject_7deae5356a6a | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:43] [Training task] Done | pid=83829 | item=84 | split=intra_subject_7deae5356a6a | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:43] [Training] Progress 84/108 | remaining=24 | elapsed=1.5m | eta≈26s
+[2026-09-17 20:01:43] [Training task] Starting | pid=83829 | item=85 | split=intra_subject_892abeea82e5 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:44] [Training task] Done | pid=83829 | item=85 | split=intra_subject_892abeea82e5 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:44] [Training] Progress 85/108 | remaining=23 | elapsed=1.5m | eta≈25s
+[2026-09-17 20:01:44] [Training task] Starting | pid=83829 | item=86 | split=intra_subject_892abeea82e5 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:45] [Training task] Done | pid=83829 | item=86 | split=intra_subject_892abeea82e5 | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:45] [Training] Progress 86/108 | remaining=22 | elapsed=1.5m | eta≈24s
+[2026-09-17 20:01:45] [Training task] Starting | pid=83829 | item=87 | split=intra_subject_892abeea82e5 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:45] [Training task] Done | pid=83829 | item=87 | split=intra_subject_892abeea82e5 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:45] [Training] Progress 87/108 | remaining=21 | elapsed=1.6m | eta≈23s
+[2026-09-17 20:01:45] [Training task] Starting | pid=83829 | item=88 | split=intra_subject_892abeea82e5 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:47] [Training task] Done | pid=83829 | item=88 | split=intra_subject_892abeea82e5 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:47] [Training] Progress 88/108 | remaining=20 | elapsed=1.6m | eta≈22s
+[2026-09-17 20:01:47] [Training task] Starting | pid=83829 | item=89 | split=intra_subject_3702a100e6d1 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:48] [Training task] Done | pid=83829 | item=89 | split=intra_subject_3702a100e6d1 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:48] [Training] Progress 89/108 | remaining=19 | elapsed=1.6m | eta≈20s
+[2026-09-17 20:01:48] [Training task] Starting | pid=83829 | item=90 | split=intra_subject_3702a100e6d1 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:48] [Training task] Done | pid=83829 | item=90 | split=intra_subject_3702a100e6d1 | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:48] [Training] Progress 90/108 | remaining=18 | elapsed=1.6m | eta≈19s
+[2026-09-17 20:01:48] [Training task] Starting | pid=83829 | item=91 | split=intra_subject_3702a100e6d1 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:49] [Training task] Done | pid=83829 | item=91 | split=intra_subject_3702a100e6d1 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:49] [Training] Progress 91/108 | remaining=17 | elapsed=1.6m | eta≈18s
+[2026-09-17 20:01:49] [Training task] Starting | pid=83829 | item=92 | split=intra_subject_3702a100e6d1 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:51] [Training task] Done | pid=83829 | item=92 | split=intra_subject_3702a100e6d1 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:51] [Training] Progress 92/108 | remaining=16 | elapsed=1.6m | eta≈17s
+[2026-09-17 20:01:51] [Training task] Starting | pid=83829 | item=93 | split=intra_subject_d3ec8f8134fa | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:52] [Training task] Done | pid=83829 | item=93 | split=intra_subject_d3ec8f8134fa | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:52] [Training] Progress 93/108 | remaining=15 | elapsed=1.7m | eta≈16s
+[2026-09-17 20:01:52] [Training task] Starting | pid=83829 | item=94 | split=intra_subject_d3ec8f8134fa | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:53] [Training task] Done | pid=83829 | item=94 | split=intra_subject_d3ec8f8134fa | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:53] [Training] Progress 94/108 | remaining=14 | elapsed=1.7m | eta≈15s
+[2026-09-17 20:01:53] [Training task] Starting | pid=83829 | item=95 | split=intra_subject_d3ec8f8134fa | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:53] [Training task] Done | pid=83829 | item=95 | split=intra_subject_d3ec8f8134fa | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:53] [Training] Progress 95/108 | remaining=13 | elapsed=1.7m | eta≈14s
+[2026-09-17 20:01:53] [Training task] Starting | pid=83829 | item=96 | split=intra_subject_d3ec8f8134fa | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:55] [Training task] Done | pid=83829 | item=96 | split=intra_subject_d3ec8f8134fa | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:55] [Training] Progress 96/108 | remaining=12 | elapsed=1.7m | eta≈13s
+[2026-09-17 20:01:55] [Training task] Starting | pid=83829 | item=97 | split=intra_subject_4331055f55c1 | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:56] [Training task] Done | pid=83829 | item=97 | split=intra_subject_4331055f55c1 | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:56] [Training] Progress 97/108 | remaining=11 | elapsed=1.7m | eta≈12s
+[2026-09-17 20:01:56] [Training task] Starting | pid=83829 | item=98 | split=intra_subject_4331055f55c1 | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:01:56] [Training task] Done | pid=83829 | item=98 | split=intra_subject_4331055f55c1 | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:56] [Training] Progress 98/108 | remaining=10 | elapsed=1.7m | eta≈11s
+[2026-09-17 20:01:56] [Training task] Starting | pid=83829 | item=99 | split=intra_subject_4331055f55c1 | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:01:57] [Training task] Done | pid=83829 | item=99 | split=intra_subject_4331055f55c1 | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:01:57] [Training] Progress 99/108 | remaining=9 | elapsed=1.7m | eta≈9s
+[2026-09-17 20:01:57] [Training task] Starting | pid=83829 | item=100 | split=intra_subject_4331055f55c1 | representation=standardized_signal | model=eegnet
+[2026-09-17 20:01:58] [Training task] Done | pid=83829 | item=100 | split=intra_subject_4331055f55c1 | representation=standardized_signal | model=eegnet | elapsed=2s
+[2026-09-17 20:01:58] [Training] Progress 100/108 | remaining=8 | elapsed=1.8m | eta≈8s
+[2026-09-17 20:01:58] [Training task] Starting | pid=83829 | item=101 | split=intra_subject_5202b207c83d | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:01:59] [Training task] Done | pid=83829 | item=101 | split=intra_subject_5202b207c83d | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:01:59] [Training] Progress 101/108 | remaining=7 | elapsed=1.8m | eta≈7s
+[2026-09-17 20:01:59] [Training task] Starting | pid=83829 | item=102 | split=intra_subject_5202b207c83d | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:02:00] [Training task] Done | pid=83829 | item=102 | split=intra_subject_5202b207c83d | representation=temporal__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:02:00] [Training] Progress 102/108 | remaining=6 | elapsed=1.8m | eta≈6s
+[2026-09-17 20:02:00] [Training task] Starting | pid=83829 | item=103 | split=intra_subject_5202b207c83d | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:02:00] [Training task] Done | pid=83829 | item=103 | split=intra_subject_5202b207c83d | representation=csp_6__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:02:00] [Training] Progress 103/108 | remaining=5 | elapsed=1.8m | eta≈5s
+[2026-09-17 20:02:00] [Training task] Starting | pid=83829 | item=104 | split=intra_subject_5202b207c83d | representation=standardized_signal | model=eegnet
+[2026-09-17 20:02:02] [Training task] Done | pid=83829 | item=104 | split=intra_subject_5202b207c83d | representation=standardized_signal | model=eegnet | elapsed=1s
+[2026-09-17 20:02:02] [Training] Progress 104/108 | remaining=4 | elapsed=1.8m | eta≈4s
+[2026-09-17 20:02:02] [Training task] Starting | pid=83829 | item=105 | split=intra_subject_2a071fee955d | representation=statistical__all_standard | model=logistic_regression
+[2026-09-17 20:02:02] [Training task] Done | pid=83829 | item=105 | split=intra_subject_2a071fee955d | representation=statistical__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:02:02] [Training] Progress 105/108 | remaining=3 | elapsed=1.8m | eta≈3s
+[2026-09-17 20:02:02] [Training task] Starting | pid=83829 | item=106 | split=intra_subject_2a071fee955d | representation=temporal__all_standard | model=logistic_regression
+[2026-09-17 20:02:03] [Training task] Done | pid=83829 | item=106 | split=intra_subject_2a071fee955d | representation=temporal__all_standard | model=logistic_regression | elapsed=1s
+[2026-09-17 20:02:03] [Training] Progress 106/108 | remaining=2 | elapsed=1.8m | eta≈2s
+[2026-09-17 20:02:03] [Training task] Starting | pid=83829 | item=107 | split=intra_subject_2a071fee955d | representation=csp_6__all_standard | model=logistic_regression
+[2026-09-17 20:02:03] [Training task] Done | pid=83829 | item=107 | split=intra_subject_2a071fee955d | representation=csp_6__all_standard | model=logistic_regression | elapsed=0s
+[2026-09-17 20:02:03] [Training] Progress 107/108 | remaining=1 | elapsed=1.9m | eta≈1s
+[2026-09-17 20:02:03] [Training task] Starting | pid=83829 | item=108 | split=intra_subject_2a071fee955d | representation=standardized_signal | model=eegnet
+[2026-09-17 20:02:05] [Training task] Done | pid=83829 | item=108 | split=intra_subject_2a071fee955d | representation=standardized_signal | model=eegnet | elapsed=1s
+[2026-09-17 20:02:05] [Training] Progress 108/108 | remaining=0 | elapsed=1.9m | eta≈0s
+[2026-09-17 20:02:05] [Training] Done | elapsed=1.9m
+[2026-09-17 20:02:05] [Evaluation] Starting...
+[Evaluation] 1/108 models[Evaluation] 2/108 models[Evaluation] 3/108 models[Evaluation] 4/108 models[Evaluation] 5/108 models[Evaluation] 6/108 models[Evaluation] 7/108 models[Evaluation] 8/108 models[Evaluation] 9/108 models[Evaluation] 10/108 models[Evaluation] 11/108 models[Evaluation] 12/108 models[Evaluation] 13/108 models[Evaluation] 14/108 models[Evaluation] 15/108 models[Evaluation] 16/108 models[Evaluation] 17/108 models[Evaluation] 18/108 models[Evaluation] 19/108 models[Evaluation] 20/108 models[Evaluation] 21/108 models[Evaluation] 22/108 models[Evaluation] 23/108 models[Evaluation] 24/108 models[Evaluation] 25/108 models[Evaluation] 26/108 models[Evaluation] 27/108 models[Evaluation] 28/108 models[Evaluation] 29/108 models[Evaluation] 30/108 models[Evaluation] 31/108 models[Evaluation] 32/108 models[Evaluation] 33/108 models[Evaluation] 34/108 models[Evaluation] 35/108 models[Evaluation] 36/108 models[Evaluation] 37/108 models[Evaluation] 38/108 models[Evaluation] 39/108 models[Evaluation] 40/108 models[Evaluation] 41/108 models[Evaluation] 42/108 models[Evaluation] 43/108 models[Evaluation] 44/108 models[Evaluation] 45/108 models[Evaluation] 46/108 models[Evaluation] 47/108 models[Evaluation] 48/108 models[Evaluation] 49/108 models[Evaluation] 50/108 models[Evaluation] 51/108 models[Evaluation] 52/108 models[Evaluation] 53/108 models[Evaluation] 54/108 models[Evaluation] 55/108 models[Evaluation] 56/108 models[Evaluation] 57/108 models[Evaluation] 58/108 models[Evaluation] 59/108 models[Evaluation] 60/108 models[Evaluation] 61/108 models[Evaluation] 62/108 models[Evaluation] 63/108 models[Evaluation] 64/108 models[Evaluation] 65/108 models[Evaluation] 66/108 models[Evaluation] 67/108 models[Evaluation] 68/108 models[Evaluation] 69/108 models[Evaluation] 70/108 models[Evaluation] 71/108 models[Evaluation] 72/108 models[Evaluation] 73/108 models[Evaluation] 74/108 models[Evaluation] 75/108 models[Evaluation] 76/108 models[Evaluation] 77/108 models[Evaluation] 78/108 models[Evaluation] 79/108 models[Evaluation] 80/108 models[Evaluation] 81/108 models[Evaluation] 82/108 models[Evaluation] 83/108 models[Evaluation] 84/108 models[Evaluation] 85/108 models[Evaluation] 86/108 models[Evaluation] 87/108 models[Evaluation] 88/108 models[Evaluation] 89/108 models[Evaluation] 90/108 models[Evaluation] 91/108 models[Evaluation] 92/108 models[Evaluation] 93/108 models[Evaluation] 94/108 models[Evaluation] 95/108 models[Evaluation] 96/108 models[Evaluation] 97/108 models[Evaluation] 98/108 models[Evaluation] 99/108 models[Evaluation] 100/108 models[Evaluation] 101/108 models[Evaluation] 102/108 models[Evaluation] 103/108 models[Evaluation] 104/108 models[Evaluation] 105/108 models[Evaluation] 106/108 models[Evaluation] 107/108 models[Evaluation] 108/108 models
+[2026-09-17 20:03:29] [Evaluation] Done | elapsed=1.4m
+[2026-09-17 20:03:29] [Benchmark] Starting...
+[2026-09-17 20:03:29] [Benchmark] Done | elapsed=0s
+[2026-09-17 20:03:29] [Paper 1 Analysis] Starting...
+[Paper 1] Waiting for scenarios: cross_session, cross_subject
+[2026-09-17 20:03:29] [Paper 1 Analysis] Done | elapsed=0s
+[2026-09-17 20:03:29] [Pipeline] Finished | total=4.3m

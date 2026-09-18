@@ -212,6 +212,20 @@ def load_eegmmidb_data(root_dir, config=None):
             )
             raw.pick("eeg")
 
+            # Some EEGMMIDB recordings have a different sampling rate.
+            # Standardize all recordings before event extraction and epoching.
+            if not np.isclose(raw.info["sfreq"], ORIGINAL_SAMPLING_RATE):
+                if verbose:
+                    print(
+                        f"Resampling {edf_path.name}: "
+                        f"{raw.info['sfreq']:.1f} -> {ORIGINAL_SAMPLING_RATE:.1f} Hz"
+                    )
+                raw.resample(
+                    ORIGINAL_SAMPLING_RATE,
+                    npad="auto",
+                    verbose=verbose,
+                )
+
             montage = _standardize_channel_names(raw, montage_name)
             raw.set_montage(
                 montage, on_missing=on_missing, verbose=verbose

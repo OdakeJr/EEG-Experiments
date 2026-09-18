@@ -1,3 +1,5 @@
+# ml/learning/classical/neural_erm.py
+
 import copy
 import pickle
 from pathlib import Path
@@ -6,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
+from torch.nn.utils import parametrize
 from torch.utils.data import DataLoader, TensorDataset
 
 from ml.learning.base import BaseLearningAlgorithm
@@ -203,6 +206,14 @@ class NeuralERM(BaseLearningAlgorithm):
 
     def save(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
+
+        for module in self.model.modules():
+            if parametrize.is_parametrized(module):
+                for name in list(module.parametrizations.keys()):
+                    parametrize.remove_parametrizations(
+                        module, name, leave_parametrized=True
+                    )
+
         with open(path, "wb") as file:
             pickle.dump(self, file)
 

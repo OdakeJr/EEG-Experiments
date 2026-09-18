@@ -1,0 +1,34 @@
+[2026-09-17 20:03:39] [Pipeline] Starting | pid=84164 | scenario=intra_subject | workers=1
+[2026-09-17 20:03:39] [Pipeline] Params | main/feature_grid/params/intra_subject/params_eegmmidb.py
+[2026-09-17 20:03:39] [Preprocessing] Starting...
+Traceback (most recent call last):
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/feature_grid/main.py", line 352, in <module>
+    main(parser.parse_args().params)
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/feature_grid/main.py", line 280, in main
+    preprocessing = _run_stage(
+                    ^^^^^^^^^^^
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/feature_grid/main.py", line 56, in _run_stage
+    result = function(*args)
+             ^^^^^^^^^^^^^^^
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/feature_grid/main.py", line 196, in preprocessing_stage
+    return [
+           ^
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/feature_grid/main.py", line 197, in <listcomp>
+    {"group": config["name"], "view": run_preprocessing(config)}
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/pipeline/process_data.py", line 501, in run_preprocessing
+    prepared_data, info = preparer(
+                          ^^^^^^^^^
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/eeg/dataset_handlers/eegmmidb.py", line 308, in prepare_eegmmidb
+    return prepare_eeg_dataframe(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/eeg/lib/preparation.py", line 289, in prepare_eeg_dataframe
+    data, batch_channels, batch_fs = _prepare_batch(
+                                     ^^^^^^^^^^^^^^^
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/eeg/lib/preparation.py", line 206, in _prepare_batch
+    _extract_signal(dataset, dataset_name, session_name),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/eeg/lib/preparation.py", line 140, in _extract_signal
+    "X": np.concatenate(X_all, axis=0),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: all the input array dimensions except for the concatenation axis must match exactly, but along dimension 2, the array at index 0 has size 481 and the array at index 12 has size 385
