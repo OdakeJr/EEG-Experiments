@@ -257,6 +257,7 @@ EEG_TCNET_PARAMS = {
     "tcn_batch_norm": True,
 }
 
+"""
 NEURAL_PARAMS = {
     "epochs": 300,  # 300 final
     "batch_size": 64,
@@ -265,6 +266,20 @@ NEURAL_PARAMS = {
     "optimizer": "adam",
     "device": "mps",
     "seed": 0,
+}
+"""
+
+NEURAL_PARAMS = {
+    "epochs": 300,
+    "batch_size": 64,
+    "learning_rate": 1e-3,
+    "weight_decay": 0.0,
+    "optimizer": "adam",
+    "device": "mps",
+    "seed": 0,
+    "validation_fraction": 0.2,
+    "patience": 20,
+    "min_delta": 0.0,
 }
 
 # ============================================================
