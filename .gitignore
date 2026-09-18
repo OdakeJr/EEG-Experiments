@@ -1,6 +1,7 @@
 datasets/
 outputs/
 output/
+logs/
 __pycache__/
 .pytest_cache/
 *.pyc

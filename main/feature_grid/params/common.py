@@ -12,9 +12,9 @@ BAND_CONFIGS = {
     "broad_1_38": [(1, 38)],
     "delta_1_4": [(1, 4)],
     "theta_4_8": [(4, 8)],
-    #"alpha_8_12": [(8, 12)],
-    #"beta_12_30": [(12, 30)],
-    #"gamma_30_38": [(30, 38)],
+    "alpha_8_12": [(8, 12)],
+    "beta_12_30": [(12, 30)],
+    "gamma_30_38": [(30, 38)],
 }
 # ============================================================
 # Feature extraction
@@ -63,13 +63,13 @@ RIEMANN_CONFIGS = {
 ACTIVE_REPRESENTATIONS = {
     "statistical": True,
     "temporal": True,
-    "spectral": False,
+    "spectral": True,
     "nonlinear": False,
-    "wavelet": False,
-    "covariance": False,
+    "wavelet": True,
+    "covariance": True,
     "csp": True,
-    "riemann": False,
-    "all_fused": False,
+    "riemann": True,
+    "all_fused": True,
 }
 
 
@@ -258,7 +258,7 @@ EEG_TCNET_PARAMS = {
 }
 
 NEURAL_PARAMS = {
-    "epochs": 1,  # 300 final
+    "epochs": 300,  # 300 final
     "batch_size": 64,
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
@@ -267,92 +267,105 @@ NEURAL_PARAMS = {
     "seed": 0,
 }
 
-
 # ============================================================
 # Training
 # ============================================================
 
+_TRAIN_LR = {
+    "name": "logistic_regression",
+    "learning": "sklearn_erm",
+    "model": "logistic_regression",
+    "model_params": LOGISTIC_REGRESSION_PARAMS,
+    "training_params": {},
+}
+
+_TRAIN_SVM = {
+    "name": "svm",
+    "learning": "sklearn_erm",
+    "model": "svm",
+    "model_params": SVM_PARAMS,
+    "training_params": {},
+}
+
+_TRAIN_RF = {
+    "name": "random_forest",
+    "learning": "sklearn_erm",
+    "model": "random_forest",
+    "model_params": RANDOM_FOREST_PARAMS,
+    "training_params": {},
+}
+
+_TRAIN_MLP_SMALL = {
+    "name": "mlp_small",
+    "learning": "neural_erm__mlp_small",
+    "model": "mlp",
+    "model_params": MLP_SMALL_PARAMS,
+    "training_params": NEURAL_PARAMS,
+}
+
+_TRAIN_MLP_MEDIUM = {
+    "name": "mlp_medium",
+    "learning": "neural_erm__mlp_medium",
+    "model": "mlp",
+    "model_params": MLP_MEDIUM_PARAMS,
+    "training_params": NEURAL_PARAMS,
+}
+
+_TRAIN_MLP_LARGE = {
+    "name": "mlp_large",
+    "learning": "neural_erm__mlp_large",
+    "model": "mlp",
+    "model_params": MLP_LARGE_PARAMS,
+    "training_params": NEURAL_PARAMS,
+}
+
+_TRAIN_EEGNET = {
+    "name": "eegnet",
+    "learning": "neural_erm__eegnet",
+    "model": "eegnet",
+    "model_params": EEGNET_PARAMS,
+    "training_params": NEURAL_PARAMS,
+}
+
+_TRAIN_SHALLOW_FBCSP = {
+    "name": "shallow_fbcsp",
+    "learning": "neural_erm__shallow_fbcsp",
+    "model": "shallow_fbcsp",
+    "model_params": SHALLOW_FBCSP_PARAMS,
+    "training_params": NEURAL_PARAMS,
+}
+
+_TRAIN_EEG_TCNET = {
+    "name": "eeg_tcnet",
+    "learning": "neural_erm__eeg_tcnet",
+    "model": "eeg_tcnet",
+    "model_params": EEG_TCNET_PARAMS,
+    "training_params": NEURAL_PARAMS,
+}
+
 TRAINING_PARAMS_SMOKE = [
-    {
-        "name": "logistic_regression",
-        "learning": "sklearn_erm",
-        "model": "logistic_regression",
-        "model_params": LOGISTIC_REGRESSION_PARAMS,
-        "training_params": {},
-    },
-    {
-        "name": "eegnet",
-        "learning": "neural_erm__eegnet",
-        "model": "eegnet",
-        "model_params": EEGNET_PARAMS,
-        "training_params": NEURAL_PARAMS,
-    },
+    _TRAIN_LR,
+    _TRAIN_EEGNET,
+]
+
+TRAINING_PARAMS_FEATURE_MODELS = [
+    _TRAIN_LR,
+    _TRAIN_SVM,
+    _TRAIN_RF,
+    _TRAIN_MLP_SMALL,
+    _TRAIN_MLP_MEDIUM,
+    _TRAIN_MLP_LARGE,
+]
+
+TRAINING_PARAMS_DEEP = [
+    _TRAIN_EEGNET,
+    _TRAIN_SHALLOW_FBCSP,
+    _TRAIN_EEG_TCNET,
 ]
 
 TRAINING_PARAMS_FULL = [
-    {
-        "name": "logistic_regression",
-        "learning": "sklearn_erm",
-        "model": "logistic_regression",
-        "model_params": LOGISTIC_REGRESSION_PARAMS,
-        "training_params": {},
-    },
-    {
-        "name": "svm",
-        "learning": "sklearn_erm",
-        "model": "svm",
-        "model_params": SVM_PARAMS,
-        "training_params": {},
-    },
-    {
-        "name": "random_forest",
-        "learning": "sklearn_erm",
-        "model": "random_forest",
-        "model_params": RANDOM_FOREST_PARAMS,
-        "training_params": {},
-    },
-    {
-        "name": "mlp_small",
-        "learning": "neural_erm__mlp_small",
-        "model": "mlp",
-        "model_params": MLP_SMALL_PARAMS,
-        "training_params": NEURAL_PARAMS,
-    },
-    {
-        "name": "mlp_medium",
-        "learning": "neural_erm__mlp_medium",
-        "model": "mlp",
-        "model_params": MLP_MEDIUM_PARAMS,
-        "training_params": NEURAL_PARAMS,
-    },
-    {
-        "name": "mlp_large",
-        "learning": "neural_erm__mlp_large",
-        "model": "mlp",
-        "model_params": MLP_LARGE_PARAMS,
-        "training_params": NEURAL_PARAMS,
-    },
-    {
-        "name": "eegnet",
-        "learning": "neural_erm__eegnet",
-        "model": "eegnet",
-        "model_params": EEGNET_PARAMS,
-        "training_params": NEURAL_PARAMS,
-    },
-    {
-        "name": "shallow_fbcsp",
-        "learning": "neural_erm__shallow_fbcsp",
-        "model": "shallow_fbcsp",
-        "model_params": SHALLOW_FBCSP_PARAMS,
-        "training_params": NEURAL_PARAMS,
-    },
-    {
-        "name": "eeg_tcnet",
-        "learning": "neural_erm__eeg_tcnet",
-        "model": "eeg_tcnet",
-        "model_params": EEG_TCNET_PARAMS,
-        "training_params": NEURAL_PARAMS,
-    },
+    *TRAINING_PARAMS_FEATURE_MODELS,
+    *TRAINING_PARAMS_DEEP,
 ]
 
 # Change only this line when moving from smoke test to final experiments.
