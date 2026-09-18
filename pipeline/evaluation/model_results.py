@@ -220,15 +220,7 @@ def _slug(value):
 
 def _output_dir(model_artifacts, signature):
     scenarios = "+".join(_slug(x) for x in sorted(model_artifacts))
-
-    methods = sorted({
-        model.learning_method
-        for artifacts in model_artifacts.values()
-        for artifact in artifacts
-        for model in artifact["artifacts"]
-    })
-
-    return OUTPUT_ROOT / scenarios / f"{'-'.join(_slug(x) for x in methods)}__{signature[:12]}"
+    return OUTPUT_ROOT / scenarios / f"evaluation__{signature[:12]}"
 
 
 def run_model_evaluation(model_artifacts, params=None):
