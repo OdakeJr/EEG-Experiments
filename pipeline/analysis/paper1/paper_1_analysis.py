@@ -20,7 +20,6 @@ from utils.storage import exists, load_manifest, save_manifest
 # ============================================================
 
 OUTPUT_ROOT = Path("outputs/analysis/paper1")
-
 PAPER_OUTPUT_DIR = None
 FIGURES_DIR = None
 TABLES_DIR = None
@@ -28,11 +27,7 @@ TABLES_DIR = None
 DEFAULT_PAPER_ANALYSIS_PARAMS = {
     "name": "paper1",
     "collection": "paper1",
-    "required_scenarios": [
-        "intra_subject",
-        "cross_session",
-        "cross_subject",
-    ],
+    "required_scenarios": ["intra_subject", "cross_session", "cross_subject"],
 }
 
 SCENARIO_DISPLAY = {
@@ -74,9 +69,16 @@ MODEL_DISPLAY = {
     "svm": "SVM",
     "random_forest": "Random Forest",
     "eegnet": "EEGNet",
+    "shallow_fbcsp": "ShallowFBCSPNet",
+    "eeg_tcnet": "EEG-TCNet",
 }
 
-DEEP_REPRESENTATION_DISPLAY = {"eegnet": "EEGNet"}
+DEEP_REPRESENTATION_DISPLAY = {
+    "eegnet": "EEGNet",
+    "shallow_fbcsp": "ShallowFBCSPNet",
+    "eeg_tcnet": "EEG-TCNet",
+}
+
 METRICS = ["Balanced Accuracy", "Macro-F1", "AUC"]
 
 
@@ -118,20 +120,66 @@ def _artifact_manifest_path(artifact):
     return None if path is None else str(path)
 
 
-def _artifact_scenarios(artifact):
-    values = pd.read_csv(_artifact_path(artifact), usecols=["scenario"])["scenario"]
-    return sorted(map(str, values.dropna().unique()))
+def _dataset_from_target_domains(value):
+    if pd.isna(value):
+        return None
+    value = str(value).strip()
+    if not value:
+        return None
+    return value.split(";")[0].split("|")[0]
+
+
+def _artifact_dataset_scenarios(artifact):
+    frame = pd.read_csv(_artifact_path(artifact), usecols=["scenario", "target_domains"])
+    frame["dataset"] = frame["target_domains"].map(_dataset_from_target_domains)
+
+    mapping = {}
+    for scenario, group in frame.groupby("scenario", dropna=True):
+        datasets = sorted(group["dataset"].dropna().astype(str).unique())
+        if datasets:
+            mapping[str(scenario)] = datasets
+    return mapping
 
 
 def _collection_manifest_path(params):
     return OUTPUT_ROOT / "collections" / _slug(params["collection"]) / "manifest.json"
 
 
+def _normalize_collection_inputs(raw_inputs):
+    normalized = {}
+
+    for scenario, value in raw_inputs.items():
+        # Legacy format: scenario -> artifact
+        if isinstance(value, dict) and "path" in value:
+            path = value.get("path")
+            if not path or not exists(path):
+                continue
+
+            frame = pd.read_csv(path, usecols=["scenario", "target_domains"])
+            frame = frame[frame["scenario"].astype(str) == str(scenario)]
+            datasets = sorted(
+                frame["target_domains"].map(_dataset_from_target_domains)
+                .dropna().astype(str).unique()
+            )
+
+            for dataset in datasets:
+                normalized.setdefault(str(scenario), {})[dataset] = value
+            continue
+
+        # Current format: scenario -> dataset -> artifact
+        if isinstance(value, dict):
+            for dataset, entry in value.items():
+                if isinstance(entry, dict) and entry.get("path") and exists(entry["path"]):
+                    normalized.setdefault(str(scenario), {})[str(dataset)] = entry
+
+    return normalized
+
+
 def _register_model_results(model_results_artifact, params):
     manifest_path = _collection_manifest_path(params)
 
     if exists(manifest_path):
-        inputs = dict(load_manifest(manifest_path).get("inputs", {}))
+        inputs = _normalize_collection_inputs(load_manifest(manifest_path).get("inputs", {}))
     else:
         inputs = {}
 
@@ -141,17 +189,21 @@ def _register_model_results(model_results_artifact, params):
         "signature": _artifact_signature(model_results_artifact),
     }
 
-    for scenario in _artifact_scenarios(model_results_artifact):
-        inputs[scenario] = entry
+    for scenario, datasets in _artifact_dataset_scenarios(model_results_artifact).items():
+        for dataset in datasets:
+            inputs.setdefault(scenario, {})[dataset] = entry
 
     inputs = {
-        scenario: item
-        for scenario, item in inputs.items()
-        if exists(item["path"])
+        scenario: {
+            dataset: item for dataset, item in datasets.items()
+            if item.get("path") and exists(item["path"])
+        }
+        for scenario, datasets in inputs.items()
     }
+    inputs = {scenario: datasets for scenario, datasets in inputs.items() if datasets}
 
     required = params["required_scenarios"]
-    missing = [scenario for scenario in required if scenario not in inputs]
+    missing = [scenario for scenario in required if not inputs.get(scenario)]
 
     effective_params = {
         "analysis": "paper1_collection",
@@ -160,10 +212,7 @@ def _register_model_results(model_results_artifact, params):
         "inputs": inputs,
     }
 
-    manifest = make_manifest(
-        "ready" if not missing else "collecting",
-        effective_params,
-    )
+    manifest = make_manifest("ready" if not missing else "collecting", effective_params)
     manifest["inputs"] = inputs
     manifest["missing_scenarios"] = missing
     save_manifest(manifest, manifest_path)
@@ -175,26 +224,31 @@ def _load_registered_results(inputs, required_scenarios):
     frames = []
 
     for scenario in required_scenarios:
-        frame = pd.read_csv(inputs[scenario]["path"])
-        frame = frame[frame["scenario"] == scenario].copy()
+        for dataset, entry in sorted(inputs[scenario].items()):
+            frame = pd.read_csv(entry["path"])
+            frame = frame[frame["scenario"].astype(str) == str(scenario)].copy()
+            frame = frame[
+                frame["target_domains"].map(_dataset_from_target_domains) == dataset
+            ].copy()
 
-        if frame.empty:
-            raise ValueError(
-                f"Registered result for '{scenario}' contains no matching rows."
-            )
+            if frame.empty:
+                raise ValueError(
+                    f"Registered result for scenario '{scenario}' and dataset "
+                    f"'{dataset}' contains no matching rows."
+                )
+            frames.append(frame)
 
-        frames.append(frame)
+    if not frames:
+        raise ValueError("No registered Paper 1 results were found.")
 
     return pd.concat(frames, ignore_index=True)
 
 
 def _set_output_dirs(output_dir):
     global PAPER_OUTPUT_DIR, FIGURES_DIR, TABLES_DIR
-
     PAPER_OUTPUT_DIR = output_dir
     FIGURES_DIR = output_dir / "figures"
     TABLES_DIR = output_dir / "tables"
-
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     TABLES_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -216,8 +270,7 @@ def _domain_parts(value):
 
 
 def _dataset_from_row(row):
-    parts = _domain_parts(row["target_domains"])
-    return parts[0] if parts else None
+    return _dataset_from_target_domains(row["target_domains"])
 
 
 def _subject_from_row(row):
@@ -237,12 +290,11 @@ def _band_from_row(row):
 
     label = str(label)
     marker = f"_{row['scenario']}_"
-
-    if marker in label:
-        band = label.split(marker, 1)[1]
-    else:
-        band = next((name for name in BAND_DISPLAY if name in label), label)
-
+    band = (
+        label.split(marker, 1)[1]
+        if marker in label
+        else next((name for name in BAND_DISPLAY if name in label), label)
+    )
     return BAND_DISPLAY.get(band, band)
 
 
@@ -257,7 +309,6 @@ def _model_from_row(row):
 
     if learning in mlp_names:
         return mlp_names[learning]
-
     return MODEL_DISPLAY.get(model, model.replace("_", " ").title())
 
 
@@ -269,13 +320,11 @@ def normalize_results(results):
         "evaluation_group", "partition", "accuracy", "balanced_accuracy",
         "macro_f1", "auc",
     ]
-
     missing = [column for column in required if column not in results.columns]
     if missing:
         raise ValueError(f"Missing required result columns: {missing}")
 
     df = results.copy()
-
     df["Dataset"] = df.apply(_dataset_from_row, axis=1)
     df["Scenario"] = df["scenario"].map(SCENARIO_DISPLAY).fillna(df["scenario"])
     df["Subject"] = df.apply(_subject_from_row, axis=1)
@@ -283,7 +332,6 @@ def normalize_results(results):
     df["Band"] = df.apply(_band_from_row, axis=1)
     df["Representation"] = df.apply(_representation_from_row, axis=1)
     df["Model"] = df.apply(_model_from_row, axis=1)
-
     df["Accuracy"] = df["accuracy"]
     df["Balanced Accuracy"] = df["balanced_accuracy"]
     df["Macro-F1"] = df["macro_f1"]
@@ -297,7 +345,6 @@ def normalize_results(results):
         "Balanced Accuracy", "Macro-F1", "AUC",
     ]
     remaining = [column for column in df.columns if column not in canonical]
-
     return df[canonical + remaining]
 
 
@@ -310,16 +357,12 @@ def _representation_from_row(row):
 
     if pd.notna(feature) and str(feature).strip():
         feature = str(feature)
-        return REPRESENTATION_DISPLAY.get(
-            feature,
-            feature.replace("_", " ").title(),
-        )
+        return REPRESENTATION_DISPLAY.get(feature, feature.replace("_", " ").title())
 
     if row.get("model_input_representation") == "signal":
         model = str(row["model_name"])
         return DEEP_REPRESENTATION_DISPLAY.get(
-            model,
-            MODEL_DISPLAY.get(model, model.replace("_", " ").title()),
+            model, MODEL_DISPLAY.get(model, model.replace("_", " ").title())
         )
 
     signal = row.get("signal_transform_config_label")
@@ -344,7 +387,6 @@ def _target_test_results(results):
 
     if df.empty:
         raise ValueError("No target test results were found.")
-
     return df
 
 
@@ -354,30 +396,34 @@ def _representation_order(dataframe):
         + list(DEEP_REPRESENTATION_DISPLAY.values())
     ))
     available = dataframe["Representation"].dropna().unique().tolist()
-
     return (
         [x for x in preferred if x in available]
         + sorted(x for x in available if x not in preferred)
     )
 
 
+def _mark_unavailable(ax):
+    ax.text(0.5, 0.5, "Not available", transform=ax.transAxes,
+            ha="center", va="center", fontsize=9)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+
 def build_representation_subject_results(results):
     df = _target_test_results(results)
-
     return (
         df.groupby(
             ["Dataset", "Scenario", "Subject", "Representation"],
-            dropna=False,
-            as_index=False,
-        )[METRICS]
-        .mean()
+            dropna=False, as_index=False,
+        )[METRICS].mean()
     )
 
 
 def build_representation_summary(subject_results):
     grouped = (
-        subject_results
-        .groupby(["Dataset", "Representation", "Scenario"], dropna=False)
+        subject_results.groupby(
+            ["Dataset", "Representation", "Scenario"], dropna=False
+        )
         .agg(
             ba_mean=("Balanced Accuracy", "mean"),
             ba_std=("Balanced Accuracy", "std"),
@@ -407,7 +453,6 @@ def build_representation_summary(subject_results):
                 continue
 
             values = current.iloc[0]
-
             row[f"{scenario} BA Mean"] = values["ba_mean"]
             row[f"{scenario} BA Std"] = values["ba_std"]
             row[f"{scenario} F1 Mean"] = values["f1_mean"]
@@ -418,14 +463,8 @@ def build_representation_summary(subject_results):
         intra = row.get("Intra-subject BA Mean")
         cs = row.get("Cross-session BA Mean")
         csub = row.get("Cross-subject BA Mean")
-
-        row["Gap CS"] = (
-            intra - cs if pd.notna(intra) and pd.notna(cs) else np.nan
-        )
-        row["Gap CSub"] = (
-            intra - csub if pd.notna(intra) and pd.notna(csub) else np.nan
-        )
-
+        row["Gap CS"] = intra - cs if pd.notna(intra) and pd.notna(cs) else np.nan
+        row["Gap CSub"] = intra - csub if pd.notna(intra) and pd.notna(csub) else np.nan
         rows.append(row)
 
     return pd.DataFrame(rows)
@@ -440,11 +479,9 @@ def plot_representation_generalization(subject_results):
     representations = _representation_order(subject_results)
 
     fig, axes = plt.subplots(
-        len(datasets),
-        len(scenarios),
+        len(datasets), len(scenarios),
         figsize=(5.2 * len(scenarios), 3.8 * len(datasets)),
-        sharey=True,
-        squeeze=False,
+        sharey=True, squeeze=False,
     )
 
     rng = np.random.default_rng(0)
@@ -452,53 +489,42 @@ def plot_representation_generalization(subject_results):
     for i, dataset in enumerate(datasets):
         for j, scenario in enumerate(scenarios):
             ax = axes[i, j]
-
             subset = subject_results[
                 (subject_results["Dataset"] == dataset)
                 & (subject_results["Scenario"] == scenario)
             ]
 
-            active = [
-                rep for rep in representations
-                if rep in subset["Representation"].values
-            ]
-
-            values = [
-                subset.loc[
-                    subset["Representation"] == rep,
-                    "Balanced Accuracy",
-                ].dropna().to_numpy()
-                for rep in active
-            ]
-
-            positions = np.arange(1, len(active) + 1)
-
-            if values:
-                violin_values = [
-                    x if len(x) > 1 else np.repeat(x, 2)
-                    for x in values
+            if subset.empty:
+                _mark_unavailable(ax)
+            else:
+                active = [
+                    rep for rep in representations
+                    if rep in subset["Representation"].values
                 ]
+                values = [
+                    subset.loc[
+                        subset["Representation"] == rep, "Balanced Accuracy"
+                    ].dropna().to_numpy()
+                    for rep in active
+                ]
+                positions = np.arange(1, len(active) + 1)
+                violin_values = [x if len(x) > 1 else np.repeat(x, 2) for x in values]
 
-                ax.violinplot(
-                    violin_values,
-                    positions=positions,
-                    showmeans=False,
-                    showmedians=True,
-                    showextrema=False,
-                )
-
-                for position, value in zip(positions, values):
-                    ax.scatter(
-                        position + rng.normal(0, 0.035, len(value)),
-                        value,
-                        s=16,
-                        alpha=0.65,
+                if violin_values:
+                    ax.violinplot(
+                        violin_values, positions=positions,
+                        showmeans=False, showmedians=True, showextrema=False,
                     )
+                    for position, value in zip(positions, values):
+                        ax.scatter(
+                            position + rng.normal(0, 0.035, len(value)),
+                            value, s=16, alpha=0.65,
+                        )
 
-            ax.set_xticks(positions)
-            ax.set_xticklabels(active, rotation=45, ha="right")
-            ax.set_ylim(0, 1)
-            ax.grid(axis="y", alpha=0.25)
+                ax.set_xticks(positions)
+                ax.set_xticklabels(active, rotation=45, ha="right")
+                ax.set_ylim(0, 1)
+                ax.grid(axis="y", alpha=0.25)
 
             if i == 0:
                 ax.set_title(scenario)
@@ -510,8 +536,7 @@ def plot_representation_generalization(subject_results):
     for ext in ["pdf", "png"]:
         fig.savefig(
             FIGURES_DIR / f"representation_generalization.{ext}",
-            dpi=300,
-            bbox_inches="tight",
+            dpi=300, bbox_inches="tight",
         )
 
     plt.close(fig)
@@ -528,10 +553,7 @@ def _configuration_columns(dataframe):
         "feature_selection_config_label",
         "signal_transform_config_label",
     ]
-    return columns + [
-        column for column in optional
-        if column in dataframe.columns
-    ]
+    return columns + [column for column in optional if column in dataframe.columns]
 
 
 def build_configuration_subject_results(results):
@@ -539,11 +561,7 @@ def build_configuration_subject_results(results):
     configuration = _configuration_columns(df)
 
     return (
-        df.groupby(
-            configuration + ["Subject"],
-            dropna=False,
-            as_index=False,
-        )[METRICS]
+        df.groupby(configuration + ["Subject"], dropna=False, as_index=False)[METRICS]
         .mean()
     )
 
@@ -553,8 +571,7 @@ def select_best_configurations(results):
     configuration = _configuration_columns(subject_results)
 
     summary = (
-        subject_results
-        .groupby(configuration, dropna=False)
+        subject_results.groupby(configuration, dropna=False)
         .agg(
             ba_mean=("Balanced Accuracy", "mean"),
             ba_std=("Balanced Accuracy", "std"),
@@ -568,8 +585,7 @@ def select_best_configurations(results):
     )
 
     best = (
-        summary
-        .sort_values(
+        summary.sort_values(
             ["Dataset", "Scenario", "ba_mean", "f1_mean", "auc_mean"],
             ascending=[True, True, False, False, False],
             na_position="last",
@@ -599,9 +615,7 @@ def select_best_configurations(results):
     })
 
     selected_subjects = subject_results.merge(
-        best[configuration],
-        on=configuration,
-        how="inner",
+        best[configuration], on=configuration, how="inner"
     )
 
     return display, selected_subjects
@@ -613,7 +627,6 @@ def select_best_configurations(results):
 
 def _subject_sort_key(value):
     text = str(value)
-
     try:
         return 0, float(text)
     except ValueError:
@@ -628,54 +641,43 @@ def plot_best_configuration_subjects(subject_results):
     ]
 
     fig, axes = plt.subplots(
-        len(datasets),
-        len(scenarios),
+        len(datasets), len(scenarios),
         figsize=(5.2 * len(scenarios), 3.6 * len(datasets)),
-        sharey=True,
-        squeeze=False,
+        sharey=True, squeeze=False,
     )
 
     for i, dataset in enumerate(datasets):
         for j, scenario in enumerate(scenarios):
             ax = axes[i, j]
-
             subset = subject_results[
                 (subject_results["Dataset"] == dataset)
                 & (subject_results["Scenario"] == scenario)
             ].copy()
 
-            subset = subset.sort_values(
-                "Subject",
-                key=lambda x: x.map(_subject_sort_key),
-            )
-
-            if not subset.empty:
+            if subset.empty:
+                _mark_unavailable(ax)
+            else:
+                subset = subset.sort_values(
+                    "Subject", key=lambda x: x.map(_subject_sort_key)
+                )
                 x = np.arange(len(subset))
                 y = subset["Balanced Accuracy"].to_numpy()
                 config = subset.iloc[0]
 
                 ax.plot(x, y, marker="o")
                 ax.axhline(np.nanmean(y), linestyle="--", linewidth=1.2)
-
                 ax.set_xticks(x)
                 ax.set_xticklabels(
-                    subset["Subject"].astype(str),
-                    rotation=45,
-                    ha="right",
+                    subset["Subject"].astype(str), rotation=45, ha="right"
                 )
-
                 ax.text(
-                    0.02,
-                    0.04,
+                    0.02, 0.04,
                     f"{config['Representation']} | {config['Model']} | {config['Band']}",
-                    transform=ax.transAxes,
-                    fontsize=8,
-                    va="bottom",
+                    transform=ax.transAxes, fontsize=8, va="bottom",
                 )
-
-            ax.set_ylim(0, 1)
-            ax.grid(axis="y", alpha=0.25)
-            ax.set_xlabel("Subject")
+                ax.set_ylim(0, 1)
+                ax.grid(axis="y", alpha=0.25)
+                ax.set_xlabel("Subject")
 
             if i == 0:
                 ax.set_title(scenario)
@@ -687,8 +689,7 @@ def plot_best_configuration_subjects(subject_results):
     for ext in ["pdf", "png"]:
         fig.savefig(
             FIGURES_DIR / f"best_configuration_subjects.{ext}",
-            dpi=300,
-            bbox_inches="tight",
+            dpi=300, bbox_inches="tight",
         )
 
     plt.close(fig)
@@ -700,15 +701,12 @@ def plot_best_configuration_subjects(subject_results):
 
 def build_subject_rankings(representation_subjects):
     rankings = representation_subjects.copy()
-
     rankings["Rank"] = (
-        rankings
-        .groupby(
+        rankings.groupby(
             ["Dataset", "Scenario", "Subject"]
         )["Balanced Accuracy"]
         .rank(method="min", ascending=False)
     )
-
     return rankings
 
 
@@ -721,8 +719,7 @@ def plot_subject_rankings(rankings):
     representations = _representation_order(rankings)
 
     fig, axes = plt.subplots(
-        len(datasets),
-        len(scenarios),
+        len(datasets), len(scenarios),
         figsize=(5.2 * len(scenarios), 4.5 * len(datasets)),
         squeeze=False,
     )
@@ -732,58 +729,52 @@ def plot_subject_rankings(rankings):
     for i, dataset in enumerate(datasets):
         for j, scenario in enumerate(scenarios):
             ax = axes[i, j]
-
             subset = rankings[
                 (rankings["Dataset"] == dataset)
                 & (rankings["Scenario"] == scenario)
             ]
 
-            subjects = sorted(
-                subset["Subject"].dropna().unique(),
-                key=_subject_sort_key,
-            )
-
-            active = [
-                rep for rep in representations
-                if rep in subset["Representation"].values
-            ]
-
-            matrix = (
-                subset
-                .pivot_table(
-                    index="Representation",
-                    columns="Subject",
-                    values="Rank",
-                    aggfunc="mean",
+            if subset.empty:
+                _mark_unavailable(ax)
+            else:
+                subjects = sorted(
+                    subset["Subject"].dropna().unique(), key=_subject_sort_key
                 )
-                .reindex(index=active, columns=subjects)
-            )
+                active = [
+                    rep for rep in representations
+                    if rep in subset["Representation"].values
+                ]
 
-            image = ax.imshow(
-                matrix.to_numpy(dtype=float),
-                aspect="auto",
-                interpolation="nearest",
-            )
+                matrix = (
+                    subset.pivot_table(
+                        index="Representation", columns="Subject",
+                        values="Rank", aggfunc="mean",
+                    )
+                    .reindex(index=active, columns=subjects)
+                )
 
-            for row in range(matrix.shape[0]):
-                for col in range(matrix.shape[1]):
-                    value = matrix.iloc[row, col]
+                if matrix.empty:
+                    _mark_unavailable(ax)
+                else:
+                    image = ax.imshow(
+                        matrix.to_numpy(dtype=float),
+                        aspect="auto", interpolation="nearest",
+                    )
 
-                    if pd.notna(value):
-                        ax.text(
-                            col,
-                            row,
-                            f"{value:.0f}",
-                            ha="center",
-                            va="center",
-                            fontsize=8,
-                        )
+                    for row in range(matrix.shape[0]):
+                        for col in range(matrix.shape[1]):
+                            value = matrix.iloc[row, col]
+                            if pd.notna(value):
+                                ax.text(
+                                    col, row, f"{value:.0f}",
+                                    ha="center", va="center", fontsize=8,
+                                )
 
-            ax.set_xticks(np.arange(len(subjects)))
-            ax.set_xticklabels(subjects, rotation=45, ha="right")
-            ax.set_yticks(np.arange(len(active)))
-            ax.set_yticklabels(active)
-            ax.set_xlabel("Subject")
+                    ax.set_xticks(np.arange(len(subjects)))
+                    ax.set_xticklabels(subjects, rotation=45, ha="right")
+                    ax.set_yticks(np.arange(len(active)))
+                    ax.set_yticklabels(active)
+                    ax.set_xlabel("Subject")
 
             if i == 0:
                 ax.set_title(scenario)
@@ -792,27 +783,19 @@ def plot_subject_rankings(rankings):
 
     if image is not None:
         fig.colorbar(
-            image,
-            ax=axes,
-            label="Representation rank",
-            fraction=0.02,
-            pad=0.02,
+            image, ax=axes, label="Representation rank",
+            fraction=0.02, pad=0.02,
         )
 
     fig.subplots_adjust(
-        left=0.12,
-        right=0.90,
-        bottom=0.10,
-        top=0.93,
-        hspace=0.35,
-        wspace=0.30,
+        left=0.12, right=0.90, bottom=0.10, top=0.93,
+        hspace=0.35, wspace=0.30,
     )
 
     for ext in ["pdf", "png"]:
         fig.savefig(
             FIGURES_DIR / f"subject_ranking.{ext}",
-            dpi=300,
-            bbox_inches="tight",
+            dpi=300, bbox_inches="tight",
         )
 
     plt.close(fig)
@@ -824,10 +807,8 @@ def plot_subject_rankings(rankings):
 
 def build_subject_ranking_summary(rankings):
     summary = (
-        rankings
-        .groupby(
-            ["Dataset", "Scenario", "Representation"],
-            dropna=False,
+        rankings.groupby(
+            ["Dataset", "Scenario", "Representation"], dropna=False
         )
         .agg(
             mean_rank=("Rank", "mean"),
@@ -864,10 +845,8 @@ def build_configuration_robustness(results):
     subject_results = build_configuration_subject_results(results)
 
     baseline = (
-        subject_results
-        .groupby(
-            ["Dataset", "Scenario", "Representation"],
-            dropna=False,
+        subject_results.groupby(
+            ["Dataset", "Scenario", "Representation"], dropna=False
         )["Balanced Accuracy"]
         .mean()
         .rename("Representation Mean")
@@ -875,9 +854,7 @@ def build_configuration_robustness(results):
     )
 
     subject_results = subject_results.merge(
-        baseline,
-        on=["Dataset", "Scenario", "Representation"],
-        how="left",
+        baseline, on=["Dataset", "Scenario", "Representation"], how="left"
     )
 
     subject_results["Delta BA"] = (
@@ -886,23 +863,15 @@ def build_configuration_robustness(results):
     )
 
     model = (
-        subject_results
-        .groupby(
-            ["Dataset", "Scenario", "Representation", "Model"],
-            dropna=False,
-        )["Delta BA"]
-        .mean()
-        .reset_index()
+        subject_results.groupby(
+            ["Dataset", "Scenario", "Representation", "Model"], dropna=False
+        )["Delta BA"].mean().reset_index()
     )
 
     band = (
-        subject_results
-        .groupby(
-            ["Dataset", "Scenario", "Representation", "Band"],
-            dropna=False,
-        )["Delta BA"]
-        .mean()
-        .reset_index()
+        subject_results.groupby(
+            ["Dataset", "Scenario", "Representation", "Band"], dropna=False
+        )["Delta BA"].mean().reset_index()
     )
 
     return model, band
@@ -912,36 +881,26 @@ def _plot_delta_heatmap(ax, dataframe, column, representations, title):
     values = sorted(dataframe[column].dropna().unique())
 
     matrix = (
-        dataframe
-        .pivot_table(
-            index="Representation",
-            columns=column,
-            values="Delta BA",
-            aggfunc="mean",
+        dataframe.pivot_table(
+            index="Representation", columns=column,
+            values="Delta BA", aggfunc="mean",
         )
         .reindex(index=representations, columns=values)
     )
 
     image = ax.imshow(
         matrix.to_numpy(dtype=float),
-        aspect="auto",
-        interpolation="nearest",
-        vmin=-0.15,
-        vmax=0.15,
+        aspect="auto", interpolation="nearest",
+        vmin=-0.15, vmax=0.15,
     )
 
     for row in range(matrix.shape[0]):
         for col in range(matrix.shape[1]):
             value = matrix.iloc[row, col]
-
             if pd.notna(value):
                 ax.text(
-                    col,
-                    row,
-                    f"{value:+.2f}",
-                    ha="center",
-                    va="center",
-                    fontsize=7,
+                    col, row, f"{value:+.2f}",
+                    ha="center", va="center", fontsize=7,
                 )
 
     ax.set_xticks(np.arange(len(values)))
@@ -974,8 +933,7 @@ def plot_configuration_robustness(model_robustness, band_robustness):
     ))
 
     fig, axes = plt.subplots(
-        len(datasets) * 2,
-        len(scenarios),
+        len(datasets) * 2, len(scenarios),
         figsize=(5.4 * len(scenarios), 8.4 * len(datasets)),
         squeeze=False,
     )
@@ -1000,33 +958,34 @@ def plot_configuration_robustness(model_robustness, band_robustness):
                 & (band_robustness["Scenario"] == scenario)
             ]
 
-            model_reps = [
-                rep for rep in representations
-                if rep in model_subset["Representation"].values
-            ]
+            if model_subset.empty and band_subset.empty:
+                _mark_unavailable(model_ax)
+                _mark_unavailable(band_ax)
+            else:
+                model_reps = [
+                    rep for rep in representations
+                    if rep in model_subset["Representation"].values
+                ]
+                band_reps = [
+                    rep for rep in representations
+                    if rep in band_subset["Representation"].values
+                ]
 
-            band_reps = [
-                rep for rep in representations
-                if rep in band_subset["Representation"].values
-            ]
+                if model_subset.empty:
+                    _mark_unavailable(model_ax)
+                else:
+                    image = _plot_delta_heatmap(
+                        model_ax, model_subset, "Model", model_reps,
+                        f"{scenario} — Model",
+                    )
 
-            if not model_subset.empty:
-                image = _plot_delta_heatmap(
-                    model_ax,
-                    model_subset,
-                    "Model",
-                    model_reps,
-                    f"{scenario} — Model",
-                )
-
-            if not band_subset.empty:
-                image = _plot_delta_heatmap(
-                    band_ax,
-                    band_subset,
-                    "Band",
-                    band_reps,
-                    f"{scenario} — Band",
-                )
+                if band_subset.empty:
+                    _mark_unavailable(band_ax)
+                else:
+                    image = _plot_delta_heatmap(
+                        band_ax, band_subset, "Band", band_reps,
+                        f"{scenario} — Band",
+                    )
 
             if scenario_index == 0:
                 model_ax.set_ylabel(f"{dataset}\nRepresentation")
@@ -1034,27 +993,19 @@ def plot_configuration_robustness(model_robustness, band_robustness):
 
     if image is not None:
         fig.colorbar(
-            image,
-            ax=axes,
-            label="Δ Balanced Accuracy",
-            fraction=0.015,
-            pad=0.02,
+            image, ax=axes, label="Δ Balanced Accuracy",
+            fraction=0.015, pad=0.02,
         )
 
     fig.subplots_adjust(
-        left=0.12,
-        right=0.90,
-        bottom=0.08,
-        top=0.95,
-        hspace=0.45,
-        wspace=0.30,
+        left=0.12, right=0.90, bottom=0.08, top=0.95,
+        hspace=0.45, wspace=0.30,
     )
 
     for ext in ["pdf", "png"]:
         fig.savefig(
             FIGURES_DIR / f"configuration_robustness.{ext}",
-            dpi=300,
-            bbox_inches="tight",
+            dpi=300, bbox_inches="tight",
         )
 
     plt.close(fig)
@@ -1098,12 +1049,13 @@ def run_friedman_tests(representation_subjects):
     for (dataset, scenario), group in representation_subjects.groupby(
         ["Dataset", "Scenario"]
     ):
-        pivot = group.pivot_table(
-            index="Subject",
-            columns="Representation",
-            values="Balanced Accuracy",
-            aggfunc="mean",
-        ).dropna()
+        pivot = (
+            group.pivot_table(
+                index="Subject", columns="Representation",
+                values="Balanced Accuracy", aggfunc="mean",
+            )
+            .dropna()
+        )
 
         if pivot.shape[0] < 2 or pivot.shape[1] < 3:
             continue
@@ -1136,10 +1088,8 @@ def run_pairwise_wilcoxon(representation_subjects):
             pair = (
                 group[group["Representation"].isin([rep_a, rep_b])]
                 .pivot_table(
-                    index="Subject",
-                    columns="Representation",
-                    values="Balanced Accuracy",
-                    aggfunc="mean",
+                    index="Subject", columns="Representation",
+                    values="Balanced Accuracy", aggfunc="mean",
                 )
             )
 
@@ -1147,7 +1097,6 @@ def run_pairwise_wilcoxon(representation_subjects):
                 continue
 
             pair = pair[[rep_a, rep_b]].dropna()
-
             if len(pair) < 2:
                 continue
 
@@ -1156,10 +1105,7 @@ def run_pairwise_wilcoxon(representation_subjects):
 
             try:
                 statistic, p_value = stats.wilcoxon(
-                    x,
-                    y,
-                    alternative="two-sided",
-                    zero_method="wilcox",
+                    x, y, alternative="two-sided", zero_method="wilcox"
                 )
             except ValueError:
                 statistic, p_value = 0.0, 1.0
@@ -1179,9 +1125,7 @@ def run_pairwise_wilcoxon(representation_subjects):
             })
 
         if comparisons:
-            adjusted = _holm_correction(
-                [item["P-value"] for item in comparisons]
-            )
+            adjusted = _holm_correction([item["P-value"] for item in comparisons])
 
             for comparison, p_adjusted in zip(comparisons, adjusted):
                 comparison["P-value Holm"] = p_adjusted
@@ -1201,7 +1145,7 @@ def run_statistical_analysis(representation_subjects):
 # ============================================================
 # 11. Save figures
 # ============================================================
-# Figures are saved directly by the plotting functions.
+# Figures are saved directly by plotting functions.
 
 
 # ============================================================
@@ -1219,7 +1163,6 @@ def _latex_escape(value):
         return "-"
 
     text = str(value)
-
     for old, new in {
         "&": r"\&",
         "%": r"\%",
@@ -1227,7 +1170,6 @@ def _latex_escape(value):
         "#": r"\#",
     }.items():
         text = text.replace(old, new)
-
     return text
 
 
@@ -1264,34 +1206,15 @@ def generate_representation_summary_latex(summary):
             values = [
                 _latex_escape(dataset) if first else "",
                 _latex_escape(row["Representation"]),
-                _mean_std(
-                    row.get("Intra-subject BA Mean"),
-                    row.get("Intra-subject BA Std"),
-                ),
-                _mean_std(
-                    row.get("Intra-subject F1 Mean"),
-                    row.get("Intra-subject F1 Std"),
-                ),
-                _mean_std(
-                    row.get("Cross-session BA Mean"),
-                    row.get("Cross-session BA Std"),
-                ),
-                _mean_std(
-                    row.get("Cross-session F1 Mean"),
-                    row.get("Cross-session F1 Std"),
-                ),
-                _mean_std(
-                    row.get("Cross-subject BA Mean"),
-                    row.get("Cross-subject BA Std"),
-                ),
-                _mean_std(
-                    row.get("Cross-subject F1 Mean"),
-                    row.get("Cross-subject F1 Std"),
-                ),
+                _mean_std(row.get("Intra-subject BA Mean"), row.get("Intra-subject BA Std")),
+                _mean_std(row.get("Intra-subject F1 Mean"), row.get("Intra-subject F1 Std")),
+                _mean_std(row.get("Cross-session BA Mean"), row.get("Cross-session BA Std")),
+                _mean_std(row.get("Cross-session F1 Mean"), row.get("Cross-session F1 Std")),
+                _mean_std(row.get("Cross-subject BA Mean"), row.get("Cross-subject BA Std")),
+                _mean_std(row.get("Cross-subject F1 Mean"), row.get("Cross-subject F1 Std")),
                 "-" if pd.isna(row.get("Gap CS")) else f"{row['Gap CS']:.3f}",
                 "-" if pd.isna(row.get("Gap CSub")) else f"{row['Gap CSub']:.3f}",
             ]
-
             first = False
             lines.append(" & ".join(values) + r" \\")
 
@@ -1299,7 +1222,6 @@ def generate_representation_summary_latex(summary):
 
     lines[-1] = r"\bottomrule"
     lines += [r"\end{tabular}", r"\end{table*}"]
-
     (TABLES_DIR / "representation_summary.tex").write_text("\n".join(lines))
 
 
@@ -1330,7 +1252,6 @@ def generate_best_configurations_latex(best):
                 _mean_std(row["BA Mean"], row["BA Std"]),
                 _mean_std(row["F1 Mean"], row["F1 Std"]),
             ]
-
             first = False
             lines.append(" & ".join(values) + r" \\")
 
@@ -1338,7 +1259,6 @@ def generate_best_configurations_latex(best):
 
     lines[-1] = r"\bottomrule"
     lines += [r"\end{tabular}", r"\end{table*}"]
-
     (TABLES_DIR / "best_configurations.tex").write_text("\n".join(lines))
 
 
@@ -1370,7 +1290,6 @@ def generate_subject_ranking_latex(summary):
                 f"{row['Best (%)']:.1f}",
                 f"{row['Top-3 (%)']:.1f}",
             ]
-
             first = False
             lines.append(" & ".join(values) + r" \\")
 
@@ -1378,7 +1297,6 @@ def generate_subject_ranking_latex(summary):
 
     lines[-1] = r"\bottomrule"
     lines += [r"\end{tabular}", r"\end{table*}"]
-
     (TABLES_DIR / "subject_ranking_summary.tex").write_text("\n".join(lines))
 
 
@@ -1391,8 +1309,8 @@ def generate_statistics_latex(friedman_results):
         r"\label{tab:friedman_tests}",
         r"\begin{tabular}{llccc}",
         r"\toprule",
-        r"\textbf{Dataset} & \textbf{Regime} & "
-        r"\textbf{$\chi^2_F$} & \textbf{$p$} & \textbf{Subjects} \\",
+        r"\textbf{Dataset} & \textbf{Regime} & \textbf{$\chi^2_F$} & "
+        r"\textbf{$p$} & \textbf{Subjects} \\",
         r"\midrule",
     ]
 
@@ -1408,20 +1326,11 @@ def generate_statistics_latex(friedman_results):
             str(int(row["Subjects"])),
         ]) + r" \\")
 
-    lines += [
-        r"\bottomrule",
-        r"\end{tabular}",
-        r"\end{table}",
-    ]
-
+    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     (TABLES_DIR / "friedman_tests.tex").write_text("\n".join(lines))
 
 
-def generate_latex_tables(
-    representation_summary,
-    best_configurations,
-    ranking_summary,
-):
+def generate_latex_tables(representation_summary, best_configurations, ranking_summary):
     generate_representation_summary_latex(representation_summary)
     generate_best_configurations_latex(best_configurations)
     generate_subject_ranking_latex(ranking_summary)
@@ -1515,39 +1424,31 @@ def validate_analysis_results(results):
         "Dataset", "Scenario", "Subject", "Band",
         "Representation", "Model", "Balanced Accuracy", "Macro-F1",
     ]
-
-    missing = [
-        column for column in required
-        if column not in results.columns
-    ]
+    missing = [column for column in required if column not in results.columns]
 
     if missing:
         raise ValueError(f"Missing canonical columns: {missing}")
 
     missing_ba = results["Balanced Accuracy"].isna().sum()
-
     if missing_ba:
-        print(
-            f"[Paper 1] Warning: {missing_ba} rows have missing Balanced Accuracy."
-        )
+        print(f"[Paper 1] Warning: {missing_ba} rows have missing Balanced Accuracy.")
 
     available = set(results["Scenario"].dropna().unique())
-
     for scenario in SCENARIO_DISPLAY.values():
         if scenario not in available:
-            print(
-                f"[Paper 1] Warning: scenario '{scenario}' is not currently available."
-            )
+            print(f"[Paper 1] Warning: scenario '{scenario}' is not currently available.")
 
     for dataset in sorted(results["Dataset"].dropna().unique()):
         subset = results[results["Dataset"] == dataset]
+        scenarios = sorted(subset["Scenario"].dropna().unique())
 
         print(
             f"[Paper 1] {dataset}: "
             f"{subset['Subject'].nunique()} subjects, "
             f"{subset['Representation'].nunique()} representations, "
             f"{subset['Model'].nunique()} models, "
-            f"{subset['Band'].nunique()} bands."
+            f"{subset['Band'].nunique()} bands, "
+            f"scenarios={scenarios}."
         )
 
 
@@ -1555,15 +1456,8 @@ def save_analysis_coverage(results):
     coverage = build_analysis_coverage(results)
     summary = build_dataset_summary(results)
 
-    coverage.to_csv(
-        TABLES_DIR / "analysis_coverage.csv",
-        index=False,
-    )
-
-    summary.to_csv(
-        TABLES_DIR / "dataset_summary.csv",
-        index=False,
-    )
+    coverage.to_csv(TABLES_DIR / "analysis_coverage.csv", index=False)
+    summary.to_csv(TABLES_DIR / "dataset_summary.csv", index=False)
 
     return coverage, summary
 
@@ -1611,17 +1505,10 @@ def _output_paths():
 
 def run_paper1_analysis(model_results_artifact, params=None):
     params = _with_default_params(params)
-
-    inputs, missing = _register_model_results(
-        model_results_artifact,
-        params,
-    )
+    inputs, missing = _register_model_results(model_results_artifact, params)
 
     if missing:
-        print(
-            "[Paper 1] Waiting for scenarios: "
-            + ", ".join(missing)
-        )
+        print("[Paper 1] Waiting for scenarios: " + ", ".join(missing))
         return None
 
     effective_params = {
@@ -1629,168 +1516,101 @@ def run_paper1_analysis(model_results_artifact, params=None):
         "params": params,
         "inputs": {
             scenario: {
-                "path": inputs[scenario]["path"],
-                "signature": inputs[scenario]["signature"],
+                dataset: {
+                    "path": entry["path"],
+                    "signature": entry["signature"],
+                }
+                for dataset, entry in inputs[scenario].items()
             }
             for scenario in params["required_scenarios"]
         },
     }
 
     signature = make_signature(effective_params)
-
-    output_dir = (
-        OUTPUT_ROOT
-        / "runs"
-        / _slug(params["collection"])
-        / signature[:12]
-    )
-
+    output_dir = OUTPUT_ROOT / "runs" / _slug(params["collection"]) / signature[:12]
     manifest_path = output_dir / "manifest.json"
 
     _set_output_dirs(output_dir)
 
     table_paths, figure_paths = _output_paths()
     snippet_path = PAPER_OUTPUT_DIR / "figure_snippets.tex"
+    expected = [*table_paths.values(), *figure_paths.values(), snippet_path]
 
-    expected = [
-        *table_paths.values(),
-        *figure_paths.values(),
-        snippet_path,
-    ]
-
-    if (
-        all(exists(path) for path in expected)
-        and is_done(manifest_path, effective_params)
-    ):
+    if all(exists(path) for path in expected) and is_done(manifest_path, effective_params):
         return AnalysisArtifact(
             name=params["name"],
             output_dir=str(output_dir),
-            tables={
-                name: str(path)
-                for name, path in table_paths.items()
-            },
-            figures={
-                name: str(path)
-                for name, path in figure_paths.items()
-            },
+            tables={name: str(path) for name, path in table_paths.items()},
+            figures={name: str(path) for name, path in figure_paths.items()},
             manifest_path=str(manifest_path),
             signature=signature,
         )
 
     start = time.time()
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    save_manifest(
-        make_manifest("running", effective_params),
-        manifest_path,
-    )
+    save_manifest(make_manifest("running", effective_params), manifest_path)
 
     try:
         results = normalize_results(
-            _load_registered_results(
-                inputs,
-                params["required_scenarios"],
-            )
+            _load_registered_results(inputs, params["required_scenarios"])
         )
 
         validate_analysis_results(results)
         save_analysis_coverage(results)
 
-        representation_subjects = (
-            build_representation_subject_results(results)
-        )
-
-        representation_summary = (
-            build_representation_summary(
-                representation_subjects
-            )
-        )
+        representation_subjects = build_representation_subject_results(results)
+        representation_summary = build_representation_summary(representation_subjects)
 
         representation_subjects.to_csv(
-            TABLES_DIR / "representation_subject_results.csv",
-            index=False,
+            TABLES_DIR / "representation_subject_results.csv", index=False
         )
-
         representation_summary.to_csv(
-            TABLES_DIR / "representation_summary.csv",
-            index=False,
+            TABLES_DIR / "representation_summary.csv", index=False
         )
-
-        plot_representation_generalization(
-            representation_subjects
-        )
+        plot_representation_generalization(representation_subjects)
 
         best_configurations, best_configuration_subjects = (
             select_best_configurations(results)
         )
 
         best_configurations.to_csv(
-            TABLES_DIR / "best_configurations.csv",
-            index=False,
+            TABLES_DIR / "best_configurations.csv", index=False
         )
-
         best_configuration_subjects.to_csv(
-            TABLES_DIR / "best_configuration_subjects.csv",
-            index=False,
+            TABLES_DIR / "best_configuration_subjects.csv", index=False
         )
+        plot_best_configuration_subjects(best_configuration_subjects)
 
-        plot_best_configuration_subjects(
-            best_configuration_subjects
+        subject_rankings = build_subject_rankings(representation_subjects)
+        ranking_summary = build_subject_ranking_summary(subject_rankings)
+
+        subject_rankings.to_csv(
+            TABLES_DIR / "subject_rankings.csv", index=False
         )
+        ranking_summary.to_csv(
+            TABLES_DIR / "subject_ranking_summary.csv", index=False
+        )
+        plot_subject_rankings(subject_rankings)
 
-        subject_rankings = build_subject_rankings(
+        model_robustness, band_robustness = build_configuration_robustness(results)
+
+        model_robustness.to_csv(
+            TABLES_DIR / "model_robustness.csv", index=False
+        )
+        band_robustness.to_csv(
+            TABLES_DIR / "band_robustness.csv", index=False
+        )
+        plot_configuration_robustness(model_robustness, band_robustness)
+
+        friedman_results, pairwise_results = run_statistical_analysis(
             representation_subjects
         )
 
-        ranking_summary = build_subject_ranking_summary(
-            subject_rankings
-        )
-
-        subject_rankings.to_csv(
-            TABLES_DIR / "subject_rankings.csv",
-            index=False,
-        )
-
-        ranking_summary.to_csv(
-            TABLES_DIR / "subject_ranking_summary.csv",
-            index=False,
-        )
-
-        plot_subject_rankings(subject_rankings)
-
-        model_robustness, band_robustness = (
-            build_configuration_robustness(results)
-        )
-
-        model_robustness.to_csv(
-            TABLES_DIR / "model_robustness.csv",
-            index=False,
-        )
-
-        band_robustness.to_csv(
-            TABLES_DIR / "band_robustness.csv",
-            index=False,
-        )
-
-        plot_configuration_robustness(
-            model_robustness,
-            band_robustness,
-        )
-
-        friedman_results, pairwise_results = (
-            run_statistical_analysis(
-                representation_subjects
-            )
-        )
-
         friedman_results.to_csv(
-            TABLES_DIR / "friedman_tests.csv",
-            index=False,
+            TABLES_DIR / "friedman_tests.csv", index=False
         )
-
         pairwise_results.to_csv(
-            TABLES_DIR / "pairwise_wilcoxon.csv",
-            index=False,
+            TABLES_DIR / "pairwise_wilcoxon.csv", index=False
         )
 
         generate_latex_tables(
@@ -1798,11 +1618,7 @@ def run_paper1_analysis(model_results_artifact, params=None):
             best_configurations,
             ranking_summary,
         )
-
-        generate_statistics_latex(
-            friedman_results
-        )
-
+        generate_statistics_latex(friedman_results)
         generate_figure_snippets()
 
         manifest = make_manifest(
@@ -1813,14 +1629,8 @@ def run_paper1_analysis(model_results_artifact, params=None):
 
         manifest["output"] = {
             "output_dir": str(output_dir),
-            "tables": {
-                name: str(path)
-                for name, path in table_paths.items()
-            },
-            "figures": {
-                name: str(path)
-                for name, path in figure_paths.items()
-            },
+            "tables": {name: str(path) for name, path in table_paths.items()},
+            "figures": {name: str(path) for name, path in figure_paths.items()},
             "figure_snippets": str(snippet_path),
         }
 
@@ -1841,14 +1651,8 @@ def run_paper1_analysis(model_results_artifact, params=None):
     return AnalysisArtifact(
         name=params["name"],
         output_dir=str(output_dir),
-        tables={
-            name: str(path)
-            for name, path in table_paths.items()
-        },
-        figures={
-            name: str(path)
-            for name, path in figure_paths.items()
-        },
+        tables={name: str(path) for name, path in table_paths.items()},
+        figures={name: str(path) for name, path in figure_paths.items()},
         manifest_path=str(manifest_path),
         signature=signature,
     )
