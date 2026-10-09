@@ -96,7 +96,6 @@ def _get_representation_trace(*artifacts):
 
     for artifact in artifacts:
         output = _manifest_output(artifact)
-
         for field in fields:
             trace[field] = _coalesce(
                 trace[field],
@@ -135,13 +134,9 @@ def _compute_auc(y, probabilities, classes):
             return None
 
         return roc_auc_score(
-            y,
-            probabilities,
-            labels=classes,
-            multi_class="ovr",
-            average="macro",
+            y, probabilities, labels=classes,
+            multi_class="ovr", average="macro",
         )
-
     except ValueError:
         return None
 
@@ -218,30 +213,138 @@ def _slug(value):
     return re.sub(r"[^a-zA-Z0-9]+", "-", str(value)).strip("-").lower()
 
 
-def _output_dir(model_artifacts, signature):
+def _combined_output_dir(model_artifacts, signature):
     scenarios = "+".join(_slug(x) for x in sorted(model_artifacts))
     return OUTPUT_ROOT / scenarios / f"evaluation__{signature[:12]}"
+
+
+def _model_output_dir(scenario, model, signature):
+    name = f"{_slug(model.learning_method)}__{_slug(model.model_name)}"
+    return OUTPUT_ROOT / _slug(scenario) / "models" / f"{name}__{model.signature[:12]}__{signature[:12]}"
+
+
+def _model_effective_params(scenario, artifact, model, params):
+    return {
+        "scenario": scenario,
+        "group": artifact["group"],
+        "split_id": artifact["split"].id,
+        "representation_signature": artifact["representation_artifact"].signature,
+        "model_signature": model.signature,
+        "params": params,
+    }
+
+
+def _evaluate_model(scenario, artifact, model_artifact, data, transformer, params):
+    group_name = artifact["group"]
+    split = artifact["split"]
+    representation_artifact = artifact["representation_artifact"]
+
+    learner = load_pickle(model_artifact.model_path, map_location=params["device"])
+    learner = _set_learner_device(learner, params["device"])
+
+    model_manifest = load_manifest(model_artifact.manifest_path)
+    trace = _get_representation_trace(representation_artifact, model_artifact)
+
+    training_time = model_manifest.get("execution_time")
+    training_seed = _get_training_seed(model_manifest)
+    model_size = Path(model_artifact.model_path).stat().st_size
+    n_parameters = _count_parameters(learner)
+
+    rows = []
+
+    for evaluation_group, partition, X, y, domains, super_domains in _iter_evaluation_sets(data):
+        metrics = _evaluate_partition(
+            learner, transformer, X, y, domains, super_domains
+        )
+
+        result = ModelResult(
+            split_id=split.id,
+            scenario=scenario,
+            group=group_name,
+            n_source_domains=len(split.source_elementary_domains),
+            n_target_super_domains=len(split.target_super_domain_elementary_domains),
+            target_fraction=split.target_fraction,
+            split_seed=split.seed,
+            source_domains=";".join(map(str, split.source_elementary_domains)),
+            target_super_domains=";".join(
+                map(str, split.target_super_domain_elementary_domains)
+            ),
+            target_domains=";".join(map(str, split.target_elementary_domains)),
+            representation_signature=representation_artifact.signature,
+            learning_method=model_artifact.learning_method,
+            model_name=model_artifact.model_name,
+            model_signature=model_artifact.signature,
+            training_seed=training_seed,
+            evaluation_group=evaluation_group,
+            partition=partition,
+            n_samples=len(y),
+            accuracy=metrics["accuracy"],
+            balanced_accuracy=metrics["balanced_accuracy"],
+            macro_f1=metrics["macro_f1"],
+            auc=metrics["auc"],
+            training_time=training_time,
+            inference_time=metrics["inference_time"],
+            inference_time_per_sample=metrics["inference_time_per_sample"],
+            model_size_bytes=model_size,
+            n_parameters=n_parameters,
+        )
+
+        row = result.to_dict()
+        row.update({
+            "input_representation": trace["input_representation"],
+            "output_representation": trace["output_representation"],
+            "model_input_representation": trace["model_input_representation"],
+            "representation_method": trace["representation_method"],
+            "representation_params": _json_string(trace["representation_params"]),
+            "representation_config_label": trace["representation_config_label"],
+            "signal_transform_method": trace["signal_transform_method"],
+            "signal_transform_params": _json_string(trace["signal_transform_params"]),
+            "signal_transform_config_label": trace["signal_transform_config_label"],
+            "feature_extraction_method": trace["feature_extraction_method"],
+            "feature_extraction_params": _json_string(trace["feature_extraction_params"]),
+            "feature_extraction_config_label": trace["feature_extraction_config_label"],
+            "feature_selection_method": trace["feature_selection_method"],
+            "feature_selection_params": _json_string(trace["feature_selection_params"]),
+            "feature_selection_config_label": trace["feature_selection_config_label"],
+            "preprocessing_signature": trace["preprocessing_signature"],
+            "preprocessing_config_label": trace["preprocessing_config_label"],
+        })
+        rows.append(row)
+
+    return pd.DataFrame(rows)
 
 
 def run_model_evaluation(model_artifacts, params=None):
     params = dict(params or {})
     params["device"] = _resolve_device(params.get("device", "auto"))
 
-    model_signatures = sorted(
-        model.signature
-        for artifacts in model_artifacts.values()
-        for artifact in artifacts
-        for model in artifact["artifacts"]
-    )
+    items = []
 
-    effective_params = {"models": model_signatures, "params": params}
-    signature = make_signature(effective_params)
+    for scenario, artifacts in model_artifacts.items():
+        for artifact in artifacts:
+            for model in artifact["artifacts"]:
+                effective_params = _model_effective_params(
+                    scenario, artifact, model, params
+                )
+                items.append({
+                    "scenario": scenario,
+                    "artifact": artifact,
+                    "model": model,
+                    "params": effective_params,
+                    "signature": make_signature(effective_params),
+                })
 
-    output_dir = _output_dir(model_artifacts, signature)
+    combined_params = {
+        "evaluations": sorted(item["signature"] for item in items),
+        "params": params,
+    }
+    signature = make_signature(combined_params)
+
+    output_dir = _combined_output_dir(model_artifacts, signature)
     results_path = output_dir / "model_results.csv"
     manifest_path = output_dir / "manifest.json"
 
-    if exists(results_path) and is_done(manifest_path, effective_params):
+    if exists(results_path) and is_done(manifest_path, combined_params):
         manifest = load_manifest(manifest_path)
         return ModelResultsArtifact(
             path=str(results_path),
@@ -250,125 +353,93 @@ def run_model_evaluation(model_artifacts, params=None):
             n_rows=manifest["output"]["n_rows"],
         )
 
-    total_models = sum(
-        len(artifact["artifacts"])
-        for artifacts in model_artifacts.values()
-        for artifact in artifacts
-    )
-    completed_models = 0
-
     start = time.time()
-    save_manifest(make_manifest("running", effective_params), manifest_path)
-    rows = []
+    save_manifest(make_manifest("running", combined_params), manifest_path)
+
+    frames = []
+    cached = evaluated = 0
+    current_artifact = None
+    data = transformer = None
 
     try:
-        for scenario, artifacts in model_artifacts.items():
-            for artifact in artifacts:
-                group_name = artifact["group"]
-                view = artifact["view"]
-                split = artifact["split"]
-                representation_artifact = artifact["representation_artifact"]
+        for index, item in enumerate(items, 1):
+            artifact = item["artifact"]
+            model = item["model"]
 
-                data = split.materialize(view)
-                transformer = load_pickle(representation_artifact.transformer_path)
+            model_dir = _model_output_dir(
+                item["scenario"], model, item["signature"]
+            )
+            model_results_path = model_dir / "model_results.csv"
+            model_manifest_path = model_dir / "manifest.json"
 
-                for model_artifact in artifact["artifacts"]:
-                    learner = load_pickle(
-                        model_artifact.model_path,
-                        map_location=params["device"],
+            if exists(model_results_path) and is_done(
+                model_manifest_path, item["params"]
+            ):
+                dataframe = pd.read_csv(model_results_path)
+                cached += 1
+            else:
+                if artifact is not current_artifact:
+                    data = artifact["split"].materialize(artifact["view"])
+                    transformer = load_pickle(
+                        artifact["representation_artifact"].transformer_path
                     )
-                    learner = _set_learner_device(learner, params["device"])
+                    current_artifact = artifact
 
-                    model_manifest = load_manifest(model_artifact.manifest_path)
-                    trace = _get_representation_trace(
-                        representation_artifact,
-                        model_artifact,
+                model_start = time.time()
+                save_manifest(
+                    make_manifest("running", item["params"]),
+                    model_manifest_path,
+                )
+
+                try:
+                    dataframe = _evaluate_model(
+                        item["scenario"], artifact, model,
+                        data, transformer, params,
                     )
+                    save_data(dataframe, model_results_path)
 
-                    training_time = model_manifest.get("execution_time")
-                    training_seed = _get_training_seed(model_manifest)
-                    model_size = Path(model_artifact.model_path).stat().st_size
-                    n_parameters = _count_parameters(learner)
-
-                    for evaluation_group, partition, X, y, domains, super_domains in _iter_evaluation_sets(data):
-                        metrics = _evaluate_partition(
-                            learner,
-                            transformer,
-                            X,
-                            y,
-                            domains,
-                            super_domains,
-                        )
-
-                        result = ModelResult(
-                            split_id=split.id,
-                            scenario=scenario,
-                            group=group_name,
-                            n_source_domains=len(split.source_elementary_domains),
-                            n_target_super_domains=len(split.target_super_domain_elementary_domains),
-                            target_fraction=split.target_fraction,
-                            split_seed=split.seed,
-                            source_domains=";".join(map(str, split.source_elementary_domains)),
-                            target_super_domains=";".join(
-                                map(str, split.target_super_domain_elementary_domains)
-                            ),
-                            target_domains=";".join(map(str, split.target_elementary_domains)),
-                            representation_signature=representation_artifact.signature,
-                            learning_method=model_artifact.learning_method,
-                            model_name=model_artifact.model_name,
-                            model_signature=model_artifact.signature,
-                            training_seed=training_seed,
-                            evaluation_group=evaluation_group,
-                            partition=partition,
-                            n_samples=len(y),
-                            accuracy=metrics["accuracy"],
-                            balanced_accuracy=metrics["balanced_accuracy"],
-                            macro_f1=metrics["macro_f1"],
-                            auc=metrics["auc"],
-                            training_time=training_time,
-                            inference_time=metrics["inference_time"],
-                            inference_time_per_sample=metrics["inference_time_per_sample"],
-                            model_size_bytes=model_size,
-                            n_parameters=n_parameters,
-                        )
-
-                        row = result.to_dict()
-                        row.update({
-                            "input_representation": trace["input_representation"],
-                            "output_representation": trace["output_representation"],
-                            "model_input_representation": trace["model_input_representation"],
-                            "representation_method": trace["representation_method"],
-                            "representation_params": _json_string(trace["representation_params"]),
-                            "representation_config_label": trace["representation_config_label"],
-                            "signal_transform_method": trace["signal_transform_method"],
-                            "signal_transform_params": _json_string(trace["signal_transform_params"]),
-                            "signal_transform_config_label": trace["signal_transform_config_label"],
-                            "feature_extraction_method": trace["feature_extraction_method"],
-                            "feature_extraction_params": _json_string(trace["feature_extraction_params"]),
-                            "feature_extraction_config_label": trace["feature_extraction_config_label"],
-                            "feature_selection_method": trace["feature_selection_method"],
-                            "feature_selection_params": _json_string(trace["feature_selection_params"]),
-                            "feature_selection_config_label": trace["feature_selection_config_label"],
-                            "preprocessing_signature": trace["preprocessing_signature"],
-                            "preprocessing_config_label": trace["preprocessing_config_label"],
-                        })
-                        rows.append(row)
-
-                    completed_models += 1
-                    print(
-                        f"\r[Evaluation] {completed_models}/{total_models} models",
-                        end="",
-                        flush=True,
+                    manifest = make_manifest(
+                        "done",
+                        item["params"],
+                        execution_time=time.time() - model_start,
                     )
+                    manifest["output"] = {
+                        "path": str(model_results_path),
+                        "n_rows": len(dataframe),
+                    }
+                    save_manifest(manifest, model_manifest_path)
+                    evaluated += 1
 
-        print()
+                except Exception as error:
+                    save_manifest(
+                        make_manifest(
+                            "failed",
+                            item["params"],
+                            execution_time=time.time() - model_start,
+                            error=str(error),
+                        ),
+                        model_manifest_path,
+                    )
+                    raise
 
-        dataframe = pd.DataFrame(rows)
+            frames.append(dataframe)
+
+            print(
+                f"\r[Evaluation] {index}/{len(items)} models "
+                f"| cached={cached} | evaluated={evaluated}",
+                end="",
+                flush=True,
+            )
+
+        if items:
+            print()
+
+        dataframe = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
         save_data(dataframe, results_path)
 
         manifest = make_manifest(
             "done",
-            effective_params,
+            combined_params,
             execution_time=time.time() - start,
         )
         manifest["output"] = {
@@ -378,11 +449,13 @@ def run_model_evaluation(model_artifacts, params=None):
         save_manifest(manifest, manifest_path)
 
     except Exception as error:
-        print()
+        if items:
+            print()
+
         save_manifest(
             make_manifest(
                 "failed",
-                effective_params,
+                combined_params,
                 execution_time=time.time() - start,
                 error=str(error),
             ),
@@ -394,5 +467,5 @@ def run_model_evaluation(model_artifacts, params=None):
         path=str(results_path),
         manifest_path=str(manifest_path),
         signature=signature,
-        n_rows=len(rows),
+        n_rows=len(dataframe),
     )
