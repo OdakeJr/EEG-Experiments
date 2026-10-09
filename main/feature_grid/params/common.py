@@ -4,7 +4,10 @@
 # Execution
 # ============================================================
 
-EXECUTION_PARAMS = {"max_workers": 1}
+EXECUTION_PARAMS = {
+    "max_workers": 2,
+    "evaluation_workers": 2,
+}
 
 SPECTRAL_BAND = (1, 38)
 
@@ -264,7 +267,7 @@ NEURAL_PARAMS = {
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
     "optimizer": "adam",
-    "device": "mps",
+    "device": "cpu",
     "seed": 0,
 }
 """
@@ -275,9 +278,9 @@ NEURAL_PARAMS = {
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
     "optimizer": "adam",
-    "device": "mps",
+    "device": "cpu",
     "seed": 0,
-    "validation_fraction": 0.2,
+    "validation_fraction": 0.1,
     "patience": 20,
     "min_delta": 0.0,
 }
@@ -384,8 +387,7 @@ TRAINING_PARAMS_FULL = [
 ]
 
 # Change only this line when moving from smoke test to final experiments.
-TRAINING_PARAMS = TRAINING_PARAMS_SMOKE
-
+TRAINING_PARAMS = TRAINING_PARAMS_FEATURE_MODELS
 
 # ============================================================
 # Evaluation

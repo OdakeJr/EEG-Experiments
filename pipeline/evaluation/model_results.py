@@ -3,6 +3,7 @@
 import json
 import re
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import numpy as np
@@ -96,6 +97,7 @@ def _get_representation_trace(*artifacts):
 
     for artifact in artifacts:
         output = _manifest_output(artifact)
+
         for field in fields:
             trace[field] = _coalesce(
                 trace[field],
@@ -103,15 +105,16 @@ def _get_representation_trace(*artifacts):
                 output.get(field),
             )
 
-    return {k: _json_copy(v) for k, v in trace.items()}
+    return {key: _json_copy(value) for key, value in trace.items()}
 
 
 def _get_classes(learner):
     if getattr(learner, "classes_", None) is not None:
         return np.asarray(learner.classes_)
 
-    if getattr(getattr(learner, "model", None), "classes_", None) is not None:
-        return np.asarray(learner.model.classes_)
+    model = getattr(learner, "model", None)
+    if getattr(model, "classes_", None) is not None:
+        return np.asarray(model.classes_)
 
     return None
 
@@ -134,8 +137,11 @@ def _compute_auc(y, probabilities, classes):
             return None
 
         return roc_auc_score(
-            y, probabilities, labels=classes,
-            multi_class="ovr", average="macro",
+            y,
+            probabilities,
+            labels=classes,
+            multi_class="ovr",
+            average="macro",
         )
     except ValueError:
         return None
@@ -220,7 +226,12 @@ def _combined_output_dir(model_artifacts, signature):
 
 def _model_output_dir(scenario, model, signature):
     name = f"{_slug(model.learning_method)}__{_slug(model.model_name)}"
-    return OUTPUT_ROOT / _slug(scenario) / "models" / f"{name}__{model.signature[:12]}__{signature[:12]}"
+    return (
+        OUTPUT_ROOT
+        / _slug(scenario)
+        / "models"
+        / f"{name}__{model.signature[:12]}__{signature[:12]}"
+    )
 
 
 def _model_effective_params(scenario, artifact, model, params):
@@ -234,16 +245,24 @@ def _model_effective_params(scenario, artifact, model, params):
     }
 
 
-def _evaluate_model(scenario, artifact, model_artifact, data, transformer, params):
-    group_name = artifact["group"]
+def _evaluate_model(scenario, artifact, model_artifact, params):
     split = artifact["split"]
     representation_artifact = artifact["representation_artifact"]
 
-    learner = load_pickle(model_artifact.model_path, map_location=params["device"])
+    data = split.materialize(artifact["view"])
+    transformer = load_pickle(representation_artifact.transformer_path)
+
+    learner = load_pickle(
+        model_artifact.model_path,
+        map_location=params["device"],
+    )
     learner = _set_learner_device(learner, params["device"])
 
     model_manifest = load_manifest(model_artifact.manifest_path)
-    trace = _get_representation_trace(representation_artifact, model_artifact)
+    trace = _get_representation_trace(
+        representation_artifact,
+        model_artifact,
+    )
 
     training_time = model_manifest.get("execution_time")
     training_seed = _get_training_seed(model_manifest)
@@ -254,13 +273,18 @@ def _evaluate_model(scenario, artifact, model_artifact, data, transformer, param
 
     for evaluation_group, partition, X, y, domains, super_domains in _iter_evaluation_sets(data):
         metrics = _evaluate_partition(
-            learner, transformer, X, y, domains, super_domains
+            learner,
+            transformer,
+            X,
+            y,
+            domains,
+            super_domains,
         )
 
         result = ModelResult(
             split_id=split.id,
             scenario=scenario,
-            group=group_name,
+            group=artifact["group"],
             n_source_domains=len(split.source_elementary_domains),
             n_target_super_domains=len(split.target_super_domain_elementary_domains),
             target_fraction=split.target_fraction,
@@ -314,7 +338,93 @@ def _evaluate_model(scenario, artifact, model_artifact, data, transformer, param
     return pd.DataFrame(rows)
 
 
-def run_model_evaluation(model_artifacts, params=None):
+def _evaluation_task(task):
+    index, scenario, artifact, model, params, effective_params, signature = task
+    output_dir = _model_output_dir(scenario, model, signature)
+    results_path = output_dir / "model_results.csv"
+    manifest_path = output_dir / "manifest.json"
+
+    if exists(results_path) and is_done(manifest_path, effective_params):
+        return index, str(results_path), True
+
+    start = time.time()
+    save_manifest(make_manifest("running", effective_params), manifest_path)
+
+    try:
+        dataframe = _evaluate_model(scenario, artifact, model, params)
+        save_data(dataframe, results_path)
+
+        manifest = make_manifest(
+            "done",
+            effective_params,
+            execution_time=time.time() - start,
+        )
+        manifest["output"] = {
+            "path": str(results_path),
+            "n_rows": len(dataframe),
+        }
+        save_manifest(manifest, manifest_path)
+
+    except Exception as error:
+        save_manifest(
+            make_manifest(
+                "failed",
+                effective_params,
+                execution_time=time.time() - start,
+                error=str(error),
+            ),
+            manifest_path,
+        )
+        raise
+
+    return index, str(results_path), False
+
+
+def _run_evaluation_tasks(tasks, max_workers):
+    total = len(tasks)
+    results = [None] * total
+    cached = evaluated = 0
+
+    def update(result):
+        nonlocal cached, evaluated
+
+        index, path, was_cached = result
+        results[index] = path
+
+        if was_cached:
+            cached += 1
+        else:
+            evaluated += 1
+
+        print(
+            f"\r[Evaluation] {cached + evaluated}/{total} models "
+            f"| cached={cached} | evaluated={evaluated}",
+            end="",
+            flush=True,
+        )
+
+    if max_workers <= 1:
+        for task in tasks:
+            update(_evaluation_task(task))
+    else:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(_evaluation_task, task) for task in tasks]
+
+            try:
+                for future in as_completed(futures):
+                    update(future.result())
+            except Exception:
+                for future in futures:
+                    future.cancel()
+                raise
+
+    if total:
+        print()
+
+    return results
+
+
+def run_model_evaluation(model_artifacts, params=None, max_workers=1):
     params = dict(params or {})
     params["device"] = _resolve_device(params.get("device", "auto"))
 
@@ -324,18 +434,25 @@ def run_model_evaluation(model_artifacts, params=None):
         for artifact in artifacts:
             for model in artifact["artifacts"]:
                 effective_params = _model_effective_params(
-                    scenario, artifact, model, params
+                    scenario,
+                    artifact,
+                    model,
+                    params,
                 )
-                items.append({
-                    "scenario": scenario,
-                    "artifact": artifact,
-                    "model": model,
-                    "params": effective_params,
-                    "signature": make_signature(effective_params),
-                })
+                signature = make_signature(effective_params)
+
+                items.append(
+                    (
+                        scenario,
+                        artifact,
+                        model,
+                        effective_params,
+                        signature,
+                    )
+                )
 
     combined_params = {
-        "evaluations": sorted(item["signature"] for item in items),
+        "evaluations": sorted(item[4] for item in items),
         "params": params,
     }
     signature = make_signature(combined_params)
@@ -346,6 +463,7 @@ def run_model_evaluation(model_artifacts, params=None):
 
     if exists(results_path) and is_done(manifest_path, combined_params):
         manifest = load_manifest(manifest_path)
+
         return ModelResultsArtifact(
             path=str(results_path),
             manifest_path=str(manifest_path),
@@ -356,85 +474,35 @@ def run_model_evaluation(model_artifacts, params=None):
     start = time.time()
     save_manifest(make_manifest("running", combined_params), manifest_path)
 
-    frames = []
-    cached = evaluated = 0
-    current_artifact = None
-    data = transformer = None
+    tasks = [
+        (
+            index,
+            scenario,
+            artifact,
+            model,
+            params,
+            effective_params,
+            evaluation_signature,
+        )
+        for index, (
+            scenario,
+            artifact,
+            model,
+            effective_params,
+            evaluation_signature,
+        ) in enumerate(items)
+    ]
 
     try:
-        for index, item in enumerate(items, 1):
-            artifact = item["artifact"]
-            model = item["model"]
+        paths = _run_evaluation_tasks(tasks, max_workers)
 
-            model_dir = _model_output_dir(
-                item["scenario"], model, item["signature"]
-            )
-            model_results_path = model_dir / "model_results.csv"
-            model_manifest_path = model_dir / "manifest.json"
+        frames = [pd.read_csv(path) for path in paths]
+        dataframe = (
+            pd.concat(frames, ignore_index=True)
+            if frames
+            else pd.DataFrame()
+        )
 
-            if exists(model_results_path) and is_done(
-                model_manifest_path, item["params"]
-            ):
-                dataframe = pd.read_csv(model_results_path)
-                cached += 1
-            else:
-                if artifact is not current_artifact:
-                    data = artifact["split"].materialize(artifact["view"])
-                    transformer = load_pickle(
-                        artifact["representation_artifact"].transformer_path
-                    )
-                    current_artifact = artifact
-
-                model_start = time.time()
-                save_manifest(
-                    make_manifest("running", item["params"]),
-                    model_manifest_path,
-                )
-
-                try:
-                    dataframe = _evaluate_model(
-                        item["scenario"], artifact, model,
-                        data, transformer, params,
-                    )
-                    save_data(dataframe, model_results_path)
-
-                    manifest = make_manifest(
-                        "done",
-                        item["params"],
-                        execution_time=time.time() - model_start,
-                    )
-                    manifest["output"] = {
-                        "path": str(model_results_path),
-                        "n_rows": len(dataframe),
-                    }
-                    save_manifest(manifest, model_manifest_path)
-                    evaluated += 1
-
-                except Exception as error:
-                    save_manifest(
-                        make_manifest(
-                            "failed",
-                            item["params"],
-                            execution_time=time.time() - model_start,
-                            error=str(error),
-                        ),
-                        model_manifest_path,
-                    )
-                    raise
-
-            frames.append(dataframe)
-
-            print(
-                f"\r[Evaluation] {index}/{len(items)} models "
-                f"| cached={cached} | evaluated={evaluated}",
-                end="",
-                flush=True,
-            )
-
-        if items:
-            print()
-
-        dataframe = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
         save_data(dataframe, results_path)
 
         manifest = make_manifest(
@@ -449,9 +517,7 @@ def run_model_evaluation(model_artifacts, params=None):
         save_manifest(manifest, manifest_path)
 
     except Exception as error:
-        if items:
-            print()
-
+        print()
         save_manifest(
             make_manifest(
                 "failed",

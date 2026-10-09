@@ -154,11 +154,7 @@ def _training_task(task):
 
     try:
         model = run_training(
-            split,
-            view,
-            representation_artifact,
-            params,
-            group=group,
+            split, view, representation_artifact, params, group=group
         )
     except Exception as exc:
         _log(
@@ -238,24 +234,24 @@ def training_stage(representations, params, max_workers=1):
     ]
 
     for item_idx, model_idx, model in _run_tasks(
-        _training_task,
-        tasks,
-        max_workers,
+        _training_task, tasks, max_workers
     ):
         artifacts[item_idx]["artifacts"][model_idx] = model
 
     for item in artifacts:
         item["artifacts"] = [
-            artifact
-            for artifact in item["artifacts"]
-            if artifact is not None
+            artifact for artifact in item["artifacts"] if artifact is not None
         ]
 
     return [item for item in artifacts if item["artifacts"]]
 
 
-def evaluation_stage(models, scenario, params):
-    return run_model_evaluation({scenario: models}, params)
+def evaluation_stage(models, scenario, params, max_workers=1):
+    return run_model_evaluation(
+        {scenario: models},
+        params,
+        max_workers=max_workers,
+    )
 
 
 def benchmark_stage(model_results, params):
@@ -268,12 +264,14 @@ def paper_analysis_stage(model_results, params):
 
 def main(params_path):
     params, params_path = _load_params(params_path)
+
     max_workers = params.EXECUTION_PARAMS.get("max_workers", 1)
+    evaluation_workers = params.EXECUTION_PARAMS.get("evaluation_workers", 1)
     start = time.perf_counter()
 
     _log(
-        f"[Pipeline] Starting | pid={os.getpid()} | "
-        f"scenario={params.SCENARIO} | workers={max_workers}"
+        f"[Pipeline] Starting | pid={os.getpid()} | scenario={params.SCENARIO} | "
+        f"workers={max_workers} | evaluation_workers={evaluation_workers}"
     )
     _log(f"[Pipeline] Params | {params_path}")
 
@@ -319,6 +317,7 @@ def main(params_path):
         models,
         params.SCENARIO,
         params.MODEL_EVALUATION_PARAMS,
+        evaluation_workers,
     )
 
     results = _run_stage(
@@ -339,8 +338,7 @@ def main(params_path):
         )
 
     _log(
-        f"[Pipeline] Finished | "
-        f"total={_format_time(time.perf_counter() - start)}"
+        f"[Pipeline] Finished | total={_format_time(time.perf_counter() - start)}"
     )
 
     return results

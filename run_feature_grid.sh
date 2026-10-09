@@ -27,7 +27,7 @@ run() {
 # Intra-subject
 # --------------------------------------------------
 run "main/feature_grid/params/intra_subject/params_bci2a.py"
-run "main/feature_grid/params/intra_subject/params_eegmmidb.py"
+##run "main/feature_grid/params/intra_subject/params_eegmmidb.py"
 run "main/feature_grid/params/intra_subject/params_weibo.py"
 run "main/feature_grid/params/intra_subject/params_zhou.py"
 
@@ -41,7 +41,7 @@ run "main/feature_grid/params/cross_session/params_zhou.py"
 # Cross-subject
 # --------------------------------------------------
 run "main/feature_grid/params/cross_subject/params_bci2a.py"
-run "main/feature_grid/params/cross_subject/params_eegmmidb.py"
+##run "main/feature_grid/params/cross_subject/params_eegmmidb.py"
 run "main/feature_grid/params/cross_subject/params_weibo.py"
 run "main/feature_grid/params/cross_subject/params_zhou.py"
 
