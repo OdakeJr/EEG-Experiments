@@ -384,9 +384,18 @@ def _target_test_results(results):
         (results["Evaluation Group"] == "target_elementary_domain")
         & (results["Partition"] == "test")
     ].copy()
-
     if df.empty:
         raise ValueError("No target test results were found.")
+    return df
+
+
+def _source_train_results(results):
+    df = results[
+        (results["Evaluation Group"] == "source")
+        & (results["Partition"] == "train")
+    ].copy()
+    if df.empty:
+        raise ValueError("No source training results were found.")
     return df
 
 
@@ -409,35 +418,49 @@ def _mark_unavailable(ax):
     ax.set_yticks([])
 
 
-def build_representation_subject_results(results):
-    df = _target_test_results(results)
+def _build_representation_subject_results(dataframe):
     return (
-        df.groupby(
+        dataframe.groupby(
             ["Dataset", "Scenario", "Subject", "Representation"],
             dropna=False, as_index=False,
         )[METRICS].mean()
     )
 
 
-def build_representation_summary(subject_results):
-    grouped = (
+def build_representation_subject_results(results):
+    return _build_representation_subject_results(_target_test_results(results))
+
+
+def build_representation_train_subject_results(results):
+    return _build_representation_subject_results(_source_train_results(results))
+
+
+def _summarize_representation_ba(subject_results, split):
+    prefix = split.lower()
+    return (
         subject_results.groupby(
             ["Dataset", "Representation", "Scenario"], dropna=False
         )
-        .agg(
-            ba_mean=("Balanced Accuracy", "mean"),
-            ba_std=("Balanced Accuracy", "std"),
-            f1_mean=("Macro-F1", "mean"),
-            f1_std=("Macro-F1", "std"),
-            auc_mean=("AUC", "mean"),
-            auc_std=("AUC", "std"),
-            subjects=("Subject", "nunique"),
-        )
+        .agg(**{
+            f"{prefix}_ba_mean": ("Balanced Accuracy", "mean"),
+            f"{prefix}_ba_std": ("Balanced Accuracy", "std"),
+            f"{prefix}_subjects": ("Subject", "nunique"),
+        })
         .reset_index()
     )
 
-    rows = []
 
+def build_representation_summary(train_subject_results, test_subject_results):
+    train = _summarize_representation_ba(train_subject_results, "Train")
+    test = _summarize_representation_ba(test_subject_results, "Test")
+
+    grouped = train.merge(
+        test,
+        on=["Dataset", "Representation", "Scenario"],
+        how="outer",
+    )
+
+    rows = []
     for (dataset, representation), group in grouped.groupby(
         ["Dataset", "Representation"], dropna=False
     ):
@@ -447,24 +470,21 @@ def build_representation_summary(subject_results):
             current = group[group["Scenario"] == scenario]
 
             if current.empty:
-                for metric in ["BA", "F1", "AUC"]:
-                    row[f"{scenario} {metric} Mean"] = np.nan
-                    row[f"{scenario} {metric} Std"] = np.nan
+                for split in ["Train", "Test"]:
+                    row[f"{scenario} {split} BA Mean"] = np.nan
+                    row[f"{scenario} {split} BA Std"] = np.nan
                 continue
 
             values = current.iloc[0]
-            row[f"{scenario} BA Mean"] = values["ba_mean"]
-            row[f"{scenario} BA Std"] = values["ba_std"]
-            row[f"{scenario} F1 Mean"] = values["f1_mean"]
-            row[f"{scenario} F1 Std"] = values["f1_std"]
-            row[f"{scenario} AUC Mean"] = values["auc_mean"]
-            row[f"{scenario} AUC Std"] = values["auc_std"]
+            for split in ["Train", "Test"]:
+                prefix = split.lower()
+                row[f"{scenario} {split} BA Mean"] = values.get(
+                    f"{prefix}_ba_mean", np.nan
+                )
+                row[f"{scenario} {split} BA Std"] = values.get(
+                    f"{prefix}_ba_std", np.nan
+                )
 
-        intra = row.get("Intra-subject BA Mean")
-        cs = row.get("Cross-session BA Mean")
-        csub = row.get("Cross-subject BA Mean")
-        row["Gap CS"] = intra - cs if pd.notna(intra) and pd.notna(cs) else np.nan
-        row["Gap CSub"] = intra - csub if pd.notna(intra) and pd.notna(csub) else np.nan
         rows.append(row)
 
     return pd.DataFrame(rows)
@@ -1184,18 +1204,18 @@ def generate_representation_summary_latex(summary):
         r"\begin{table*}[t]",
         r"\centering",
         r"\small",
-        r"\caption{Overall performance of the evaluated EEG representations.}",
+        r"\caption{Balanced Accuracy of the evaluated EEG representations across generalization regimes. Values are reported as mean $\pm$ standard deviation across subjects.}",
         r"\label{tab:representation_summary}",
-        r"\begin{tabular}{llcccccccc}",
+        r"\begin{tabular}{llcccccc}",
         r"\toprule",
         r"\textbf{Dataset} & \textbf{Representation} &",
         r"\multicolumn{2}{c}{\textbf{Intra-subject}} &",
         r"\multicolumn{2}{c}{\textbf{Cross-session}} &",
-        r"\multicolumn{2}{c}{\textbf{Cross-subject}} &",
-        r"\textbf{Gap CS} & \textbf{Gap CSub} \\",
+        r"\multicolumn{2}{c}{\textbf{Cross-subject}} \\",
         r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
-        r"& & \textbf{BA} & \textbf{F1} & \textbf{BA} & \textbf{F1} &",
-        r"\textbf{BA} & \textbf{F1} & & \\",
+        r"& & \textbf{Train BA} & \textbf{Test BA} &",
+        r"\textbf{Train BA} & \textbf{Test BA} &",
+        r"\textbf{Train BA} & \textbf{Test BA} \\",
         r"\midrule",
     ]
 
@@ -1206,14 +1226,30 @@ def generate_representation_summary_latex(summary):
             values = [
                 _latex_escape(dataset) if first else "",
                 _latex_escape(row["Representation"]),
-                _mean_std(row.get("Intra-subject BA Mean"), row.get("Intra-subject BA Std")),
-                _mean_std(row.get("Intra-subject F1 Mean"), row.get("Intra-subject F1 Std")),
-                _mean_std(row.get("Cross-session BA Mean"), row.get("Cross-session BA Std")),
-                _mean_std(row.get("Cross-session F1 Mean"), row.get("Cross-session F1 Std")),
-                _mean_std(row.get("Cross-subject BA Mean"), row.get("Cross-subject BA Std")),
-                _mean_std(row.get("Cross-subject F1 Mean"), row.get("Cross-subject F1 Std")),
-                "-" if pd.isna(row.get("Gap CS")) else f"{row['Gap CS']:.3f}",
-                "-" if pd.isna(row.get("Gap CSub")) else f"{row['Gap CSub']:.3f}",
+                _mean_std(
+                    row.get("Intra-subject Train BA Mean"),
+                    row.get("Intra-subject Train BA Std"),
+                ),
+                _mean_std(
+                    row.get("Intra-subject Test BA Mean"),
+                    row.get("Intra-subject Test BA Std"),
+                ),
+                _mean_std(
+                    row.get("Cross-session Train BA Mean"),
+                    row.get("Cross-session Train BA Std"),
+                ),
+                _mean_std(
+                    row.get("Cross-session Test BA Mean"),
+                    row.get("Cross-session Test BA Std"),
+                ),
+                _mean_std(
+                    row.get("Cross-subject Train BA Mean"),
+                    row.get("Cross-subject Train BA Std"),
+                ),
+                _mean_std(
+                    row.get("Cross-subject Test BA Mean"),
+                    row.get("Cross-subject Test BA Std"),
+                ),
             ]
             first = False
             lines.append(" & ".join(values) + r" \\")
@@ -1473,6 +1509,7 @@ def _output_paths():
             "analysis_coverage.csv",
             "dataset_summary.csv",
             "representation_subject_results.csv",
+            "representation_train_subject_results.csv",
             "representation_summary.csv",
             "best_configurations.csv",
             "best_configuration_subjects.csv",
@@ -1559,14 +1596,23 @@ def run_paper1_analysis(model_results_artifact, params=None):
         save_analysis_coverage(results)
 
         representation_subjects = build_representation_subject_results(results)
-        representation_summary = build_representation_summary(representation_subjects)
+        representation_train_subjects = build_representation_train_subject_results(results)
+
+        representation_summary = build_representation_summary(
+            representation_train_subjects,
+            representation_subjects,
+        )
 
         representation_subjects.to_csv(
             TABLES_DIR / "representation_subject_results.csv", index=False
         )
+        representation_train_subjects.to_csv(
+            TABLES_DIR / "representation_train_subject_results.csv", index=False
+        )
         representation_summary.to_csv(
             TABLES_DIR / "representation_summary.csv", index=False
         )
+
         plot_representation_generalization(representation_subjects)
 
         best_configurations, best_configuration_subjects = (

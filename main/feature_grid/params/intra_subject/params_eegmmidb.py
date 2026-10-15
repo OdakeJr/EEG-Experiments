@@ -25,6 +25,7 @@ COMMON_CLASSES = [
 CHANNELS = None
 
 EEGMMIDB_RUNS = [4, 6, 8, 10, 12, 14]
+EEGMMIDB_SUBJECTS = list(range(1, 11))
 
 
 # ============================================================
@@ -38,6 +39,7 @@ PREPROCESSING_PARAMS = [
         "name": f"eegmmidb_intra_{band_name}",
         "representation": "signal",
         "loader": {
+            "subjects": EEGMMIDB_SUBJECTS,
             "runs": EEGMMIDB_RUNS,
             "channels": CHANNELS,
             "classes": COMMON_CLASSES,

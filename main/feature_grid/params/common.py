@@ -6,7 +6,7 @@
 
 EXECUTION_PARAMS = {
     "max_workers": 2,
-    "evaluation_workers": 2,
+    "evaluation_workers": 4,
 }
 
 SPECTRAL_BAND = (1, 38)
@@ -387,7 +387,7 @@ TRAINING_PARAMS_FULL = [
 ]
 
 # Change only this line when moving from smoke test to final experiments.
-TRAINING_PARAMS = TRAINING_PARAMS_FEATURE_MODELS
+TRAINING_PARAMS = TRAINING_PARAMS_FULL
 
 # ============================================================
 # Evaluation

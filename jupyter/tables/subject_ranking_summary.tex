@@ -1,0 +1,113 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Summary of subject-specific representation rankings.}
+\label{tab:subject_ranking_summary}
+\begin{tabular}{lllcccc}
+\toprule
+\textbf{Dataset} & \textbf{Regime} & \textbf{Representation} &
+\textbf{Mean Rank} & \textbf{Rank Variability} &
+\textbf{Best (\%)} & \textbf{Top-3 (\%)} \\
+\midrule
+bci2a & Cross-session & CSP-6 & 2.89 & 0.33 & 0.0 & 100.0 \\
+ & Cross-session & Covariance & 5.11 & 0.33 & 0.0 & 0.0 \\
+ & Cross-session & Fused & 1.33 & 0.71 & 77.8 & 100.0 \\
+ & Cross-session & Riemannian & 1.78 & 0.44 & 22.2 & 100.0 \\
+ & Cross-session & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-session & Statistical & 5.89 & 0.33 & 0.0 & 0.0 \\
+ & Cross-session & Temporal & 7.67 & 0.50 & 0.0 & 0.0 \\
+ & Cross-session & Wavelet & 7.33 & 0.50 & 0.0 & 0.0 \\
+ & Cross-subject & CSP-6 & 3.00 & 0.00 & 0.0 & 100.0 \\
+ & Cross-subject & Covariance & 5.22 & 0.44 & 0.0 & 0.0 \\
+ & Cross-subject & Fused & 1.22 & 0.44 & 77.8 & 100.0 \\
+ & Cross-subject & Riemannian & 1.78 & 0.44 & 22.2 & 100.0 \\
+ & Cross-subject & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-subject & Statistical & 5.78 & 0.44 & 0.0 & 0.0 \\
+ & Cross-subject & Temporal & 7.89 & 0.33 & 0.0 & 0.0 \\
+ & Cross-subject & Wavelet & 7.11 & 0.33 & 0.0 & 0.0 \\
+ & Intra-subject & CSP-6 & 2.67 & 0.50 & 0.0 & 100.0 \\
+ & Intra-subject & Covariance & 5.00 & 0.00 & 0.0 & 0.0 \\
+ & Intra-subject & Fused & 1.11 & 0.33 & 88.9 & 100.0 \\
+ & Intra-subject & Riemannian & 2.22 & 0.67 & 11.1 & 100.0 \\
+ & Intra-subject & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Intra-subject & Statistical & 6.00 & 0.00 & 0.0 & 0.0 \\
+ & Intra-subject & Temporal & 8.00 & 0.00 & 0.0 & 0.0 \\
+ & Intra-subject & Wavelet & 7.00 & 0.00 & 0.0 & 0.0 \\
+\midrule
+eegmmidb & Cross-session & CSP-6 & 2.87 & 0.35 & 0.0 & 100.0 \\
+ & Cross-session & Covariance & 5.13 & 0.35 & 0.0 & 0.0 \\
+ & Cross-session & Fused & 1.07 & 0.26 & 93.3 & 100.0 \\
+ & Cross-session & Riemannian & 2.07 & 0.46 & 6.7 & 100.0 \\
+ & Cross-session & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-session & Statistical & 5.87 & 0.35 & 0.0 & 0.0 \\
+ & Cross-session & Temporal & 7.87 & 0.35 & 0.0 & 0.0 \\
+ & Cross-session & Wavelet & 7.13 & 0.35 & 0.0 & 0.0 \\
+ & Cross-subject & CSP-6 & 2.80 & 0.56 & 6.7 & 100.0 \\
+ & Cross-subject & Covariance & 5.13 & 0.35 & 0.0 & 0.0 \\
+ & Cross-subject & Fused & 1.07 & 0.26 & 93.3 & 100.0 \\
+ & Cross-subject & Riemannian & 2.13 & 0.35 & 0.0 & 100.0 \\
+ & Cross-subject & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-subject & Statistical & 5.87 & 0.35 & 0.0 & 0.0 \\
+ & Cross-subject & Temporal & 7.93 & 0.26 & 0.0 & 0.0 \\
+ & Cross-subject & Wavelet & 7.07 & 0.26 & 0.0 & 0.0 \\
+ & Intra-subject & CSP-6 & 2.87 & 0.35 & 0.0 & 100.0 \\
+ & Intra-subject & Covariance & 5.13 & 0.35 & 0.0 & 0.0 \\
+ & Intra-subject & Fused & 1.13 & 0.52 & 93.3 & 100.0 \\
+ & Intra-subject & Riemannian & 2.00 & 0.38 & 6.7 & 100.0 \\
+ & Intra-subject & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Intra-subject & Statistical & 5.87 & 0.35 & 0.0 & 0.0 \\
+ & Intra-subject & Temporal & 7.87 & 0.35 & 0.0 & 0.0 \\
+ & Intra-subject & Wavelet & 7.13 & 0.35 & 0.0 & 0.0 \\
+\midrule
+weibo & Cross-session & CSP-6 & 2.90 & 0.32 & 0.0 & 100.0 \\
+ & Cross-session & Covariance & 5.10 & 0.32 & 0.0 & 0.0 \\
+ & Cross-session & Fused & 1.00 & 0.00 & 100.0 & 100.0 \\
+ & Cross-session & Riemannian & 2.10 & 0.32 & 0.0 & 100.0 \\
+ & Cross-session & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-session & Statistical & 5.90 & 0.32 & 0.0 & 0.0 \\
+ & Cross-session & Temporal & 8.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-session & Wavelet & 7.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-subject & CSP-6 & 2.70 & 0.48 & 0.0 & 100.0 \\
+ & Cross-subject & Covariance & 5.10 & 0.57 & 0.0 & 0.0 \\
+ & Cross-subject & Fused & 1.10 & 0.32 & 90.0 & 100.0 \\
+ & Cross-subject & Riemannian & 2.20 & 0.63 & 10.0 & 100.0 \\
+ & Cross-subject & Spectral & 4.10 & 0.32 & 0.0 & 0.0 \\
+ & Cross-subject & Statistical & 5.80 & 0.42 & 0.0 & 0.0 \\
+ & Cross-subject & Temporal & 7.90 & 0.32 & 0.0 & 0.0 \\
+ & Cross-subject & Wavelet & 7.10 & 0.32 & 0.0 & 0.0 \\
+ & Intra-subject & CSP-6 & 2.90 & 0.32 & 0.0 & 100.0 \\
+ & Intra-subject & Covariance & 5.10 & 0.32 & 0.0 & 0.0 \\
+ & Intra-subject & Fused & 1.10 & 0.32 & 90.0 & 100.0 \\
+ & Intra-subject & Riemannian & 2.00 & 0.47 & 10.0 & 100.0 \\
+ & Intra-subject & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Intra-subject & Statistical & 5.90 & 0.32 & 0.0 & 0.0 \\
+ & Intra-subject & Temporal & 7.90 & 0.32 & 0.0 & 0.0 \\
+ & Intra-subject & Wavelet & 7.10 & 0.32 & 0.0 & 0.0 \\
+\midrule
+zhou & Cross-session & CSP-6 & 3.00 & 0.00 & 0.0 & 100.0 \\
+ & Cross-session & Covariance & 5.10 & 0.32 & 0.0 & 0.0 \\
+ & Cross-session & Fused & 1.10 & 0.32 & 90.0 & 100.0 \\
+ & Cross-session & Riemannian & 1.90 & 0.32 & 10.0 & 100.0 \\
+ & Cross-session & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-session & Statistical & 5.90 & 0.32 & 0.0 & 0.0 \\
+ & Cross-session & Temporal & 7.70 & 0.48 & 0.0 & 0.0 \\
+ & Cross-session & Wavelet & 7.30 & 0.48 & 0.0 & 0.0 \\
+ & Cross-subject & CSP-6 & 2.90 & 0.32 & 0.0 & 100.0 \\
+ & Cross-subject & Covariance & 5.10 & 0.32 & 0.0 & 0.0 \\
+ & Cross-subject & Fused & 1.10 & 0.32 & 90.0 & 100.0 \\
+ & Cross-subject & Riemannian & 2.00 & 0.47 & 10.0 & 100.0 \\
+ & Cross-subject & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-subject & Statistical & 5.90 & 0.32 & 0.0 & 0.0 \\
+ & Cross-subject & Temporal & 8.00 & 0.00 & 0.0 & 0.0 \\
+ & Cross-subject & Wavelet & 7.00 & 0.00 & 0.0 & 0.0 \\
+ & Intra-subject & CSP-6 & 3.00 & 0.00 & 0.0 & 100.0 \\
+ & Intra-subject & Covariance & 5.10 & 0.32 & 0.0 & 0.0 \\
+ & Intra-subject & Fused & 1.10 & 0.32 & 90.0 & 100.0 \\
+ & Intra-subject & Riemannian & 1.90 & 0.32 & 10.0 & 100.0 \\
+ & Intra-subject & Spectral & 4.00 & 0.00 & 0.0 & 0.0 \\
+ & Intra-subject & Statistical & 5.90 & 0.32 & 0.0 & 0.0 \\
+ & Intra-subject & Temporal & 7.80 & 0.42 & 0.0 & 0.0 \\
+ & Intra-subject & Wavelet & 7.20 & 0.42 & 0.0 & 0.0 \\
+\bottomrule
+\end{tabular}
+\end{table*}

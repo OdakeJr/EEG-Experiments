@@ -1,0 +1,28 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Best observed configuration for each dataset and generalization regime.}
+\label{tab:best_configurations}
+\begin{tabular}{lllllcc}
+\toprule
+\textbf{Dataset} & \textbf{Regime} & \textbf{Representation} &
+\textbf{Classifier} & \textbf{Preprocessing} & \textbf{BA} & \textbf{F1} \\
+\midrule
+bci2a & Cross-session & Fused & MLP Large & Beta & 0.832 $\pm$ 0.133 & 0.810 $\pm$ 0.126 \\
+ & Cross-subject & Fused & MLP Medium & Beta & 0.603 $\pm$ 0.103 & 0.582 $\pm$ 0.101 \\
+ & Intra-subject & Fused & SVM & Beta & 0.985 $\pm$ 0.011 & 0.959 $\pm$ 0.010 \\
+\midrule
+eegmmidb & Cross-session & Fused & SVM & Beta & 0.851 $\pm$ 0.077 & 0.824 $\pm$ 0.078 \\
+ & Cross-subject & Fused & SVM & Beta & 0.566 $\pm$ 0.059 & 0.554 $\pm$ 0.067 \\
+ & Intra-subject & Fused & SVM & Beta & 0.970 $\pm$ 0.031 & 0.950 $\pm$ 0.039 \\
+\midrule
+weibo & Cross-session & CSP-6 & MLP Large & Beta & 0.824 $\pm$ 0.086 & 0.813 $\pm$ 0.091 \\
+ & Cross-subject & Fused & MLP Large & Beta & 0.538 $\pm$ 0.079 & 0.506 $\pm$ 0.081 \\
+ & Intra-subject & Riemannian & SVM & Beta & 0.973 $\pm$ 0.026 & 0.954 $\pm$ 0.037 \\
+\midrule
+zhou & Cross-session & Fused & MLP Large & Beta & 0.838 $\pm$ 0.087 & 0.825 $\pm$ 0.081 \\
+ & Cross-subject & Fused & MLP Medium & Beta & 0.548 $\pm$ 0.102 & 0.525 $\pm$ 0.098 \\
+ & Intra-subject & Fused & MLP Medium & Beta & 0.969 $\pm$ 0.026 & 0.946 $\pm$ 0.031 \\
+\bottomrule
+\end{tabular}
+\end{table*}
