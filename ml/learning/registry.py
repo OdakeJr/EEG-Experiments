@@ -11,6 +11,8 @@ from ml.learning.domain_generalization.groupdro import GroupDRO
 from ml.learning.domain_generalization.vrex import VREx
 from ml.learning.domain_generalization.coral import CORAL
 from ml.learning.domain_generalization.mmd import MMD
+from ml.learning.domain_generalization.dg_dann import DGDANN
+from ml.learning.domain_generalization.mldg import MLDG
 
 from ml.learning.domain_adaptation_unlabeled.deep_coral import DeepCORAL
 from ml.learning.domain_adaptation_unlabeled.dann import DANN
@@ -189,7 +191,8 @@ LEARNING_ALGORITHMS = {
     "vrex": VREx,
     "coral": CORAL,
     "mmd": MMD,
-
+    "dg_dann": DGDANN,
+    "mldg": MLDG,
 
     # --------------------------------------------------------
     # Unlabeled domain adaptation

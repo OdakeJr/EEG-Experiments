@@ -1,219 +1,196 @@
+
 # ml/learning/domain_generalization/vrex.py
 
+import copy
 import pickle
 from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
+from sklearn.model_selection import train_test_split
+from torch.nn.utils import parametrize
+from torch.utils.data import DataLoader, TensorDataset
 
 from ml.learning.base import BaseLearningAlgorithm
 
 
 class VREx(BaseLearningAlgorithm):
-
     def __init__(self):
         self.model = None
         self.classes_ = None
         self.device = "cpu"
 
-    def fit(
-        self,
-        model,
-        source=None,
-        target_super_domain=None,
-        target_elementary_domain=None,
-        **training_params,
-    ):
-        X, y, domains = self._get_training_data(
-            source
-        )
+    def fit(self, model, source=None, target_super_domain=None,
+            target_elementary_domain=None, **params):
+        if source is None:
+            raise ValueError("VREx requires source data.")
+        mask = source.partitions == "train"
+        if not np.any(mask):
+            raise ValueError("No source training samples found.")
 
-        epochs = training_params.get(
-            "epochs",
-            100,
-        )
-        learning_rate = training_params.get(
-            "learning_rate",
-            1e-3,
-        )
-        weight_decay = training_params.get(
-            "weight_decay",
-            0.0,
-        )
-        vrex_lambda = training_params.get(
-            "vrex_lambda",
-            1.0,
-        )
-        penalty_anneal_epochs = training_params.get(
-            "penalty_anneal_epochs",
-            0,
-        )
-        self.device = training_params.get(
-            "device",
-            "cpu",
-        )
-        seed = training_params.get(
-            "seed",
-            42,
-        )
+        X, y, domains = source.X[mask], source.y[mask], source.elementary_domains[mask]
+        self.classes_, y = np.unique(y, return_inverse=True)
 
-        np.random.seed(seed)
+        seed = params.get("seed", 42)
+        rng = np.random.default_rng(seed)
         torch.manual_seed(seed)
-
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
-        model.apply(self._reset_parameters)
-        model = model.to(self.device)
+        epochs = params.get("epochs", 100)
+        batch_size = params.get("batch_size", 64)
+        val_fraction = params.get("validation_fraction", 0.2)
+        patience = params.get("patience", 20)
+        min_delta = params.get("min_delta", 0.0)
+        vrex_lambda = params.get("vrex_lambda", 1.0)
+        anneal_epochs = params.get("penalty_anneal_epochs", 0)
+        self.device = params.get("device", "cpu")
 
-        self.classes_ = np.unique(y)
-
-        class_to_index = {
-            label: index
-            for index, label in enumerate(self.classes_)
-        }
-
-        y_encoded = np.array([
-            class_to_index[label]
-            for label in y
-        ])
-
-        X_tensor = torch.as_tensor(
-            X,
-            dtype=torch.float32,
-            device=self.device,
-        )
-
-        y_tensor = torch.as_tensor(
-            y_encoded,
-            dtype=torch.long,
-            device=self.device,
-        )
-
-        domains = np.asarray(domains)
-        unique_domains = np.unique(domains)
-
-        domain_indices = {
-            domain: torch.as_tensor(
-                np.where(domains == domain)[0],
-                dtype=torch.long,
-                device=self.device,
+        indices = np.arange(len(y))
+        if val_fraction > 0:
+            train_idx, val_idx = train_test_split(
+                indices, test_size=val_fraction, stratify=y, random_state=seed
             )
-            for domain in unique_domains
-        }
+        else:
+            train_idx, val_idx = indices, None
 
-        optimizer = torch.optim.Adam(
+        domain_indices = [
+            train_idx[domains[train_idx] == domain]
+            for domain in np.unique(domains[train_idx])
+        ]
+
+        n_domains = min(int(params.get("domains_per_batch", 4)), len(domain_indices))
+        if n_domains < 2 or batch_size // n_domains < 2:
+            raise ValueError("VREx requires at least 2 domains and 2 samples per domain.")
+
+        per_domain = batch_size // n_domains
+        X = torch.as_tensor(X, dtype=torch.float32)
+        y = torch.as_tensor(y, dtype=torch.long)
+
+        val_loader = None
+        if val_idx is not None:
+            val_loader = DataLoader(
+                TensorDataset(X[val_idx], y[val_idx]), batch_size=batch_size
+            )
+
+        model = model.to(self.device)
+        optimizer_name = params.get("optimizer", "adam")
+        optimizers = {"adam": torch.optim.Adam, "adamw": torch.optim.AdamW}
+
+        if optimizer_name not in optimizers:
+            raise ValueError(f"Unknown optimizer: {optimizer_name}")
+
+        optimizer = optimizers[optimizer_name](
             model.parameters(),
-            lr=learning_rate,
-            weight_decay=weight_decay,
+            lr=params.get("learning_rate", 1e-3),
+            weight_decay=params.get("weight_decay", 0.0),
         )
 
-        criterion = nn.CrossEntropyLoss()
-
-        model.train()
+        best_loss, best_state, stale_epochs = float("inf"), None, 0
+        n_steps = int(np.ceil(len(train_idx) / batch_size))
 
         for epoch in range(epochs):
+            model.train()
 
-            optimizer.zero_grad()
-
-            risks = []
-
-            for indices in domain_indices.values():
-
-                logits = model(
-                    X_tensor[indices]
+            for _ in range(n_steps):
+                selected = rng.choice(
+                    len(domain_indices), size=n_domains, replace=False
                 )
+                batch_indices = np.concatenate([
+                    rng.choice(
+                        domain_indices[d], size=per_domain,
+                        replace=len(domain_indices[d]) < per_domain
+                    )
+                    for d in selected
+                ])
 
-                risk = criterion(
-                    logits,
-                    y_tensor[indices],
-                )
+                xb = X[batch_indices].to(self.device)
+                yb = y[batch_indices].to(self.device)
 
-                risks.append(risk)
+                optimizer.zero_grad()
+                logits = model(xb)
 
-            risks = torch.stack(risks)
+                risks = torch.stack([
+                    F.cross_entropy(
+                        logits[i * per_domain:(i + 1) * per_domain],
+                        yb[i * per_domain:(i + 1) * per_domain]
+                    )
+                    for i in range(n_domains)
+                ])
 
-            mean_risk = risks.mean()
+                risk = risks.mean()
+                penalty = risks.var(unbiased=False)
+                weight = vrex_lambda if epoch >= anneal_epochs else 1.0
 
-            penalty = torch.var(
-                risks,
-                unbiased=False,
-            )
+                loss = risk + weight * penalty
+                if weight > 1.0:
+                    loss = loss / weight
 
-            penalty_weight = (
-                vrex_lambda
-                if epoch >= penalty_anneal_epochs
-                else 1.0
-            )
+                loss.backward()
+                optimizer.step()
 
-            loss = (
-                mean_risk
-                + penalty_weight * penalty
-            )
+            if val_loader is None:
+                continue
 
-            if penalty_weight > 1.0:
-                loss = loss / penalty_weight
+            model.eval()
+            total_loss = 0.0
 
-            loss.backward()
-            optimizer.step()
+            with torch.no_grad():
+                for xb, yb in val_loader:
+                    xb, yb = xb.to(self.device), yb.to(self.device)
+                    total_loss += F.cross_entropy(
+                        model(xb), yb, reduction="sum"
+                    ).item()
+
+            val_loss = total_loss / len(val_idx)
+
+            if val_loss < best_loss - min_delta:
+                best_loss = val_loss
+                best_state = copy.deepcopy(model.state_dict())
+                stale_epochs = 0
+            else:
+                stale_epochs += 1
+                if stale_epochs >= patience:
+                    break
+
+        if best_state is not None:
+            model.load_state_dict(best_state)
 
         self.model = model
-
         return self
 
-    def predict(
-        self,
-        X,
-        domains=None,
-        super_domains=None,
-    ):
-        probabilities = self.predict_proba(
-            X,
-            domains,
-            super_domains,
-        )
-
-        indices = np.argmax(
-            probabilities,
-            axis=1,
-        )
-
-        return self.classes_[indices]
-
-    def predict_proba(
-        self,
-        X,
-        domains=None,
-        super_domains=None,
-    ):
-        self._check_fitted()
+    def predict_proba(self, X, domains=None, super_domains=None):
+        if self.model is None:
+            raise RuntimeError("VREx has not been fitted.")
 
         self.model.eval()
-
-        X_tensor = torch.as_tensor(
-            X,
-            dtype=torch.float32,
-        ).to(self.device)
+        probabilities = []
 
         with torch.no_grad():
+            for start in range(0, len(X), 256):
+                xb = torch.as_tensor(
+                    X[start:start + 256], dtype=torch.float32,
+                    device=self.device
+                )
+                probabilities.append(
+                    F.softmax(self.model(xb), dim=1).cpu().numpy()
+                )
 
-            logits = self.model(
-                X_tensor
-            )
+        return np.concatenate(probabilities)
 
-            probabilities = torch.softmax(
-                logits,
-                dim=1,
-            )
-
-        return probabilities.cpu().numpy()
+    def predict(self, X, domains=None, super_domains=None):
+        return self.classes_[self.predict_proba(X).argmax(axis=1)]
 
     def save(self, path):
-        Path(path).parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+
+        for module in self.model.modules():
+            if parametrize.is_parametrized(module):
+                for name in list(module.parametrizations.keys()):
+                    parametrize.remove_parametrizations(
+                        module, name, leave_parametrized=True
+                    )
 
         with open(path, "wb") as file:
             pickle.dump(self, file)
@@ -222,39 +199,3 @@ class VREx(BaseLearningAlgorithm):
     def load(cls, path):
         with open(path, "rb") as file:
             return pickle.load(file)
-
-    @staticmethod
-    def _get_training_data(source):
-        if source is None:
-            raise ValueError(
-                "VREx requires source data."
-            )
-
-        mask = (
-            source.partitions == "train"
-        )
-
-        if not np.any(mask):
-            raise ValueError(
-                "No source training samples found."
-            )
-
-        return (
-            source.X[mask],
-            source.y[mask],
-            source.elementary_domains[mask],
-        )
-
-    @staticmethod
-    def _reset_parameters(module):
-        if hasattr(
-            module,
-            "reset_parameters",
-        ):
-            module.reset_parameters()
-
-    def _check_fitted(self):
-        if self.model is None:
-            raise RuntimeError(
-                "Learning algorithm has not been fitted."
-            )

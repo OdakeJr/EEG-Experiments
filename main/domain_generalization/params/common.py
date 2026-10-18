@@ -129,6 +129,8 @@ DG_METHODS = {
     "groupdro": {"eta": 0.01},
     "coral": {"coral_lambda": 1.0},
     "mmd": {"mmd_lambda": 1.0},
+    "dg_dann": {"dann_lambda": 1.0, "dann_gamma": 10.0},
+    "mldg": {"mldg_alpha": 1e-3, "mldg_beta": 1.0,},
 }
 
 TRAINING_PARAMS = [
@@ -165,6 +167,8 @@ DG_LABELS = {
     "groupdro": "GroupDRO",
     "coral": "CORAL",
     "mmd": "MMD",
+    "dg_dann": "DG-DANN",
+    "mldg": "MLDG",
 }
 
 METHOD_DISPLAY = [
