@@ -115,11 +115,6 @@ NEURAL_PARAMS = {
 # Training
 # ============================================================
 
-
-# ============================================================
-# Training
-# ============================================================
-
 _TRAIN_EEGNET = {
     "name": "eegnet_erm",
     "learning": "neural_erm__eegnet",
@@ -152,35 +147,6 @@ TRAINING_PARAMS = [
         for method, method_params in DG_METHODS.items()
     ],
 ]
-
-
-"""
-_TRAIN_SHALLOW_FBCSP = {
-    "name": "shallow_fbcsp",
-    "learning": "neural_erm__shallow_fbcsp",
-    "model": "shallow_fbcsp",
-    "model_params": SHALLOW_FBCSP_PARAMS,
-    "training_params": NEURAL_PARAMS,
-}
-
-_TRAIN_EEG_TCNET = {
-    "name": "eeg_tcnet",
-    "learning": "neural_erm__eeg_tcnet",
-    "model": "eeg_tcnet",
-    "model_params": EEG_TCNET_PARAMS,
-    "training_params": NEURAL_PARAMS,
-}
-"""
-
-TRAINING_PARAMS_DEEP = [
-    _TRAIN_EEGNET,
-    #_TRAIN_SHALLOW_FBCSP,
-    #_TRAIN_EEG_TCNET,
-]
-
-# Change only this line when moving from smoke test to final experiments.
-TRAINING_PARAMS = TRAINING_PARAMS_DEEP
-
 
 # ============================================================
 # Evaluation

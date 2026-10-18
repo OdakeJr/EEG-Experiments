@@ -86749,3 +86749,6 @@ Log:     logs/20261014_180601/cross_subject_params_eegmmidb.log
 [2026-10-18 05:25:58] [Training task] Done | pid=1565255 | item=422 | split=cross_subject_dc5ce2da1004 | representation=all_fused__all_standard | model=mlp_medium | elapsed=17.1m
 [2026-10-18 05:25:58] [Training] Progress 2393/3060 | remaining=667 | elapsed=74.79h | eta≈20.85h
 [2026-10-18 05:25:58] [Training task] Starting | pid=1565255 | item=423 | split=cross_subject_dc5ce2da1004 | representation=standardized_signal | model=eegnet
+[2026-10-18 05:36:40] [Training task] Done | pid=1565256 | item=422 | split=cross_subject_dc5ce2da1004 | representation=all_fused__all_standard | model=mlp_large | elapsed=16.2m
+[2026-10-18 05:36:40] [Training task] Starting | pid=1565256 | item=423 | split=cross_subject_dc5ce2da1004 | representation=standardized_signal | model=shallow_fbcsp
+[2026-10-18 05:36:40] [Training] Progress 2394/3060 | remaining=666 | elapsed=74.97h | eta≈20.86h
