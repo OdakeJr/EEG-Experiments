@@ -124,13 +124,13 @@ _TRAIN_EEGNET = {
 }
 
 DG_METHODS = {
-    "irm": {"irm_lambda": 100.0},
-    "vrex": {"vrex_lambda": 1.0},
+    # "irm": {"irm_lambda": 100.0},
+    "vrex": {"vrex_lambda": 10.0},
     "groupdro": {"eta": 0.01},
     "coral": {"coral_lambda": 1.0},
-    "mmd": {"mmd_lambda": 1.0},
-    "dg_dann": {"dann_lambda": 1.0, "dann_gamma": 10.0},
-    "mldg": {"mldg_alpha": 1e-3, "mldg_beta": 1.0,},
+    # "mmd": {"mmd_lambda": 1.0},
+    # "dg_dann": {"dann_lambda": 1.0, "dann_gamma": 10.0},
+    # "mldg": {"mldg_alpha": 1e-3, "mldg_beta": 1.0},
 }
 
 TRAINING_PARAMS = [
