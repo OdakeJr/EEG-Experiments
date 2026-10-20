@@ -131,6 +131,18 @@ DG_METHODS = {
     # "mmd": {"mmd_lambda": 1.0},
     # "dg_dann": {"dann_lambda": 1.0, "dann_gamma": 10.0},
     # "mldg": {"mldg_alpha": 1e-3, "mldg_beta": 1.0},
+    
+    
+    "residual_moments__linear": {
+        "moment_lambda": 1.0,
+        "moment_type": "linear",
+        "normalize_features": True,
+    },
+    "residual_moments__quadratic": {
+        "moment_lambda": 1.0,
+        "moment_type": "quadratic",
+        "normalize_features": True,
+    },
 }
 
 TRAINING_PARAMS = [
@@ -169,6 +181,9 @@ DG_LABELS = {
     "mmd": "MMD",
     "dg_dann": "DG-DANN",
     "mldg": "MLDG",
+    
+    "residual_moments__linear": "Residual Moments (Linear)",
+    "residual_moments__quadratic": "Residual Moments (Quadratic)",
 }
 
 METHOD_DISPLAY = [

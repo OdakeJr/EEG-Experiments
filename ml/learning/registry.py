@@ -13,6 +13,7 @@ from ml.learning.domain_generalization.coral import CORAL
 from ml.learning.domain_generalization.mmd import MMD
 from ml.learning.domain_generalization.dg_dann import DGDANN
 from ml.learning.domain_generalization.mldg import MLDG
+from ml.learning.domain_generalization.proposed.residual_moments import ResidualMoments
 
 from ml.learning.domain_adaptation_unlabeled.deep_coral import DeepCORAL
 from ml.learning.domain_adaptation_unlabeled.dann import DANN
@@ -193,6 +194,7 @@ LEARNING_ALGORITHMS = {
     "mmd": MMD,
     "dg_dann": DGDANN,
     "mldg": MLDG,
+    "residual_moments": ResidualMoments,
 
     # --------------------------------------------------------
     # Unlabeled domain adaptation
