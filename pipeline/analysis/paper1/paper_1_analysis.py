@@ -356,13 +356,29 @@ def _target_test_results(results):
     return df
 
 
+
 def _source_train_results(results):
-    df = results[
-        (results["Evaluation Group"] == "source")
-        & (results["Partition"] == "train")
-    ].copy()
+    train = results[results["Partition"] == "train"].copy()
+    intra = train["Scenario"] == "Intra-subject"
+
+    source = train[
+        ~intra & (train["Evaluation Group"] == "source")
+    ]
+    intra_train = train[intra]
+
+    for group in ["target_elementary_domain", "source"]:
+        selected = intra_train[
+            intra_train["Evaluation Group"] == group
+        ]
+        if not selected.empty:
+            intra_train = selected
+            break
+
+    df = pd.concat([source, intra_train], ignore_index=True)
+
     if df.empty:
-        raise ValueError("No source training results were found.")
+        raise ValueError("No training results were found.")
+
     return df
 
 
@@ -448,16 +464,21 @@ def build_representation_summary(train_subject_results, test_subject_results):
     return pd.DataFrame(rows)
 
 
-def plot_representation_generalization(subject_results):
-    datasets = sorted(subject_results["Dataset"].dropna().unique())
+
+def plot_representation_generalization(results):
+    configs = build_configuration_subject_results(results)
+    columns = _configuration_columns(configs)
+
+    points = configs.groupby(
+        columns, dropna=False, as_index=False
+    )["Balanced Accuracy"].mean()
+
+    datasets = sorted(points["Dataset"].dropna().unique())
     scenarios = [
         s for s in SCENARIO_DISPLAY.values()
-        if s in subject_results["Scenario"].unique()
+        if s in points["Scenario"].unique()
     ]
-    representations = [
-        r for r in _representation_order(subject_results)
-        if r in subject_results["Representation"].unique()
-    ]
+    representations = _representation_order(points)
 
     fig, axes = plt.subplots(
         len(datasets), len(scenarios),
@@ -470,53 +491,42 @@ def plot_representation_generalization(subject_results):
     for i, dataset in enumerate(datasets):
         for j, scenario in enumerate(scenarios):
             ax = axes[i, j]
-            subset = subject_results[
-                (subject_results["Dataset"] == dataset)
-                & (subject_results["Scenario"] == scenario)
+            subset = points[
+                (points["Dataset"] == dataset)
+                & (points["Scenario"] == scenario)
             ]
 
             if subset.empty:
                 _mark_unavailable(ax)
-                if i == 0:
-                    ax.set_title(scenario)
-                if j == 0:
-                    ax.set_ylabel(f"{dataset}\nBalanced Accuracy")
                 continue
 
             active = [
                 rep for rep in representations
                 if rep in subset["Representation"].values
             ]
-
-            values = [
-                subset.loc[
-                    subset["Representation"] == rep,
-                    "Balanced Accuracy"
-                ].dropna().to_numpy()
-                for rep in active
-            ]
-
             positions = np.arange(1, len(active) + 1)
-            violin_values = [
-                x if len(x) > 1 else np.repeat(x, 2)
-                for x in values
-            ]
 
-            if violin_values:
-                ax.violinplot(
-                    violin_values, positions=positions,
-                    showmeans=False, showmedians=True,
-                    showextrema=False,
-                )
+            for position, rep in zip(positions, active):
+                values = subset.loc[
+                    subset["Representation"] == rep,
+                    "Balanced Accuracy",
+                ].dropna().to_numpy(dtype=float)
 
-                for position, value in zip(positions, values):
-                    ax.scatter(
-                        position + rng.normal(0, 0.035, len(value)),
-                        value, s=16, alpha=0.65,
+                if len(values) >= 2 and np.std(values) > 1e-10:
+                    ax.violinplot(
+                        [values], positions=[position],
+                        showmeans=False, showmedians=True,
+                        showextrema=False,
                     )
+
+                ax.scatter(
+                    position + rng.normal(0, 0.035, len(values)),
+                    values, s=16, alpha=0.65,
+                )
 
             ax.set_xticks(positions)
             ax.set_xticklabels(active, rotation=45, ha="right")
+
             ax.set_ylim(0, 1)
             ax.set_yticks(np.linspace(0, 1, 6))
             ax.tick_params(axis="y", labelleft=True)
@@ -532,8 +542,7 @@ def plot_representation_generalization(subject_results):
     for ext in ["pdf", "png"]:
         fig.savefig(
             FIGURES_DIR / f"representation_generalization.{ext}",
-            dpi=300,
-            bbox_inches="tight",
+            dpi=300, bbox_inches="tight",
         )
 
     plt.close(fig)
@@ -926,10 +935,12 @@ def _plot_delta_heatmap(ax, dataframe, column, representations, title):
         .reindex(index=representations, columns=values)
     )
 
+    limit = 0.30 if column == "Band" else 0.15
+
     image = ax.imshow(
         matrix.to_numpy(dtype=float),
         aspect="auto", interpolation="nearest",
-        vmin=-0.15, vmax=0.15,
+        vmin=-limit, vmax=limit,
     )
 
     for row in range(matrix.shape[0]):
@@ -1323,50 +1334,60 @@ def generate_best_configurations_latex(best):
     print(f"Saved to: {path.resolve()}")
 
 
+
 def generate_subject_ranking_latex(summary):
+    scenarios = list(SCENARIO_DISPLAY.values())
     lines = [
         r"\begin{table*}[t]",
         r"\centering",
         r"\scriptsize",
-        r"\caption{Summary of subject-specific representation rankings.}",
+        r"\caption{Subject-specific representation rankings across generalization regimes. Rank values are reported as mean $\pm$ standard deviation across subjects. Best (\%) indicates the percentage of subjects for which a representation ranked first.}",
         r"\label{tab:subject_ranking_summary}",
-        r"\begin{tabular}{lllcccc}",
+        r"\begin{tabular}{llcccccc}",
         r"\toprule",
-        r"\textbf{Dataset} & \textbf{Regime} & \textbf{Representation} &",
-        r"\textbf{Mean Rank} & \textbf{Rank Variability} &",
-        r"\textbf{Best (\%)} & \textbf{Top-3 (\%)} \\",
+        r"\textbf{Dataset} & \textbf{Representation} &",
+        r"\multicolumn{2}{c}{\textbf{Intra-subject}} &",
+        r"\multicolumn{2}{c}{\textbf{Cross-session}} &",
+        r"\multicolumn{2}{c}{\textbf{Cross-subject}} \\",
+        r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
+        r"& & \textbf{Rank} & \textbf{Best (\%)} &",
+        r"\textbf{Rank} & \textbf{Best (\%)} &",
+        r"\textbf{Rank} & \textbf{Best (\%)} \\",
         r"\midrule",
     ]
 
-    scenario_order = ["Intra-subject", "Cross-session", "Cross-subject"]
-
     for dataset, group in summary.groupby("Dataset", sort=True):
-        first_dataset = True
+        first = True
 
-        for scenario in scenario_order:
-            subset = group[group["Scenario"] == scenario]
-            if subset.empty:
-                continue
+        for representation in sorted(group["Representation"].dropna().unique()):
+            subset = group[group["Representation"] == representation]
+            values = [
+                _latex_escape(dataset) if first else "",
+                _latex_escape(representation),
+            ]
 
-            if not first_dataset:
-                lines.append(r"\addlinespace[3pt]")
+            for scenario in scenarios:
+                current = subset[subset["Scenario"] == scenario]
 
-            first_scenario = True
+                if current.empty:
+                    values.extend(["-", "-"])
+                    continue
 
-            for _, row in subset.sort_values("Representation").iterrows():
-                values = [
-                    _latex_escape(dataset) if first_dataset else "",
-                    _latex_escape(scenario) if first_scenario else "",
-                    _latex_escape(row["Representation"]),
-                    f"{row['Mean Rank']:.2f}",
-                    f"{row['Rank Variability']:.2f}",
-                    f"{row['Best (%)']:.1f}",
-                    f"{row['Top-3 (%)']:.1f}",
-                ]
+                row = current.iloc[0]
+                mean, std = row["Mean Rank"], row["Rank Variability"]
+                rank = (
+                    f"${mean:.2f} \\pm {std:.2f}$"
+                    if pd.notna(mean) and pd.notna(std)
+                    else f"{mean:.2f}" if pd.notna(mean) else "-"
+                )
+                best = (
+                    f"{row['Best (%)']:.1f}"
+                    if pd.notna(row["Best (%)"]) else "-"
+                )
+                values.extend([rank, best])
 
-                lines.append(" & ".join(values) + r" \\")
-                first_dataset = False
-                first_scenario = False
+            lines.append(" & ".join(values) + r" \\")
+            first = False
 
         lines.append(r"\midrule")
 
@@ -1376,6 +1397,7 @@ def generate_subject_ranking_latex(summary):
     path = TABLES_DIR / "subject_ranking_summary.tex"
     path.write_text("\n".join(lines), encoding="utf-8")
     print(f"Saved to: {path.resolve()}")
+
 
 
 def generate_statistics_latex(friedman_results):
@@ -1433,8 +1455,10 @@ def generate_figure_snippets():
     figures = [
         (
             "representation_generalization",
-            "Subject-level Balanced Accuracy of EEG representations across datasets "
-            "and generalization regimes.",
+            "Distribution of Balanced Accuracy across EEG configurations "
+            "for each representation, dataset, and generalization regime. "
+            "Each point represents a configuration averaged across subjects, "
+            "while violin plots illustrate variability across configurations.",
             "fig:representation_generalization",
         ),
         (
@@ -1462,7 +1486,9 @@ def generate_figure_snippets():
             "fig:band_robustness",
         ),
     ]
+
     blocks = []
+
     for filename, caption, label in figures:
         blocks += [
             r"\begin{figure*}[t]",
@@ -1473,7 +1499,10 @@ def generate_figure_snippets():
             r"\end{figure*}",
             "",
         ]
-    (PAPER_OUTPUT_DIR / "figure_snippets.tex").write_text("\n".join(blocks))
+
+    (PAPER_OUTPUT_DIR / "figure_snippets.tex").write_text(
+        "\n".join(blocks)
+    )
 
 
 # ============================================================
@@ -1597,7 +1626,7 @@ def run_paper1_analysis(model_results_artifact, params=None):
         return None
     effective_params = {
         "analysis": "paper1",
-        "analysis_version": 5,
+        "analysis_version": 6,
         "params": params,
         "inputs": {
             scenario: {
@@ -1649,7 +1678,7 @@ def run_paper1_analysis(model_results_artifact, params=None):
         representation_summary.to_csv(
             TABLES_DIR / "representation_summary.csv", index=False
         )
-        plot_representation_generalization(representation_subjects)
+        plot_representation_generalization(results)
         best_configurations, best_configuration_subjects = (
             select_best_configurations(results)
         )
