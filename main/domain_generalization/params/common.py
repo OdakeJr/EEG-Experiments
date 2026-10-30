@@ -6,8 +6,8 @@
 # ============================================================
 
 EXECUTION_PARAMS = {
-    "max_workers": 8,
-    "evaluation_workers": 4,
+    "max_workers": 1,
+    "evaluation_workers": 1,
 }
 
 
@@ -99,15 +99,15 @@ NEURAL_PARAMS = {
 """
 
 NEURAL_PARAMS = {
-    "epochs": 100,
+    "epochs": 1,
     "batch_size": 64,
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
     "optimizer": "adam",
-    "device": "cpu",
+    "device": "mps",
     "seed": 0,
     "validation_fraction": 0.1,
-    "patience": 20,
+    "patience": 1,
     "min_delta": 0.0,
 }
 
@@ -124,15 +124,17 @@ _TRAIN_EEGNET = {
 }
 
 DG_METHODS = {
-    "irm": {"irm_lambda": 100.0},
-    "vrex": {"vrex_lambda": 10.0},
-    "groupdro": {"eta": 0.01},
-    "coral": {"coral_lambda": 1.0},
-     "mmd": {"mmd_lambda": 1.0},
-     "dg_dann": {"dann_lambda": 1.0, "dann_gamma": 10.0},
-     "mldg": {"mldg_alpha": 1e-3, "mldg_beta": 1.0},
-    #"residual_moments__linear": {"moment_lambda": 1.0, "moment_type": "linear", "normalize_features": True},
-    #"residual_moments__quadratic": {"moment_lambda": 1.0, "moment_type": "quadratic", "normalize_features": True},
+    #"irm": {"irm_lambda": 100.0},
+    #"vrex": {"vrex_lambda": 10.0},
+    #"groupdro": {"eta": 0.01},
+    #"coral": {"coral_lambda": 1.0},
+    #"mmd": {"mmd_lambda": 1.0},
+    #"dg_dann": {"dann_lambda": 1.0, "dann_gamma": 10.0},
+    #"mldg": {"mldg_alpha": 1e-3, "mldg_beta": 1.0},
+    "residual_moments__linear_pooled": {"constraint_lambda": 1.0, "risk_weighting": "pooled", "constraint_scope": "pooled", "predicates": ["constant", "linear"], "normalize_features": True},
+    "residual_moments__linear_domain": {"constraint_lambda": 1.0, "risk_weighting": "pooled", "constraint_scope": "domain", "predicates": ["constant", "linear"], "normalize_features": True},
+    "residual_moments__quadratic_pooled": {"constraint_lambda": 1.0, "risk_weighting": "pooled", "constraint_scope": "pooled", "predicates": ["constant", "linear", "quadratic"], "normalize_features": True},
+    "residual_moments__quadratic_domain": {"constraint_lambda": 1.0, "risk_weighting": "pooled", "constraint_scope": "domain", "predicates": ["constant", "linear", "quadratic"], "normalize_features": True},
 }
 
 TRAINING_PARAMS = [
@@ -171,9 +173,10 @@ DG_LABELS = {
     "mmd": "MMD",
     "dg_dann": "DG-DANN",
     "mldg": "MLDG",
-    
-    "residual_moments__linear": "Residual Moments (Linear)",
-    "residual_moments__quadratic": "Residual Moments (Quadratic)",
+    "residual_moments__linear_pooled": "Residual Moments (Linear, Pooled)",
+    "residual_moments__linear_domain": "Residual Moments (Linear, Domain)",
+    "residual_moments__quadratic_pooled": "Residual Moments (Quadratic, Pooled)",
+    "residual_moments__quadratic_domain": "Residual Moments (Quadratic, Domain)",
 }
 
 METHOD_DISPLAY = [
