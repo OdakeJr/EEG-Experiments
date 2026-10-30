@@ -1,10 +1,15 @@
 
+# ml/learning/domain_generalization/residual_moments.py
+
 import pickle
 from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn.functional as F
+from sklearn.model_selection import train_test_split
+from torch.nn.utils import parametrize
+from torch.utils.data import DataLoader, TensorDataset
 
 from ml.learning.base import BaseLearningAlgorithm
 
@@ -15,6 +20,7 @@ class ResidualMoments(BaseLearningAlgorithm):
         self.classes_ = None
         self.device = "cpu"
         self.history_ = []
+        self.prediction_batch_size = 128
 
     @staticmethod
     def _compute_predicates(features, predicates, normalize):
@@ -38,115 +44,198 @@ class ResidualMoments(BaseLearningAlgorithm):
     def _statistical_moments(cls, features, logits, labels, predicates, normalize):
         psi = cls._compute_predicates(features, predicates, normalize)
         residuals = logits.softmax(dim=1) - F.one_hot(labels, logits.shape[1]).to(logits.dtype)
-        return psi.T @ residuals / labels.numel()
+        return psi.T @ residuals / len(labels)
 
     def fit(self, model, source=None, target_super_domain=None,
-            target_elementary_domain=None, **training_params):
+            target_elementary_domain=None, **params):
         if source is None:
             raise ValueError("ResidualMoments requires source data.")
-        if not all(hasattr(model, name) for name in ("extract_feature_map", "classify_feature_map")):
+        if not all(callable(getattr(model, name, None)) for name in
+                   ("extract_feature_map", "classify_feature_map")):
             raise ValueError("Model must expose extract_feature_map() and classify_feature_map().")
 
         mask = np.asarray(source.partitions) == "train"
         if not mask.any():
             raise ValueError("No source training samples found.")
 
-        risk_weighting = training_params.get("risk_weighting", "pooled")
-        constraint_scope = training_params.get("constraint_scope", "domain")
-        if risk_weighting not in ("pooled", "balanced"):
-            raise ValueError(f"Unknown risk_weighting: {risk_weighting}")
-        if constraint_scope not in ("pooled", "domain"):
-            raise ValueError(f"Unknown constraint_scope: {constraint_scope}")
+        risk_weighting = params.get("risk_weighting", "pooled")
+        constraint_scope = params.get("constraint_scope", "domain")
+        if risk_weighting not in ("pooled", "balanced") or constraint_scope not in ("pooled", "domain"):
+            raise ValueError("Invalid risk_weighting or constraint_scope.")
 
-        if "predicates" in training_params:
-            predicates = training_params["predicates"]
+        if "predicates" in params:
+            predicates = params["predicates"]
         else:
-            old_type = training_params.get("moment_type", "linear")
-            if old_type not in ("linear", "quadratic"):
-                raise ValueError(f"Unknown moment_type: {old_type}")
-            predicates = ["constant", "linear"] + (["quadratic"] if old_type == "quadratic" else [])
-        if not isinstance(predicates, (list, tuple)) or not predicates or len(set(predicates)) != len(predicates):
-            raise ValueError("predicates must be a nonempty list of unique names.")
-        if set(predicates) - {"constant", "linear", "quadratic"}:
-            raise ValueError("Unknown predicate names.")
+            kind = params.get("moment_type", "linear")
+            if kind not in ("linear", "quadratic"):
+                raise ValueError(f"Unknown moment_type: {kind}")
+            predicates = ["constant", "linear"] + (["quadratic"] if kind == "quadratic" else [])
 
-        epochs = training_params.get("epochs", 100)
-        lr = training_params.get("learning_rate", 1e-3)
-        weight_decay = training_params.get("weight_decay", 0.0)
-        lam = training_params.get("constraint_lambda", training_params.get("moment_lambda", 1.0))
-        normalize = training_params.get("normalize_features", True)
-        self.device = training_params.get("device", "cpu")
-        seed = training_params.get("seed", 42)
+        if (not isinstance(predicates, (list, tuple)) or not predicates
+                or len(set(predicates)) != len(predicates)
+                or set(predicates) - {"constant", "linear", "quadratic"}):
+            raise ValueError("predicates must be a nonempty list of unique supported names.")
 
-        if lam < 0:
-            raise ValueError("constraint_lambda must be nonnegative.")
+        epochs = int(params.get("epochs", 100))
+        batch_size = int(params.get("batch_size", 64))
+        lam = params.get("constraint_lambda", params.get("moment_lambda", 1.0))
+        normalize = params.get("normalize_features", True)
+        self.device = params.get("device", "cpu")
+        self.prediction_batch_size = int(params.get("prediction_batch_size", 128))
+        seed = params.get("seed", 42)
 
-        np.random.seed(seed)
+        if lam < 0 or batch_size < 1 or self.prediction_batch_size < 1:
+            raise ValueError("Invalid regularization strength or batch size.")
+
+        rng = np.random.default_rng(seed)
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
-        model.apply(self._reset_parameters)
-        model = model.to(self.device)
 
         self.classes_, encoded_y = np.unique(source.y[mask], return_inverse=True)
+        domains = np.asarray(source.elementary_domains)[mask]
         X = torch.as_tensor(source.X[mask], dtype=torch.float32)
         y = torch.as_tensor(encoded_y, dtype=torch.long)
-        domains = np.asarray(source.elementary_domains)[mask]
+
+        indices = np.arange(len(y))
+        val_fraction = params.get("validation_fraction", 0.0)
+        train_idx, val_idx = train_test_split(
+            indices, test_size=val_fraction, stratify=encoded_y, random_state=seed
+        ) if val_fraction > 0 else (indices, None)
+
         domain_indices = [
-            torch.as_tensor(np.flatnonzero(domains == domain), dtype=torch.long)
-            for domain in np.unique(domains)
+            train_idx[domains[train_idx] == e]
+            for e in np.unique(domains[train_idx])
         ]
+        counts = np.array([len(idx) for idx in domain_indices])
+        n_domains = min(int(params.get("domains_per_batch", 4)), len(domain_indices))
+        per_domain = batch_size // n_domains
 
-        counts = torch.tensor([len(idx) for idx in domain_indices], dtype=torch.float32, device=self.device)
-        moment_weights = counts / counts.sum()
-        risk_weights = moment_weights if risk_weighting == "pooled" else torch.ones_like(counts) / len(counts)
+        if n_domains < 1 or per_domain < 2:
+            raise ValueError("At least two samples per selected domain are required.")
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+        val_loader = None if val_idx is None else DataLoader(
+            TensorDataset(X[val_idx], y[val_idx]), batch_size=batch_size
+        )
+
+        model = model.to(self.device)
+        optimizers = {"adam": torch.optim.Adam, "adamw": torch.optim.AdamW}
+        optimizer_name = params.get("optimizer", "adam")
+        if optimizer_name not in optimizers:
+            raise ValueError(f"Unknown optimizer: {optimizer_name}")
+
+        optimizer = optimizers[optimizer_name](
+            model.parameters(),
+            lr=params.get("learning_rate", 1e-3),
+            weight_decay=params.get("weight_decay", 0.0)
+        )
+
+        best_loss, best_state, stale = float("inf"), None, 0
+        patience = params.get("patience", 20)
+        min_delta = params.get("min_delta", 0.0)
+        n_steps = int(np.ceil(len(train_idx) / (per_domain * n_domains)))
         self.history_ = []
 
         for _ in range(epochs):
             model.train()
-            optimizer.zero_grad()
-            risks, moments = [], []
+            total_risk = total_penalty = 0.0
 
-            for indices in domain_indices:
-                x_e, y_e = X[indices].to(self.device), y[indices].to(self.device)
-                feature_map = model.extract_feature_map(x_e)
+            for _ in range(n_steps):
+                selected = rng.choice(len(domain_indices), n_domains, replace=False)
+                batch_idx = np.concatenate([
+                    rng.choice(domain_indices[d], size=per_domain,
+                               replace=len(domain_indices[d]) < per_domain)
+                    for d in selected
+                ])
+                xb, yb = X[batch_idx].to(self.device), y[batch_idx].to(self.device)
+
+                optimizer.zero_grad()
+                feature_map = model.extract_feature_map(xb)
                 logits = model.classify_feature_map(feature_map)
 
-                risks.append(F.cross_entropy(logits, y_e))
-                moments.append(self._statistical_moments(
-                    feature_map, logits, y_e, predicates, normalize
-                ))
+                risks, moments = [], []
+                for j in range(n_domains):
+                    s = slice(j * per_domain, (j + 1) * per_domain)
+                    risks.append(F.cross_entropy(logits[s], yb[s]))
+                    moments.append(self._statistical_moments(
+                        feature_map[s], logits[s], yb[s], predicates, normalize
+                    ))
 
-            risk = (torch.stack(risks) * risk_weights).sum()
-            moments = torch.stack(moments)
+                weights = torch.as_tensor(
+                    counts[selected] / counts.sum() * len(counts) / n_domains,
+                    dtype=logits.dtype, device=self.device
+                )
+                risk = (torch.stack(risks) * (
+                    weights if risk_weighting == "pooled"
+                    else torch.ones_like(weights) / n_domains
+                )).sum()
 
-            if constraint_scope == "pooled":
-                penalty = (moments * moment_weights[:, None, None]).sum(dim=0).square().mean()
+                moments = torch.stack(moments)
+                penalty = (
+                    (moments * weights[:, None, None]).sum(0).square().mean()
+                    if constraint_scope == "pooled"
+                    else moments.square().mean()
+                )
+
+                (risk + lam * penalty).backward()
+                optimizer.step()
+                total_risk += risk.detach().item()
+                total_penalty += penalty.detach().item()
+
+            self.history_.append((total_risk / n_steps, total_penalty / n_steps))
+
+            if val_loader is None:
+                continue
+
+            model.eval()
+            val_loss = 0.0
+            with torch.no_grad():
+                for xb, yb in val_loader:
+                    xb, yb = xb.to(self.device), yb.to(self.device)
+                    val_loss += F.cross_entropy(model(xb), yb, reduction="sum").item()
+
+            val_loss /= len(val_idx)
+            if val_loss < best_loss - min_delta:
+                best_loss = val_loss
+                best_state = {
+                    k: v.detach().cpu().clone()
+                    for k, v in model.state_dict().items()
+                }
+                stale = 0
             else:
-                penalty = moments.square().mean()
+                stale += 1
+                if stale >= patience:
+                    break
 
-            (risk + lam * penalty).backward()
-            optimizer.step()
-            self.history_.append((risk.item(), penalty.item()))
-
+        if best_state is not None:
+            model.load_state_dict(best_state)
         self.model = model
         return self
 
     def predict_proba(self, X, domains=None, super_domains=None):
         if self.model is None:
             raise RuntimeError("Learning algorithm has not been fitted.")
+
         self.model.eval()
+        outputs = []
         with torch.no_grad():
-            X = torch.as_tensor(X, dtype=torch.float32, device=self.device)
-            return self.model(X).softmax(dim=1).cpu().numpy()
+            for i in range(0, len(X), self.prediction_batch_size):
+                xb = torch.as_tensor(
+                    X[i:i + self.prediction_batch_size],
+                    dtype=torch.float32, device=self.device
+                )
+                outputs.append(self.model(xb).softmax(dim=1).cpu().numpy())
+        return np.concatenate(outputs)
 
     def predict(self, X, domains=None, super_domains=None):
         return self.classes_[self.predict_proba(X, domains, super_domains).argmax(axis=1)]
 
     def save(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
+        for module in self.model.modules():
+            if parametrize.is_parametrized(module):
+                for name in list(module.parametrizations):
+                    parametrize.remove_parametrizations(module, name, leave_parametrized=True)
         with open(path, "wb") as file:
             pickle.dump(self, file)
 
@@ -154,8 +243,3 @@ class ResidualMoments(BaseLearningAlgorithm):
     def load(cls, path):
         with open(path, "rb") as file:
             return pickle.load(file)
-
-    @staticmethod
-    def _reset_parameters(module):
-        if hasattr(module, "reset_parameters"):
-            module.reset_parameters()

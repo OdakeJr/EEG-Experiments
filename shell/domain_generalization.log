@@ -1,87 +1,58 @@
 
 ==================================================
 Running: main/domain_generalization/params/cross_subject/params_bci2a.py
-Log:     logs/domain_generalization/20261030_164315/params_bci2a.log
+Log:     logs/domain_generalization/20261030_170350/params_bci2a.log
 ==================================================
-[2026-10-30 16:43:18] [Pipeline] Starting | pid=92304 | scenario=cross_subject | workers=1 | evaluation_workers=1
-[2026-10-30 16:43:18] [Pipeline] Params | main/domain_generalization/params/cross_subject/params_bci2a.py
-[2026-10-30 16:43:18] [Preprocessing] Starting...
-[2026-10-30 16:43:18] [Preprocessing] Done | elapsed=0s
-[2026-10-30 16:43:18] [Scenarios] Starting...
-[2026-10-30 16:43:18] [Scenarios] Done | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Starting...
-[2026-10-30 16:43:18] [Representation] Tasks=9 | workers=1
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_2f0c6c9e6270 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_2f0c6c9e6270 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 1/9 | remaining=8 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_d591024e24da | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_d591024e24da | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 2/9 | remaining=7 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_86ae1443d8ba | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_86ae1443d8ba | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 3/9 | remaining=6 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_4651bb4c7a87 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_4651bb4c7a87 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 4/9 | remaining=5 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_a8c7b5ef7996 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_a8c7b5ef7996 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 5/9 | remaining=4 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_41ec72bf7413 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_41ec72bf7413 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 6/9 | remaining=3 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_d7a080b3ea81 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_d7a080b3ea81 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 7/9 | remaining=2 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_88683bbd824f | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_88683bbd824f | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 8/9 | remaining=1 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation task] Starting | pid=92304 | split=cross_subject_d4e53dfb94e4 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
-[2026-10-30 16:43:18] [Representation task] Done | pid=92304 | split=cross_subject_d4e53dfb94e4 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
-[2026-10-30 16:43:18] [Representation] Progress 9/9 | remaining=0 | elapsed=0s | eta≈0s
-[2026-10-30 16:43:18] [Representation] Done | elapsed=0s
-[2026-10-30 16:43:18] [Training] Starting...
-[2026-10-30 16:43:18] [Training] Tasks=45 | workers=1
-[2026-10-30 16:43:18] [Training task] Starting | pid=92304 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_erm
-[2026-10-30 16:43:40] [Training task] Done | pid=92304 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_erm | elapsed=22s
-[2026-10-30 16:43:40] [Training] Progress 1/45 | remaining=44 | elapsed=22s | eta≈16.0m
-[2026-10-30 16:43:40] [Training task] Starting | pid=92304 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__linear_pooled
-[2026-10-30 16:44:37] [Training task] FAILED | pid=92304 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__linear_pooled | RuntimeError: MPS backend out of memory (MPS allocated: 7.73 GB, other allocations: 780.58 MB, max allowed: 9.07 GB). Tried to allocate 774.21 MB on private pool. Use PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 to disable upper limit for memory allocations (may cause system failure).
-Traceback (most recent call last):
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/domain_generalization/main.py", line 350, in <module>
-    main(parser.parse_args().params)
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/domain_generalization/main.py", line 306, in main
-    models = _run_stage(
-             ^^^^^^^^^^^
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/domain_generalization/main.py", line 56, in _run_stage
-    result = function(*args)
-             ^^^^^^^^^^^^^^^
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/domain_generalization/main.py", line 236, in training_stage
-    for item_idx, model_idx, model in _run_tasks(
-                                      ^^^^^^^^^^^
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/domain_generalization/main.py", line 84, in _run_tasks
-    results.append(function(task))
-                   ^^^^^^^^^^^^^^
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/main/domain_generalization/main.py", line 156, in _training_task
-    model = run_training(
-            ^^^^^^^^^^^^^
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/pipeline/training.py", line 260, in run_training
-    learner.fit(
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/ml/learning/domain_generalization/proposed/residual_moments.py", line 114, in fit
-    feature_map = model.extract_feature_map(x_e)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/edsonodake/Library/Mobile Documents/com~apple~CloudDocs/Documents/Doutorado/Code/2026/Code Paper 2 Git/EEG-Experiments/ml/models/eegnet.py", line 49, in extract_feature_map
-    X = layer(X)
-        ^^^^^^^^
-  File "/Users/edsonodake/miniforge3/envs/eeg311/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/edsonodake/miniforge3/envs/eeg311/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/edsonodake/miniforge3/envs/eeg311/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 460, in forward
-    return self._conv_forward(input, self.weight, self.bias)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/edsonodake/miniforge3/envs/eeg311/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 456, in _conv_forward
-    return F.conv2d(input, weight, bias, self.stride,
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-RuntimeError: MPS backend out of memory (MPS allocated: 7.73 GB, other allocations: 780.58 MB, max allowed: 9.07 GB). Tried to allocate 774.21 MB on private pool. Use PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 to disable upper limit for memory allocations (may cause system failure).
+[2026-10-30 17:03:54] [Pipeline] Starting | pid=95062 | scenario=cross_subject | workers=1 | evaluation_workers=1
+[2026-10-30 17:03:54] [Pipeline] Params | main/domain_generalization/params/cross_subject/params_bci2a.py
+[2026-10-30 17:03:54] [Preprocessing] Starting...
+[2026-10-30 17:03:54] [Preprocessing] Done | elapsed=0s
+[2026-10-30 17:03:54] [Scenarios] Starting...
+[2026-10-30 17:03:54] [Scenarios] Done | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Starting...
+[2026-10-30 17:03:54] [Representation] Tasks=9 | workers=1
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_2f0c6c9e6270 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_2f0c6c9e6270 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 1/9 | remaining=8 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_d591024e24da | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_d591024e24da | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 2/9 | remaining=7 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_86ae1443d8ba | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_86ae1443d8ba | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 3/9 | remaining=6 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_4651bb4c7a87 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_4651bb4c7a87 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 4/9 | remaining=5 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_a8c7b5ef7996 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_a8c7b5ef7996 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 5/9 | remaining=4 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_41ec72bf7413 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_41ec72bf7413 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 6/9 | remaining=3 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_d7a080b3ea81 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_d7a080b3ea81 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 7/9 | remaining=2 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_88683bbd824f | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_88683bbd824f | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 8/9 | remaining=1 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation task] Starting | pid=95062 | split=cross_subject_d4e53dfb94e4 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 17:03:54] [Representation task] Done | pid=95062 | split=cross_subject_d4e53dfb94e4 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 17:03:54] [Representation] Progress 9/9 | remaining=0 | elapsed=0s | eta≈0s
+[2026-10-30 17:03:54] [Representation] Done | elapsed=0s
+[2026-10-30 17:03:54] [Training] Starting...
+[2026-10-30 17:03:54] [Training] Tasks=45 | workers=1
+[2026-10-30 17:03:54] [Training task] Starting | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_erm
+[2026-10-30 17:04:14] [Training task] Done | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_erm | elapsed=21s
+[2026-10-30 17:04:14] [Training] Progress 1/45 | remaining=44 | elapsed=21s | eta≈15.2m
+[2026-10-30 17:04:14] [Training task] Starting | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__linear_pooled
+[2026-10-30 17:04:33] [Training task] Done | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__linear_pooled | elapsed=18s
+[2026-10-30 17:04:33] [Training] Progress 2/45 | remaining=43 | elapsed=39s | eta≈13.9m
+[2026-10-30 17:04:33] [Training task] Starting | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__linear_domain
+[2026-10-30 17:04:52] [Training task] Done | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__linear_domain | elapsed=19s
+[2026-10-30 17:04:52] [Training] Progress 3/45 | remaining=42 | elapsed=58s | eta≈13.6m
+[2026-10-30 17:04:52] [Training task] Starting | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__quadratic_pooled
+[2026-10-30 17:05:23] [Training task] Done | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__quadratic_pooled | elapsed=31s
+[2026-10-30 17:05:23] [Training] Progress 4/45 | remaining=41 | elapsed=1.5m | eta≈15.2m
+[2026-10-30 17:05:23] [Training task] Starting | pid=95062 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_residual_moments__quadratic_domain
+./shell/domain_generalization.sh: line 8: 95062 Terminated: 15          python main/domain_generalization/main.py --params "$params" 2>&1
+     95063 Done                    | tee "$log_file"

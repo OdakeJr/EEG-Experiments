@@ -99,7 +99,7 @@ NEURAL_PARAMS = {
 """
 
 NEURAL_PARAMS = {
-    "epochs": 1,
+    "epochs": 100,
     "batch_size": 64,
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
@@ -107,7 +107,7 @@ NEURAL_PARAMS = {
     "device": "mps",
     "seed": 0,
     "validation_fraction": 0.1,
-    "patience": 1,
+    "patience": 20,
     "min_delta": 0.0,
 }
 
