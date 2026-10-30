@@ -1,0 +1,52 @@
+nohup: ignorando entrada
+
+==================================================
+Running: main/domain_generalization/params/cross_subject/params_bci2a.py
+Log:     logs/domain_generalization/20261030_094418/params_bci2a.log
+==================================================
+[2026-10-30 09:44:19] [Pipeline] Starting | pid=2268689 | scenario=cross_subject | workers=8 | evaluation_workers=4
+[2026-10-30 09:44:19] [Pipeline] Params | main/domain_generalization/params/cross_subject/params_bci2a.py
+[2026-10-30 09:44:19] [Preprocessing] Starting...
+[2026-10-30 09:44:19] [Preprocessing] Done | elapsed=0s
+[2026-10-30 09:44:19] [Scenarios] Starting...
+[2026-10-30 09:44:19] [Scenarios] Done | elapsed=0s
+[2026-10-30 09:44:19] [Representation] Starting...
+[2026-10-30 09:44:19] [Representation] Tasks=9 | workers=8
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268726 | split=cross_subject_2f0c6c9e6270 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268727 | split=cross_subject_d591024e24da | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268728 | split=cross_subject_86ae1443d8ba | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268729 | split=cross_subject_4651bb4c7a87 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268730 | split=cross_subject_a8c7b5ef7996 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268731 | split=cross_subject_41ec72bf7413 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268726 | split=cross_subject_2f0c6c9e6270 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268728 | split=cross_subject_86ae1443d8ba | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268727 | split=cross_subject_d591024e24da | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268729 | split=cross_subject_4651bb4c7a87 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268726 | split=cross_subject_88683bbd824f | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268733 | split=cross_subject_d7a080b3ea81 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Starting | pid=2268727 | split=cross_subject_d4e53dfb94e4 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268730 | split=cross_subject_a8c7b5ef7996 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268726 | split=cross_subject_88683bbd824f | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268727 | split=cross_subject_d4e53dfb94e4 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation] Progress 1/9 | remaining=8 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268731 | split=cross_subject_41ec72bf7413 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation] Progress 2/9 | remaining=7 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation] Progress 3/9 | remaining=6 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation] Progress 4/9 | remaining=5 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation] Progress 5/9 | remaining=4 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation] Progress 6/9 | remaining=3 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation] Progress 7/9 | remaining=2 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation task] Done | pid=2268733 | split=cross_subject_d7a080b3ea81 | group=bci2a_cross_subject_broad_1_38 | representation=standardized_signal | elapsed=0s
+[2026-10-30 09:44:19] [Representation] Progress 8/9 | remaining=1 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation] Progress 9/9 | remaining=0 | elapsed=0s | eta≈0s
+[2026-10-30 09:44:19] [Representation] Done | elapsed=0s
+[2026-10-30 09:44:19] [Training] Starting...
+[2026-10-30 09:44:19] [Training] Tasks=72 | workers=8
+[2026-10-30 09:44:19] [Training task] Starting | pid=2268747 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_erm
+[2026-10-30 09:44:19] [Training task] Starting | pid=2268748 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_irm
+[2026-10-30 09:44:19] [Training task] Starting | pid=2268749 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_vrex
+[2026-10-30 09:44:19] [Training task] Starting | pid=2268750 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_groupdro
+[2026-10-30 09:44:19] [Training task] Starting | pid=2268751 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_coral
+[2026-10-30 09:44:19] [Training task] Starting | pid=2268752 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_mmd
+[2026-10-30 09:44:19] [Training task] Starting | pid=2268753 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_dg_dann
+[2026-10-30 09:44:19] [Training task] Starting | pid=2268754 | item=1 | split=cross_subject_2f0c6c9e6270 | representation=standardized_signal | model=eegnet_mldg

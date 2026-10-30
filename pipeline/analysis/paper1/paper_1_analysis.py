@@ -435,34 +435,40 @@ def _summarize_representation_ba(subject_results, split):
     )
 
 
-def build_representation_summary(train_subject_results, test_subject_results):
-    train = _summarize_representation_ba(train_subject_results, "Train")
-    test = _summarize_representation_ba(test_subject_results, "Test")
-    grouped = train.merge(
-        test,
-        on=["Dataset", "Representation", "Scenario"],
-        how="outer",
-    )
+
+def build_representation_summary(results):
+    def summarize(data, split):
+        config = _configuration_columns(data)
+        subjects = data.groupby(
+            config + ["Subject"], dropna=False, as_index=False
+        )["Balanced Accuracy"].mean()
+        points = subjects.groupby(
+            config, dropna=False, as_index=False
+        )["Balanced Accuracy"].mean()
+        return (
+            points.groupby(["Dataset", "Representation", "Scenario"], dropna=False)
+            ["Balanced Accuracy"].agg(["mean", "std"])
+            .rename(columns={"mean": f"{split}_ba_mean", "std": f"{split}_ba_std"})
+            .reset_index()
+        )
+
+    train = summarize(_source_train_results(results), "train")
+    test = summarize(_target_test_results(results), "test")
+    grouped = train.merge(test, on=["Dataset", "Representation", "Scenario"], how="outer")
+
     rows = []
-    for (dataset, representation), group in grouped.groupby(
-        ["Dataset", "Representation"], dropna=False
-    ):
+    for (dataset, representation), group in grouped.groupby(["Dataset", "Representation"]):
         row = {"Dataset": dataset, "Representation": representation}
         for scenario in SCENARIO_DISPLAY.values():
             current = group[group["Scenario"] == scenario]
-            if current.empty:
-                for split in ["Train", "Test"]:
-                    row[f"{scenario} {split} BA Mean"] = np.nan
-                    row[f"{scenario} {split} BA Std"] = np.nan
-                continue
-            values = current.iloc[0]
             for split in ["Train", "Test"]:
-                prefix = split.lower()
-                row[f"{scenario} {split} BA Mean"] = values.get(f"{prefix}_ba_mean", np.nan)
-                row[f"{scenario} {split} BA Std"] = values.get(f"{prefix}_ba_std", np.nan)
+                for stat in ["Mean", "Std"]:
+                    key = f"{scenario} {split} BA {stat}"
+                    column = f"{split.lower()}_ba_{stat.lower()}"
+                    row[key] = current.iloc[0][column] if not current.empty else np.nan
         rows.append(row)
-    return pd.DataFrame(rows)
 
+    return pd.DataFrame(rows)
 
 
 def plot_representation_generalization(results):
@@ -1247,7 +1253,7 @@ def generate_representation_summary_latex(summary):
         r"\begin{table*}[t]",
         r"\centering",
         r"\small",
-        r"\caption{Balanced Accuracy of the evaluated EEG representations across generalization regimes. Values are reported as mean $\pm$ standard deviation across subjects.}",
+        r"\caption{Balanced Accuracy of EEG representations across generalization regimes. Values are reported as mean $\pm$ standard deviation across configurations, after averaging across subjects.}",
         r"\label{tab:representation_summary}",
         r"\begin{tabular}{llcccccc}",
         r"\toprule",
@@ -1626,7 +1632,7 @@ def run_paper1_analysis(model_results_artifact, params=None):
         return None
     effective_params = {
         "analysis": "paper1",
-        "analysis_version": 6,
+        "analysis_version": 7,
         "params": params,
         "inputs": {
             scenario: {
@@ -1666,9 +1672,7 @@ def run_paper1_analysis(model_results_artifact, params=None):
         save_analysis_coverage(results)
         representation_subjects = build_representation_subject_results(results)
         representation_train_subjects = build_representation_train_subject_results(results)
-        representation_summary = build_representation_summary(
-            representation_train_subjects, representation_subjects
-        )
+        representation_summary = build_representation_summary(results)
         representation_subjects.to_csv(
             TABLES_DIR / "representation_subject_results.csv", index=False
         )

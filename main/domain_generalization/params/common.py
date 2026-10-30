@@ -6,7 +6,7 @@
 # ============================================================
 
 EXECUTION_PARAMS = {
-    "max_workers": 2,
+    "max_workers": 8,
     "evaluation_workers": 4,
 }
 
@@ -99,7 +99,7 @@ NEURAL_PARAMS = {
 """
 
 NEURAL_PARAMS = {
-    "epochs": 300,
+    "epochs": 100,
     "batch_size": 64,
     "learning_rate": 1e-3,
     "weight_decay": 0.0,
@@ -124,25 +124,15 @@ _TRAIN_EEGNET = {
 }
 
 DG_METHODS = {
-    # "irm": {"irm_lambda": 100.0},
+    "irm": {"irm_lambda": 100.0},
     "vrex": {"vrex_lambda": 10.0},
     "groupdro": {"eta": 0.01},
     "coral": {"coral_lambda": 1.0},
-    # "mmd": {"mmd_lambda": 1.0},
-    # "dg_dann": {"dann_lambda": 1.0, "dann_gamma": 10.0},
-    # "mldg": {"mldg_alpha": 1e-3, "mldg_beta": 1.0},
-    
-    
-    "residual_moments__linear": {
-        "moment_lambda": 1.0,
-        "moment_type": "linear",
-        "normalize_features": True,
-    },
-    "residual_moments__quadratic": {
-        "moment_lambda": 1.0,
-        "moment_type": "quadratic",
-        "normalize_features": True,
-    },
+     "mmd": {"mmd_lambda": 1.0},
+     "dg_dann": {"dann_lambda": 1.0, "dann_gamma": 10.0},
+     "mldg": {"mldg_alpha": 1e-3, "mldg_beta": 1.0},
+    #"residual_moments__linear": {"moment_lambda": 1.0, "moment_type": "linear", "normalize_features": True},
+    #"residual_moments__quadratic": {"moment_lambda": 1.0, "moment_type": "quadratic", "normalize_features": True},
 }
 
 TRAINING_PARAMS = [
@@ -229,3 +219,4 @@ BENCHMARK_TABLES_PARAMS = {
 # ============================================================
 
 PAPER2_ANALYSIS_PARAMS = {}
+PAPER_ANALYSIS_PARAMS = PAPER2_ANALYSIS_PARAMS

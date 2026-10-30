@@ -24,9 +24,9 @@ run() {
 
 # Cross-subject
 run "main/domain_generalization/params/cross_subject/params_bci2a.py"
-run "main/domain_generalization/params/cross_subject/params_eegmmidb.py"
-run "main/domain_generalization/params/cross_subject/params_weibo.py"
-run "main/domain_generalization/params/cross_subject/params_zhou.py"
+#run "main/domain_generalization/params/cross_subject/params_eegmmidb.py"
+#run "main/domain_generalization/params/cross_subject/params_weibo.py"
+#run "main/domain_generalization/params/cross_subject/params_zhou.py"
 
 echo
 echo "All runs finished successfully."
