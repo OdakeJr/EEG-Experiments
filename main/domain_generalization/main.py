@@ -1,4 +1,4 @@
-# main/feature_grid/main.py
+# main/domain_generalization/main.py
 
 import argparse
 import importlib.util
@@ -290,9 +290,10 @@ def main(params_path):
     )
 
     representation_params = build_representation_configs(
-        params.FEATURE_EXTRACTION_PARAMS,
-        params.FEATURE_SELECTION_PARAMS,
-        params.SIGNAL_TRANSFORM_PARAMS,
+        getattr(params, "FEATURE_EXTRACTION_PARAMS", []),
+        getattr(params, "FEATURE_SELECTION_PARAMS", []),
+        getattr(params, "SIGNAL_TRANSFORM_PARAMS", []),
+        getattr(params, "IMAGE_TRANSFORM_PARAMS", []),
     )
 
     representations = _run_stage(

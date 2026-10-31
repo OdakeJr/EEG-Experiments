@@ -1,3 +1,4 @@
+
 # pipeline/representation.py
 
 import json
@@ -17,6 +18,10 @@ from utils.status import is_done, make_manifest, make_signature
 OUTPUT_ROOT = Path("outputs/representation")
 
 
+# ============================================================
+# Configuration
+# ============================================================
+
 def _safe_label(text):
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", str(text)).strip("_")
 
@@ -29,7 +34,7 @@ def _json_copy(value):
 
 
 def build_representation_configs(feature_extraction_params, feature_selection_params,
-                                 signal_transform_params):
+                                 signal_transform_params, image_transform_params=None):
     configs = [
         {
             "name": f"{fe['name']}__{fs['name']}",
@@ -44,8 +49,17 @@ def build_representation_configs(feature_extraction_params, feature_selection_pa
         {"name": st["name"], "route": "signal", "signal_transform": deepcopy(st)}
         for st in signal_transform_params
     ]
+
+    configs += [
+        {"name": im["name"], "route": "image", "image_transform": deepcopy(im)}
+        for im in (image_transform_params or [])
+    ]
     return configs
 
+
+# ============================================================
+# Representation steps
+# ============================================================
 
 def _prepare_extractor(config, view):
     method = config["method"]
@@ -57,24 +71,20 @@ def _prepare_extractor(config, view):
             "channel_names": getattr(view, "channel_names", None),
             "band_labels": getattr(view, "band_labels", None),
         }
-
     return {"method": method, "params": params}
 
 
 def _feature_extraction_step(config, view):
-    raw_extractors = deepcopy(config.get("extractors"))
-    if raw_extractors is None:
-        raw_extractors = [{"method": config["method"], "params": config.get("params", {})}]
-
-    extractors = [_prepare_extractor(extractor, view) for extractor in raw_extractors]
-    trace_params = raw_extractors if "extractors" in config else deepcopy(config.get("params", {}))
+    raw = deepcopy(config.get("extractors"))
+    if raw is None:
+        raw = [{"method": config["method"], "params": config.get("params", {})}]
 
     return {
         "kind": "feature_extraction",
         "config_label": _safe_label(config["name"]),
-        "extractors": extractors,
-        "trace_method": "__".join(extractor["method"] for extractor in raw_extractors),
-        "trace_params": trace_params,
+        "extractors": [_prepare_extractor(x, view) for x in raw],
+        "trace_method": "__".join(x["method"] for x in raw),
+        "trace_params": raw if "extractors" in config else deepcopy(config.get("params", {})),
     }
 
 
@@ -101,14 +111,19 @@ def _signal_transform_step(config):
 
 
 def _build_steps(config, view):
-    if config["route"] == "features":
+    route = config["route"]
+
+    if route == "features":
         return [
             _feature_extraction_step(config["feature_extraction"], view),
             _feature_selection_step(config["feature_selection"]),
         ]
-    if config["route"] == "signal":
+    if route == "signal":
         return [_signal_transform_step(config["signal_transform"])]
-    raise ValueError(f"Unknown representation route: {config['route']}")
+    if route == "image":
+        return []
+
+    raise ValueError(f"Unknown representation route: {route}")
 
 
 def _validate_input(transformer, representation):
@@ -116,6 +131,10 @@ def _validate_input(transformer, representation):
     if expected != "any" and expected != representation:
         raise ValueError(f"Transformer expects '{expected}', got '{representation}'.")
 
+
+# ============================================================
+# Representation pipeline
+# ============================================================
 
 class RepresentationPipeline:
     def __init__(self, steps):
@@ -129,7 +148,9 @@ class RepresentationPipeline:
                     for x in step["extractors"]
                 ])
             else:
-                self.steps.append(get_representation_transformer(step["method"], step["params"]))
+                self.steps.append(
+                    get_representation_transformer(step["method"], step["params"])
+                )
 
         self.input_representation = None
         self.output_representation = None
@@ -156,7 +177,7 @@ class RepresentationPipeline:
                 representation = transformer.output_representation
 
         self.output_representation = representation
-        self.output_shape_ = tuple(X.shape[1:])
+        self.output_shape_ = None if representation == "image" else tuple(X.shape[1:])
         return self
 
     def transform(self, X, domains=None):
@@ -178,14 +199,19 @@ class RepresentationPipeline:
         return X
 
 
+# ============================================================
+# Helpers
+# ============================================================
+
 def _get_fit_data(data, fit_partitions):
     X, y, domains = [], [], []
 
     for group in (data.source, data.target_super_domain, data.target_elementary_domain):
         if group is None:
             continue
+
         mask = np.isin(group.partitions, fit_partitions)
-        if np.any(mask):
+        if mask.any():
             X.append(group.X[mask])
             y.append(group.y[mask])
             domains.append(group.elementary_domains[mask])
@@ -197,7 +223,7 @@ def _get_fit_data(data, fit_partitions):
 
 
 def _step_info(steps, kind):
-    step = next((step for step in steps if step["kind"] == kind), None)
+    step = next((s for s in steps if s["kind"] == kind), None)
     if step is None:
         return None, None, None
     return step["trace_method"], _json_copy(step["trace_params"]), step["config_label"]
@@ -222,8 +248,8 @@ def _trace(steps):
 
 
 def _get_output_paths(scenario, group, split_id, name, signature):
-    output_dir = OUTPUT_ROOT / scenario / group / split_id / f"{name}_{signature[:12]}"
-    return output_dir / "transformer.pkl", output_dir / "manifest.json"
+    root = OUTPUT_ROOT / scenario / group / split_id / f"{name}_{signature[:12]}"
+    return root / "transformer.pkl", root / "manifest.json"
 
 
 def _make_artifact(split, transformer_path, manifest_path, signature, config,
@@ -245,9 +271,18 @@ def _make_artifact(split, transformer_path, manifest_path, signature, config,
     )
 
 
+# ============================================================
+# Main representation stage
+# ============================================================
+
 def run_representation(split, view, representation_params, group="default"):
-    steps = _build_steps(representation_params, view)
+    route = representation_params["route"]
     input_representation = getattr(view, "representation", "signal")
+
+    if (route == "image") != (input_representation == "image"):
+        raise ValueError(f"Incompatible representation: {input_representation} -> {route}")
+
+    steps = _build_steps(representation_params, view)
     fit_partitions = representation_params.get("fit_partitions", ["train"])
     name = _safe_label(representation_params["name"])
     input_manifest = load_manifest(view.manifest_path)
@@ -268,8 +303,9 @@ def run_representation(split, view, representation_params, group="default"):
     if exists(transformer_path) and is_done(manifest_path, effective_params):
         output = load_manifest(manifest_path)["output"]
         return _make_artifact(
-            split, transformer_path, manifest_path, signature, representation_params,
-            output["input_representation"], output["output_representation"], steps, view
+            split, transformer_path, manifest_path, signature,
+            representation_params, output["input_representation"],
+            output["output_representation"], steps, view
         )
 
     save_manifest(make_manifest("running", effective_params), manifest_path)
@@ -290,10 +326,13 @@ def run_representation(split, view, representation_params, group="default"):
             "transformer_path": str(transformer_path),
             "input_representation": input_representation,
             "output_representation": transformer.output_representation,
-            "input_shape": [int(v) for v in X.shape[1:]],
-            "output_shape": [int(v) for v in transformer.output_shape_],
-            "n_fit_samples": int(X.shape[0]),
-            "representation_method": representation_params["route"],
+            "input_shape": list(X.shape[1:]),
+            "output_shape": (
+                list(transformer.output_shape_)
+                if transformer.output_shape_ is not None else None
+            ),
+            "n_fit_samples": int(len(X)),
+            "representation_method": route,
             "representation_params": _json_copy(representation_params),
             "representation_config_label": name,
             **_trace(steps),
@@ -303,14 +342,15 @@ def run_representation(split, view, representation_params, group="default"):
         save_manifest(manifest, manifest_path)
 
     except Exception as error:
-        save_manifest(
-            make_manifest("failed", effective_params,
-                          execution_time=time.perf_counter() - start, error=str(error)),
-            manifest_path,
-        )
+        save_manifest(make_manifest(
+            "failed", effective_params,
+            execution_time=time.perf_counter() - start,
+            error=str(error),
+        ), manifest_path)
         raise
 
     return _make_artifact(
-        split, transformer_path, manifest_path, signature, representation_params,
-        input_representation, transformer.output_representation, steps, view
+        split, transformer_path, manifest_path, signature,
+        representation_params, input_representation,
+        transformer.output_representation, steps, view
     )

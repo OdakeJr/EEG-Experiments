@@ -1,19 +1,25 @@
 
 # ml/learning/domain_generalization/mldg.py
 
-import copy
 import pickle
 from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from sklearn.model_selection import train_test_split
 from torch.func import functional_call
 from torch.nn.utils import parametrize
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
 from ml.learning.base import BaseLearningAlgorithm
+from ml.learning.lib.data import (
+    class_mapping, split_indices, make_loader, DomainBalancedBatchSampler
+)
+from ml.learning.lib.neural import (
+    make_optimizer, validation_loss, EarlyStopping,
+    predict_proba as batched_predict_proba,
+)
+from models.scenario_data import DataGroup
 
 
 class MLDG(BaseLearningAlgorithm):
@@ -21,177 +27,189 @@ class MLDG(BaseLearningAlgorithm):
         self.model = None
         self.classes_ = None
         self.device = "cpu"
+        self.eval_transform = None
+        self.prediction_batch_size = 256
+        self.prediction_num_workers = 0
+
+    def _prepare_loaders(self, source, params):
+        if source is None:
+            raise ValueError("MLDG requires source data.")
+
+        mask = source.partitions == "train"
+        if not mask.any():
+            raise ValueError("No source training samples found.")
+
+        X, y = source.X[mask], source.y[mask]
+        domains = source.elementary_domains[mask]
+        self.classes_, mapping = class_mapping(y)
+
+        _, val_idx = split_indices(
+            y, params.get("validation_fraction", 0.2),
+            params.get("seed", 42)
+        )
+        partitions = np.full(len(y), "train", dtype=object)
+        if val_idx is not None:
+            partitions[val_idx] = "validation"
+
+        group = DataGroup(X, y, domains, partitions)
+        common = {
+            "group": group,
+            "class_to_idx": mapping,
+            "batch_size": params.get("batch_size", 64),
+            "seed": params.get("seed", 42),
+        }
+
+        train_loader = make_loader(
+            **common, partition="train", domain_balanced=True,
+            domains_per_batch=params.get("domains_per_batch", 4)
+        )
+        val_loader = (
+            make_loader(**common, partition="validation")
+            if val_idx is not None else None
+        )
+        return train_loader, val_loader
 
     def fit(self, model, source=None, target_super_domain=None,
             target_elementary_domain=None, **params):
-        if source is None:
-            raise ValueError("MLDG requires source data.")
-        mask = source.partitions == "train"
-        if not np.any(mask):
-            raise ValueError("No source training samples found.")
-
-        X, y, domains = source.X[mask], source.y[mask], source.elementary_domains[mask]
-        self.classes_, y = np.unique(y, return_inverse=True)
 
         seed = params.get("seed", 42)
-        rng = np.random.default_rng(seed)
+        batch_size = params.get("batch_size", 64)
+        self.device = params.get("device", "cpu")
+
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
-        epochs = params.get("epochs", 100)
-        batch_size = params.get("batch_size", 64)
-        val_fraction = params.get("validation_fraction", 0.2)
-        patience = params.get("patience", 20)
-        min_delta = params.get("min_delta", 0.0)
-        inner_lr = params.get("mldg_alpha", 1e-3)
-        meta_weight = params.get("mldg_beta", 1.0)
-        self.device = params.get("device", "cpu")
+        train_loader = params.get("train_loader")
+        val_loader = params.get("val_loader")
 
-        indices = np.arange(len(y))
-        if val_fraction > 0:
-            train_idx, val_idx = train_test_split(
-                indices, test_size=val_fraction, stratify=y, random_state=seed
-            )
+        if train_loader is None:
+            if getattr(model, "input_representation", None) == "image":
+                raise ValueError("Image training requires train_loader.")
+
+            train_loader, val_loader = self._prepare_loaders(source, params)
+            self.eval_transform = None
         else:
-            train_idx, val_idx = indices, None
+            mapping = params["class_to_idx"]
+            self.classes_ = np.asarray(sorted(mapping, key=mapping.get))
+            self.eval_transform = params["eval_transform"]
+            self.prediction_batch_size = params.get(
+                "prediction_batch_size", batch_size
+            )
+            self.prediction_num_workers = params.get("num_workers", 0)
 
-        domain_indices = [
-            train_idx[domains[train_idx] == domain]
-            for domain in np.unique(domains[train_idx])
-        ]
-        n_domains = min(int(params.get("domains_per_batch", 4)), len(domain_indices))
-        if n_domains < 2 or batch_size // n_domains < 2:
-            raise ValueError("MLDG requires at least 2 domains and 2 samples per domain.")
+            sampler = DomainBalancedBatchSampler(
+                train_loader.dataset.domains, batch_size,
+                params.get("domains_per_batch", 4), seed
+            )
+            train_loader = DataLoader(
+                train_loader.dataset, batch_sampler=sampler,
+                num_workers=params.get("num_workers", 0)
+            )
 
-        per_domain = batch_size // n_domains
-        X = torch.as_tensor(X, dtype=torch.float32)
-        y = torch.as_tensor(y, dtype=torch.long)
+        n_domains = train_loader.batch_sampler.n_domains
+        per_domain = train_loader.batch_sampler.per_domain
 
-        val_loader = None if val_idx is None else DataLoader(
-            TensorDataset(X[val_idx], y[val_idx]), batch_size=batch_size
-        )
+        # ----------------------------------------------------
+        # Model and optimizer
+        # ----------------------------------------------------
 
         model = model.to(self.device)
-        optimizer_name = params.get("optimizer", "adam")
-        optimizers = {"adam": torch.optim.Adam, "adamw": torch.optim.AdamW}
-
-        if optimizer_name not in optimizers:
-            raise ValueError(f"Unknown optimizer: {optimizer_name}")
-
-        optimizer = optimizers[optimizer_name](
-            model.parameters(),
-            lr=params.get("learning_rate", 1e-3),
+        optimizer = make_optimizer(
+            model,
+            name=params.get("optimizer", "adam"),
+            learning_rate=params.get("learning_rate", 1e-3),
             weight_decay=params.get("weight_decay", 0.0),
         )
+        early_stop = EarlyStopping(
+            patience=params.get("patience", 20),
+            min_delta=params.get("min_delta", 0.0),
+        )
 
-        best_loss, best_state, stale_epochs = float("inf"), None, 0
-        n_steps = int(np.ceil(len(train_idx) / batch_size))
+        inner_lr = params.get("mldg_alpha", 1e-3)
+        meta_weight = params.get("mldg_beta", 1.0)
 
-        for _ in range(epochs):
+        # ----------------------------------------------------
+        # Training
+        # ----------------------------------------------------
+
+        for _ in range(params.get("epochs", 100)):
             model.train()
 
-            for _ in range(n_steps):
-                chosen = rng.choice(
-                    len(domain_indices), size=n_domains, replace=False
-                )
-                groups = [
-                    rng.choice(
-                        domain_indices[d], size=per_domain,
-                        replace=len(domain_indices[d]) < per_domain
-                    )
-                    for d in chosen
-                ]
+            for batch in train_loader:
+                xb, yb = (v.to(self.device) for v in batch[:2])
 
-                train_batch = np.concatenate(groups[:-1])
-                test_batch = groups[-1]
-
-                x_train = X[train_batch].to(self.device)
-                y_train = y[train_batch].to(self.device)
-                x_test = X[test_batch].to(self.device)
-                y_test = y[test_batch].to(self.device)
+                # Last domain is used for meta-testing.
+                split = (n_domains - 1) * per_domain
+                x_train, y_train = xb[:split], yb[:split]
+                x_test, y_test = xb[split:], yb[split:]
 
                 optimizer.zero_grad()
 
-                # Meta-train: temporary adaptation on source domains.
-                train_loss = F.cross_entropy(model(x_train), y_train)
-                weights = dict(model.named_parameters())
-
-                inner_grad = torch.autograd.grad(
-                    train_loss, tuple(weights.values()), retain_graph=True
+                # Meta-train
+                train_loss = F.cross_entropy(
+                    model(x_train), y_train
                 )
+
+                weights = dict(model.named_parameters())
+                gradients = torch.autograd.grad(
+                    train_loss, tuple(weights.values()),
+                    retain_graph=True, create_graph=False
+                )
+
                 fast_weights = {
                     name: weight - inner_lr * grad
-                    for (name, weight), grad in zip(weights.items(), inner_grad)
+                    for (name, weight), grad in zip(
+                        weights.items(), gradients
+                    )
                 }
 
-                # Meta-test: evaluate adapted weights on another source domain.
+                # Meta-test
                 buffers = {
                     name: value.clone()
                     for name, value in model.named_buffers()
                 }
+
                 meta_logits = functional_call(
                     model, (fast_weights, buffers), (x_test,)
                 )
                 meta_loss = F.cross_entropy(meta_logits, y_test)
 
-                # First-order MLDG update.
+                # First-order MLDG objective
                 loss = train_loss + meta_weight * meta_loss
                 loss.backward()
                 optimizer.step()
 
-            if val_loader is None:
-                continue
+            val_loss = validation_loss(model, val_loader, self.device)
+            if early_stop.step(val_loss, model):
+                break
 
-            model.eval()
-            val_loss = 0.0
-
-            with torch.no_grad():
-                for xb, yb in val_loader:
-                    xb, yb = xb.to(self.device), yb.to(self.device)
-                    val_loss += F.cross_entropy(
-                        model(xb), yb, reduction="sum"
-                    ).item()
-
-            val_loss /= len(val_idx)
-
-            if val_loss < best_loss - min_delta:
-                best_loss = val_loss
-                best_state = copy.deepcopy(model.state_dict())
-                stale_epochs = 0
-            else:
-                stale_epochs += 1
-                if stale_epochs >= patience:
-                    break
-
-        if best_state is not None:
-            model.load_state_dict(best_state)
-
-        self.model = model
+        self.model = early_stop.restore(model)
         return self
+
+    # ----------------------------------------------------
+    # Prediction
+    # ----------------------------------------------------
 
     def predict_proba(self, X, domains=None, super_domains=None):
         if self.model is None:
             raise RuntimeError("MLDG has not been fitted.")
 
-        self.model.eval()
-        probabilities = []
-
-        with torch.no_grad():
-            for start in range(0, len(X), 256):
-                xb = torch.as_tensor(
-                    X[start:start + 256],
-                    dtype=torch.float32,
-                    device=self.device,
-                )
-                probabilities.append(
-                    F.softmax(self.model(xb), dim=1).cpu().numpy()
-                )
-
-        return np.concatenate(probabilities)
+        return batched_predict_proba(
+            self.model, X, device=self.device,
+            batch_size=getattr(self, "prediction_batch_size", 256),
+            transform=getattr(self, "eval_transform", None),
+            num_workers=getattr(self, "prediction_num_workers", 0),
+        )
 
     def predict(self, X, domains=None, super_domains=None):
-        return self.classes_[self.predict_proba(X).argmax(axis=1)]
+        return self.classes_[
+            self.predict_proba(X, domains, super_domains).argmax(axis=1)
+        ]
+
+    # ----------------------------------------------------
+    # Persistence
+    # ----------------------------------------------------
 
     def save(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)

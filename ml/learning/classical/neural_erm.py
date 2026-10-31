@@ -1,17 +1,21 @@
+
 # ml/learning/classical/neural_erm.py
 
-import copy
 import pickle
 from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn as nn
-from sklearn.model_selection import train_test_split
+import torch.nn.functional as F
 from torch.nn.utils import parametrize
-from torch.utils.data import DataLoader, TensorDataset
 
 from ml.learning.base import BaseLearningAlgorithm
+from ml.learning.lib.data import class_mapping, split_indices, make_loader
+from ml.learning.lib.neural import (
+    make_optimizer, validation_loss, EarlyStopping,
+    predict_proba as batched_predict_proba,
+)
+from models.scenario_data import DataGroup
 
 
 class NeuralERM(BaseLearningAlgorithm):
@@ -20,196 +24,150 @@ class NeuralERM(BaseLearningAlgorithm):
         self.model = None
         self.classes_ = None
         self.device = "cpu"
+        self.eval_transform = None
+        self.prediction_batch_size = 256
+        self.prediction_num_workers = 0
 
-    def fit(self, model, source=None, target_super_domain=None,
-            target_elementary_domain=None, **training_params):
-
+    def _prepare_loaders(self, source, target_super_domain,
+                         target_elementary_domain, params):
         X, y = self._get_training_data(
             source, target_super_domain, target_elementary_domain
         )
+        self.classes_, mapping = class_mapping(y)
 
-        # ----------------------------------------------------
-        # Training parameters
-        # ----------------------------------------------------
+        train_idx, val_idx = split_indices(
+            y, params.get("validation_fraction", 0.2),
+            params.get("seed", 42)
+        )
 
-        epochs = training_params.get("epochs", 100)
-        batch_size = training_params.get("batch_size", 64)
-        learning_rate = training_params.get("learning_rate", 1e-3)
-        weight_decay = training_params.get("weight_decay", 1e-4)
-        optimizer_name = training_params.get("optimizer", "adamw")
-        self.device = training_params.get("device", "cpu")
-        seed = training_params.get("seed", 42)
+        partitions = np.full(len(y), "train", dtype=object)
+        if val_idx is not None:
+            partitions[val_idx] = "validation"
 
-        validation_fraction = training_params.get("validation_fraction", 0.2)
-        patience = training_params.get("patience", 20)
-        min_delta = training_params.get("min_delta", 0.0)
+        group = DataGroup(
+            X=X, y=y,
+            elementary_domains=np.full(len(y), "source"),
+            partitions=partitions,
+        )
 
-        # ----------------------------------------------------
-        # Reproducibility
-        # ----------------------------------------------------
+        common = {
+            "group": group,
+            "class_to_idx": mapping,
+            "batch_size": params.get("batch_size", 64),
+            "seed": params.get("seed", 42),
+        }
+
+        train_loader = make_loader(
+            **common, partition="train", shuffle=True
+        )
+        val_loader = (
+            make_loader(**common, partition="validation")
+            if val_idx is not None else None
+        )
+        return train_loader, val_loader
+
+    def fit(self, model, source=None, target_super_domain=None,
+            target_elementary_domain=None, **params):
+
+        seed = params.get("seed", 42)
+        self.device = params.get("device", "cpu")
 
         np.random.seed(seed)
         torch.manual_seed(seed)
-
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
         # ----------------------------------------------------
-        # Labels
+        # Data loading
         # ----------------------------------------------------
 
-        self.classes_ = np.unique(y)
-        class_to_index = {
-            label: index for index, label in enumerate(self.classes_)
-        }
-        y_encoded = np.array([class_to_index[label] for label in y])
+        train_loader = params.get("train_loader")
+        val_loader = params.get("val_loader")
 
-        # ----------------------------------------------------
-        # Train / validation split
-        # ----------------------------------------------------
-
-        indices = np.arange(len(y_encoded))
-
-        if validation_fraction > 0:
-            train_idx, val_idx = train_test_split(
-                indices,
-                test_size=validation_fraction,
-                stratify=y_encoded,
-                random_state=seed,
+        if train_loader is not None:
+            mapping = params["class_to_idx"]
+            self.classes_ = np.asarray(sorted(mapping, key=mapping.get))
+            self.eval_transform = params.get("eval_transform")
+            self.prediction_batch_size = params.get(
+                "prediction_batch_size", params.get("batch_size", 64)
             )
+            self.prediction_num_workers = params.get("num_workers", 0)
+
+            if self.eval_transform is None:
+                raise ValueError("Image training requires eval_transform.")
         else:
-            train_idx, val_idx = indices, None
+            if getattr(model, "input_representation", None) == "image":
+                raise ValueError("Image training requires train_loader.")
 
-        X_tensor = torch.as_tensor(X, dtype=torch.float32)
-        y_tensor = torch.as_tensor(y_encoded, dtype=torch.long)
-
-        generator = torch.Generator().manual_seed(seed)
-
-        train_loader = DataLoader(
-            TensorDataset(X_tensor[train_idx], y_tensor[train_idx]),
-            batch_size=batch_size,
-            shuffle=True,
-            generator=generator,
-        )
-
-        val_loader = None
-        if val_idx is not None:
-            val_loader = DataLoader(
-                TensorDataset(X_tensor[val_idx], y_tensor[val_idx]),
-                batch_size=batch_size,
-                shuffle=False,
+            train_loader, val_loader = self._prepare_loaders(
+                source, target_super_domain, target_elementary_domain, params
             )
-
-        # ----------------------------------------------------
-        # Model / optimizer / loss
-        # ----------------------------------------------------
-
-        model = model.to(self.device)
-
-        if optimizer_name == "adamw":
-            optimizer = torch.optim.AdamW(
-                model.parameters(),
-                lr=learning_rate,
-                weight_decay=weight_decay,
-            )
-        elif optimizer_name == "adam":
-            optimizer = torch.optim.Adam(
-                model.parameters(),
-                lr=learning_rate,
-                weight_decay=weight_decay,
-            )
-        else:
-            raise ValueError(
-                f"Unknown optimizer '{optimizer_name}'. "
-                "Available: ['adam', 'adamw']."
-            )
-
-        criterion = nn.CrossEntropyLoss()
+            self.eval_transform = None
+            self.prediction_batch_size = 256
+            self.prediction_num_workers = 0
 
         # ----------------------------------------------------
         # Training
         # ----------------------------------------------------
 
-        best_loss = np.inf
-        best_state = None
-        epochs_without_improvement = 0
+        model = model.to(self.device)
+        optimizer = make_optimizer(
+            model,
+            name=params.get("optimizer", "adamw"),
+            learning_rate=params.get("learning_rate", 1e-3),
+            weight_decay=params.get("weight_decay", 1e-4),
+        )
+        early_stop = EarlyStopping(
+            patience=params.get("patience", 20),
+            min_delta=params.get("min_delta", 0.0),
+        )
 
-        for _ in range(epochs):
+        for _ in range(params.get("epochs", 100)):
             model.train()
 
-            for X_batch, y_batch in train_loader:
-                X_batch = X_batch.to(self.device)
-                y_batch = y_batch.to(self.device)
+            for batch in train_loader:
+                xb, yb = (v.to(self.device) for v in batch[:2])
 
                 optimizer.zero_grad()
-                loss = criterion(model(X_batch), y_batch)
+                loss = F.cross_entropy(model(xb), yb)
                 loss.backward()
                 optimizer.step()
 
-            if val_loader is None:
-                continue
+            val_loss = validation_loss(model, val_loader, self.device)
+            if early_stop.step(val_loss, model):
+                break
 
-            model.eval()
-            val_loss = 0.0
-            n_samples = 0
-
-            with torch.no_grad():
-                for X_batch, y_batch in val_loader:
-                    X_batch = X_batch.to(self.device)
-                    y_batch = y_batch.to(self.device)
-
-                    loss = criterion(model(X_batch), y_batch)
-                    val_loss += loss.item() * len(y_batch)
-                    n_samples += len(y_batch)
-
-            val_loss /= n_samples
-
-            if val_loss < best_loss - min_delta:
-                best_loss = val_loss
-                best_state = copy.deepcopy(model.state_dict())
-                epochs_without_improvement = 0
-            else:
-                epochs_without_improvement += 1
-
-                if epochs_without_improvement >= patience:
-                    break
-
-        if best_state is not None:
-            model.load_state_dict(best_state)
-
-        self.model = model
+        self.model = early_stop.restore(model)
         return self
 
-    def predict(self, X, domains=None, super_domains=None):
-        probabilities = self.predict_proba(X, domains, super_domains)
-        indices = np.argmax(probabilities, axis=1)
-        return self.classes_[indices]
+    # --------------------------------------------------------
+    # Prediction
+    # --------------------------------------------------------
 
     def predict_proba(self, X, domains=None, super_domains=None):
         self._check_fitted()
-        self.model.eval()
+        return batched_predict_proba(
+            self.model, X, device=self.device,
+            batch_size=getattr(self, "prediction_batch_size", 256),
+            transform=getattr(self, "eval_transform", None),
+            num_workers=getattr(self, "prediction_num_workers", 0),
+        )
 
-        batch_size = 256
-        probabilities = []
+    def predict(self, X, domains=None, super_domains=None):
+        return self.classes_[
+            self.predict_proba(X, domains, super_domains).argmax(axis=1)
+        ]
 
-        with torch.no_grad():
-            for start in range(0, len(X), batch_size):
-                X_batch = torch.as_tensor(
-                    X[start:start + batch_size],
-                    dtype=torch.float32,
-                    device=self.device,
-                )
-                logits = self.model(X_batch)
-                probabilities.append(torch.softmax(logits, dim=1).cpu().numpy())
-
-        return np.concatenate(probabilities, axis=0)
+    # --------------------------------------------------------
+    # Persistence
+    # --------------------------------------------------------
 
     def save(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
 
         for module in self.model.modules():
             if parametrize.is_parametrized(module):
-                for name in list(module.parametrizations.keys()):
+                for name in list(module.parametrizations):
                     parametrize.remove_parametrizations(
                         module, name, leave_parametrized=True
                     )
@@ -223,22 +181,15 @@ class NeuralERM(BaseLearningAlgorithm):
             return pickle.load(file)
 
     @staticmethod
-    def _get_training_data(
-        source, target_super_domain, target_elementary_domain
-    ):
+    def _get_training_data(source, target_super_domain, target_elementary_domain):
         X_parts, y_parts = [], []
 
-        for group in [
-            source,
-            target_super_domain,
-            target_elementary_domain,
-        ]:
+        for group in (source, target_super_domain, target_elementary_domain):
             if group is None:
                 continue
 
             mask = group.partitions == "train"
-
-            if np.any(mask):
+            if mask.any():
                 X_parts.append(group.X[mask])
                 y_parts.append(group.y[mask])
 
@@ -249,6 +200,4 @@ class NeuralERM(BaseLearningAlgorithm):
 
     def _check_fitted(self):
         if self.model is None:
-            raise RuntimeError(
-                "Learning algorithm has not been fitted."
-            )
+            raise RuntimeError("Learning algorithm has not been fitted.")

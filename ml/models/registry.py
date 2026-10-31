@@ -1,3 +1,4 @@
+
 # ml/models/registry.py
 
 from ml.models.classical import logistic_regression, random_forest, svm
@@ -5,6 +6,7 @@ from ml.models.mlp import MLP
 from ml.models.eegnet import EEGNet
 from ml.models.shallow_fbcsp import ShallowFBCSPNet
 from ml.models.eeg_tcnet import EEGTCNet
+from ml.models.mobilenet import MobileNetV3Small
 
 
 MODELS = {
@@ -15,14 +17,14 @@ MODELS = {
     "eegnet": EEGNet,
     "shallow_fbcsp": ShallowFBCSPNet,
     "eeg_tcnet": EEGTCNet,
+    "mobilenet_v3_small": MobileNetV3Small,
 }
 
 
 def get_model(name, params=None, **context):
     if name not in MODELS:
         raise ValueError(
-            f"Unknown model '{name}'. "
-            f"Available: {sorted(MODELS)}"
+            f"Unknown model '{name}'. Available: {sorted(MODELS)}"
         )
 
     resolved_params = {**(params or {}), **context}

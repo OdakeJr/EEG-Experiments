@@ -159,3 +159,23 @@ Log:     logs/domain_generalization/20261030_171849/params_bci2a.log
 [2026-10-31 08:14:05] [Training task] Done | pid=97249 | item=8 | split=cross_subject_88683bbd824f | representation=standardized_signal | model=eegnet_residual_moments__quadratic_pooled | elapsed=24.3m
 [2026-10-31 08:14:05] [Training] Progress 39/45 | remaining=6 | elapsed=14.88h | eta≈2.29h
 [2026-10-31 08:14:05] [Training task] Starting | pid=97249 | item=8 | split=cross_subject_88683bbd824f | representation=standardized_signal | model=eegnet_residual_moments__quadratic_domain
+[2026-10-31 08:40:31] [Training task] Done | pid=97249 | item=8 | split=cross_subject_88683bbd824f | representation=standardized_signal | model=eegnet_residual_moments__quadratic_domain | elapsed=26.4m
+[2026-10-31 08:40:31] [Training] Progress 40/45 | remaining=5 | elapsed=15.32h | eta≈1.91h
+[2026-10-31 08:40:31] [Training task] Starting | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_erm
+[2026-10-31 09:03:38] [Training task] Done | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_erm | elapsed=23.1m
+[2026-10-31 09:03:38] [Training] Progress 41/45 | remaining=4 | elapsed=15.70h | eta≈1.53h
+[2026-10-31 09:03:38] [Training task] Starting | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_residual_moments__linear_pooled
+[2026-10-31 09:30:51] [Training task] Done | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_residual_moments__linear_pooled | elapsed=27.2m
+[2026-10-31 09:30:51] [Training] Progress 42/45 | remaining=3 | elapsed=16.15h | eta≈1.15h
+[2026-10-31 09:30:51] [Training task] Starting | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_residual_moments__linear_domain
+[2026-10-31 10:06:19] [Training task] Done | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_residual_moments__linear_domain | elapsed=35.5m
+[2026-10-31 10:06:19] [Training] Progress 43/45 | remaining=2 | elapsed=16.75h | eta≈46.7m
+[2026-10-31 10:06:19] [Training task] Starting | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_residual_moments__quadratic_pooled
+[2026-10-31 10:32:39] [Training task] Done | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_residual_moments__quadratic_pooled | elapsed=26.3m
+[2026-10-31 10:32:39] [Training] Progress 44/45 | remaining=1 | elapsed=17.18h | eta≈23.4m
+[2026-10-31 10:32:39] [Training task] Starting | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_residual_moments__quadratic_domain
+[2026-10-31 10:55:43] [Training task] Done | pid=97249 | item=9 | split=cross_subject_d4e53dfb94e4 | representation=standardized_signal | model=eegnet_residual_moments__quadratic_domain | elapsed=23.1m
+[2026-10-31 10:55:43] [Training] Progress 45/45 | remaining=0 | elapsed=17.57h | eta≈0s
+[2026-10-31 10:55:43] [Training] Done | elapsed=17.57h
+[2026-10-31 10:55:43] [Evaluation] Starting...
+[Evaluation] 1/45 models | cached=0 | evaluated=1[Evaluation] 2/45 models | cached=0 | evaluated=2[Evaluation] 3/45 models | cached=0 | evaluated=3[Evaluation] 4/45 models | cached=0 | evaluated=4[Evaluation] 5/45 models | cached=0 | evaluated=5[Evaluation] 6/45 models | cached=0 | evaluated=6[Evaluation] 7/45 models | cached=0 | evaluated=7[Evaluation] 8/45 models | cached=0 | evaluated=8[Evaluation] 9/45 models | cached=0 | evaluated=9[Evaluation] 10/45 models | cached=0 | evaluated=10[Evaluation] 11/45 models | cached=0 | evaluated=11[Evaluation] 12/45 models | cached=0 | evaluated=12[Evaluation] 13/45 models | cached=0 | evaluated=13[Evaluation] 14/45 models | cached=0 | evaluated=14[Evaluation] 15/45 models | cached=0 | evaluated=15[Evaluation] 16/45 models | cached=0 | evaluated=16[Evaluation] 17/45 models | cached=0 | evaluated=17[Evaluation] 18/45 models | cached=0 | evaluated=18
