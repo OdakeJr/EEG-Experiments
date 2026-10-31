@@ -15,3 +15,6 @@ torch==2.2.2
 torchaudio==2.2.2
 tqdm==4.66.2
 PyWavelets==1.9.0
+datasets
+Pillow
+torchvision==0.17.2
